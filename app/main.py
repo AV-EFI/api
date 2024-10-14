@@ -3,7 +3,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 
-from app.routers import hello
+from app.routers import hello,efi
 
 tags_metadata = [
     {
@@ -25,7 +25,8 @@ app = FastAPI(
     openapi_tags=tags_metadata,
 )
 
-app.include_router(hello.router, tags=['hello'], prefix='/hello')
+app.include_router(hello.router, prefix='/hello', tags=['hello'])
+app.include_router(efi.router, prefix="/efi/v1", tags=["EFI"])
 
 if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=8000)
