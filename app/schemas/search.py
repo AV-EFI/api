@@ -9,4 +9,4 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     matches_found: int
     similar_works: List[Dict]
-    matching_criteria: Dict[str, bool]
+    # matching_criteria: Dict[str, bool]

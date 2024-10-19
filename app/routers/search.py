@@ -80,7 +80,6 @@ async def find_similar_works(request: SearchRequest):
         # Process results
         hits = response['hits']['hits']
         
-        # print(hits)
         total_matches = response['hits']['total']['value']
         print(total_matches)
         
@@ -119,8 +118,8 @@ async def find_similar_works(request: SearchRequest):
 
         return SearchResponse(
             matches_found=total_matches,
-            similar_works=similar_works,
-            matching_criteria=matching_criteria
+            similar_works=similar_works
+            # matching_criteria=matching_criteria
         )
 
     except Exception as e:
