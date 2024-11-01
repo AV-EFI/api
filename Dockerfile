@@ -65,9 +65,9 @@ ENV HTTP_PORT=80
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
 # Copy the source code
-COPY ./app /code/app
+COPY ./efi_api /code/efi_api
 
 EXPOSE $HTTP_PORT
 
 # --proxy-headers to trust headers from the proxy (e.g. Traefik)
-CMD uvicorn app.main:app --proxy-headers --host 0.0.0.0 --port "${HTTP_PORT}"
+CMD uvicorn efi_api.main:app --proxy-headers --host 0.0.0.0 --port "${HTTP_PORT}"
