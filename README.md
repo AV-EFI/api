@@ -46,7 +46,7 @@ To start the server, execute the commands below.
 $ docker login docker.gitlab.gwdg.de
 
 # Download and run the server in the background
-$ docker run --detach --port 80:80 docker.gitlab.gwdg.de/av-efi/api:0.0.1
+$ docker run --name efi-api --detach --publish 8000:8000 docker.gitlab.gwdg.de/av-efi/api:<tag or branch_name>
 ```
 
 At the login step, provide your username and token for authentication. Then, make sure that you have enough right to
