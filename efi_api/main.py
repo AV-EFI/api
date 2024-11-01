@@ -3,7 +3,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 
-from app.routers import hello,efi,health,search
+from .routers import hello,efi,health,search
 
 tags_metadata = [
     {

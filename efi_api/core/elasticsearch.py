@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch
-from app.core.config import settings
+from .config import settings
 
 def get_elasticsearch_client() -> Elasticsearch:
     """

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schemas.efi_schema import EFIRequest, EFIResponse, ErrorResponse
+from ..schemas.efi_schema import EFIRequest, EFIResponse, ErrorResponse
 
 router = APIRouter()
 

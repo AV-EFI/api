@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.core.elasticsearch import es_client
+from ..core.elasticsearch import es_client
 
 router = APIRouter()
 
