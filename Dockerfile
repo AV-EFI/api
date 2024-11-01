@@ -59,7 +59,7 @@ FROM python-base as production
 WORKDIR /code
 
 ENV FASTAPI_ENV=production
-ENV HTTP_PORT=80
+ENV HTTP_PORT=8000
 
 # Copy the dependencies
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
