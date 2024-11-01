@@ -24,8 +24,13 @@ async def find_similar_works(request: SearchRequest):
         
         if request.date:
             must_clauses.append({
-                "term": {
-                    "has_record.has_event.has_date.keyword": request.date
+                "nested": {
+                    "path": "has_record.has_event",
+                    "query": {
+                        "term": {
+                            "has_record.has_event.has_date.keyword": request.date
+                        }
+                    }
                 }
             })
             
@@ -41,17 +46,12 @@ async def find_similar_works(request: SearchRequest):
                                     "must": [
                                         {
                                             "term": {
-                                                "has_record.has_event.has_activity.category.keyword": "avefi:DirectingActivity"
+                                                "has_record.has_event.has_activity.type.keyword": "Director"
                                             }
                                         },
                                         {
-                                            "nested": {
-                                                "path": "has_record.has_event.has_activity.has_agent",
-                                                "query": {
-                                                    "match": {
-                                                        "has_record.has_event.has_activity.has_agent.has_name": request.director
-                                                    }
-                                                }
+                                            "match": {
+                                                "has_record.has_event.has_activity.has_agent.has_name": request.director
                                             }
                                         }
                                     ]
