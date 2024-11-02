@@ -1,8 +1,9 @@
+#!/bin/sh
+set -e
+
 echo "*********************** Activating venv ***********************"
 poetry install
-poetry shell 
 
 echo "*********************** Starting FASTAPI ***********************"
 echo "Swagger Documentation: http://127.0.0.1:8000/docs"
-uvicorn app.main:app --reload
-
+poetry run uvicorn efi_api.main:app --reload
