@@ -1,6 +1,8 @@
+#!/bin/sh
+set -e
+
 echo "*********************** Activating venv ***********************"
-poetry install --no-dev 
-poetry shell 
+poetry install
 
 echo "*********************** Running pytest ***********************"
-pytest tests/efi_endpoint.py
+poetry run pytest
