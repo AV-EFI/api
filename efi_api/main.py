@@ -31,4 +31,4 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(search.router, prefix="", tags=["Search"])
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run("efi_api.main:app", host='0.0.0.0', port=8000)
