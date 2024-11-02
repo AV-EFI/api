@@ -70,4 +70,4 @@ COPY ./efi_api /code/efi_api
 EXPOSE $HTTP_PORT
 
 # --proxy-headers to trust headers from the proxy (e.g. Traefik)
-CMD uvicorn efi_api.main:app --proxy-headers --host 0.0.0.0 --port "${HTTP_PORT}"
+CMD ["uvicorn", "efi_api.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
