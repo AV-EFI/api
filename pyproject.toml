@@ -16,6 +16,8 @@ elasticsearch = "^8.15.1"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
 httpx = "0.25.1"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.9"
 
 [build-system]
 requires = ["poetry-core"]

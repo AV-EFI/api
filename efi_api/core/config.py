@@ -9,6 +9,12 @@ class Settings(BaseSettings):
     ES_PORT: int = 9200
     ES_INDEX: str = "21.11155_test_nested"
     ES_SCHEME: str = "http"
+    
+    # Auth settings
+    SECRET_KEY: str = "some-secret-key"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     class Config:
         env_file = ".env"
 

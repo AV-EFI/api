@@ -4,17 +4,17 @@ from ..schemas.efi_schema import EFIRequest, EFIResponse, ErrorResponse
 router = APIRouter()
 
 @router.post("/", 
-             response_model=EFIResponse,
-             status_code=status.HTTP_201_CREATED,
-             summary="Process EFI data",
-             description="Endpoint to process EFI (Extended Film Information) data. "
-                         "It accepts a JSON payload containing film metadata and returns "
-                         "a processed version of the same data.",
-             response_description="Processed EFI data with a success message",
-             responses={
-                 400: {"model": ErrorResponse, "description": "Bad Request"},
-                 500: {"model": ErrorResponse, "description": "Internal Server Error"}
-             })
+            response_model=EFIResponse,
+            status_code=status.HTTP_201_CREATED,
+            summary="Process EFI data",
+            description="Endpoint to process EFI (Extended Film Information) data. "
+                        "It accepts a JSON payload containing film metadata and returns "
+                        "a processed version of the same data.",
+            response_description="Processed EFI data with a success message",
+            responses={
+                400: {"model": ErrorResponse, "description": "Bad Request"},
+                500: {"model": ErrorResponse, "description": "Internal Server Error"}
+            })
 
 async def process_efi(request: EFIRequest):
     """
