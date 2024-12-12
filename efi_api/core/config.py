@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    PID_SERVICE_URL: str = "http://141.5.105.237:8081/handles/21.T11998"
+    PID_USERNAME: str = "admin"
+    PID_PASSWORD: str = "" #TODO: UPDATE PASSWORD TO AUTHENTICATE AGAINS PID SYSTEM; CAN BE DONE IN .ENV FILE
+    
     class Config:
         env_file = ".env"
 
