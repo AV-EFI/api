@@ -34,7 +34,7 @@ run_analysis() {
     echo "Generating ${title}..."
     if [[ -f "${file}" ]]; then
         # Use find to get all Python files excluding venv directory
-        find . -type f -name "*.py" -not -path "./venv/*" -print0 | xargs -0 $3 >> "${file}"
+        find . -type f -name "*.py" -not -path "./venv/*" -not -path "./tests/*" -not -name "__init__.py" -print0 | xargs -0 $3 >> "${file}"
         echo "Results saved to ${file}"
     else
         echo "Error: Could not create ${file}"
