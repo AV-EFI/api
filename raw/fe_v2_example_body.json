@@ -1,0 +1,30 @@
+{
+    "query": "DIE HEIMAT DES DON QUIJOTE",
+    "facetFilters": [
+      [
+        "category_clean:avefi_WorkVariant",
+        "category_clean:avefi_Item"
+      ],
+      [
+        "productionyears:1975"
+      ],
+      [
+        "directors:Gasquet, Nicole"
+      ]
+    ],
+    "facets": [
+      "castmembers",
+      "categories",
+      "category_clean",
+      "countries",
+      "directors",
+      "producers",
+      "productionyears",
+      "subjects"
+    ],
+    "highlightPreTag": "__ais-highlight__",
+    "highlightPostTag": "__/ais-highlight__",
+    "hitsPerPage": 20,
+    "maxValuesPerFacet": 10,
+    "page": 0
+  }
