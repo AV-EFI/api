@@ -19,6 +19,9 @@ dependencies = [
 uvicorn = {extras = ["standard"], version = "^0.27.1"}
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 
+[project.scripts]
+rebuild_search_index = "efi_api.helpers.indexing:rebuild_search_index"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
 
