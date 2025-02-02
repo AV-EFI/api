@@ -1,19 +1,23 @@
-[tool.poetry]
+[project]
 name = "efi_api"
 version = "0.0.1"
 description = "This is the backend for the AV-EFI project."
-authors = ["Triet Doan"]
+authors = [
+    { name = "Triet Doan", email = "triet.doan@gwdg.de" },
+]
 readme = "README.md"
+requires-python = ">=3.11,<4"
+dependencies = [
+    "fastapi (>=0.110.0,<1.0.0)",
+    "pydantic-settings (>=2.6.0,<3.0.0)",
+    "elasticsearch (>=8.15.1,<9.0.0)",
+    "python-multipart (>=0.0.9,<0.1.0)",
+    "httpx (>=0.25.1,<0.26.0)",
+]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<4"
-fastapi = "^0.110.0"
 uvicorn = {extras = ["standard"], version = "^0.27.1"}
-pydantic-settings = "^2.6.0"
-elasticsearch = "^8.15.1"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-python-multipart = "^0.0.9"
-httpx = "0.25.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
