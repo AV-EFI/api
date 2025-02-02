@@ -4,6 +4,8 @@ version = "0.0.1"
 description = "This is the backend for the AV-EFI project."
 authors = [
     { name = "Triet Doan", email = "triet.doan@gwdg.de" },
+    { name = "Pranay Bhatia", email = "pranay.bhatia@stud.uni-goettingen.de" },
+    { name = "Elias Oltmanns", email = "elias.oltmanns@gwdg.de" },
 ]
 readme = "README.md"
 requires-python = ">=3.11,<4"
