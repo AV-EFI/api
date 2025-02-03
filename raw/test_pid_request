@@ -1,0 +1,49 @@
+[
+  {
+    "type": "KIP",
+    "parsed_data": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+    "idx": 1
+  },
+  {
+    "type": "has_record",
+    "parsed_data": {
+      "category": "avefi:WorkVariant",
+      "has_primary_title": {
+        "has_name": "DIE HEIMAT DES DON QUIJOTE",
+        "type": "PreferredTitle",
+        "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE"
+      },
+      "described_by": {
+        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+      },
+      "has_event": [
+        {
+          "category": "avefi:ProductionEvent",
+          "has_activity": [
+            {
+              "category": "avefi:DirectingActivity",
+              "has_agent": [
+                {
+                  "category": "avefi:Agent",
+                  "has_name": "Hinke, Gisbert",
+                  "type": "Person"
+                }
+              ],
+              "type": "Director"
+            }
+          ],
+          "has_date": "1953",
+          "located_in": [
+            {
+              "category": "avefi:GeographicName",
+              "has_name": "Deutschland"
+            }
+          ]
+        }
+      ],
+      "type": "Monographic"
+    },
+    "idx": 2
+  }
+]

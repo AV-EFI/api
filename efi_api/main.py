@@ -4,8 +4,8 @@ import uvicorn
 from fastapi import FastAPI
 
 from .routers import hello,efi,health,search,transform,auth
-from .routers.pid import create,update
 from .routers.frontend import frontend_search, frontend_search_v2, get_manifest_by_id, get_work_by_id
+from .routers.pid import create,update, pid
 
 tags_metadata = [
     {
@@ -33,6 +33,7 @@ app.include_router(auth.router, prefix="", tags=["Auth"])
 app.include_router(efi.router, prefix="/efi/v1", tags=["EFI"])
 app.include_router(create.router, prefix="/efi/pid", tags=["PID"])
 app.include_router(update.router, prefix="/efi/pid", tags=["PID"])
+app.include_router(pid.router, prefix="", tags=["PID"])
 app.include_router(frontend_search.router, prefix="", tags=["Frontend"])
 app.include_router(frontend_search_v2.router, prefix="", tags=["Frontend"])
 app.include_router(get_manifest_by_id.router, prefix="", tags=["Frontend"])
