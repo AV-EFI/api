@@ -1,49 +1,115 @@
 [
-  {
-    "type": "KIP",
-    "parsed_data": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
-    "idx": 1
-  },
-  {
-    "type": "has_record",
-    "parsed_data": {
-      "category": "avefi:WorkVariant",
-      "has_primary_title": {
-        "has_name": "DIE HEIMAT DES DON QUIJOTE",
-        "type": "PreferredTitle",
-        "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE"
-      },
-      "described_by": {
-        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
-        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
-      },
-      "has_event": [
-        {
-          "category": "avefi:ProductionEvent",
-          "has_activity": [
-            {
-              "category": "avefi:DirectingActivity",
-              "has_agent": [
-                {
-                  "category": "avefi:Agent",
-                  "has_name": "Hinke, Gisbert",
-                  "type": "Person"
-                }
-              ],
-              "type": "Director"
-            }
-          ],
-          "has_date": "1953",
-          "located_in": [
-            {
-              "category": "avefi:GeographicName",
-              "has_name": "Deutschland"
-            }
-          ]
-        }
-      ],
-      "type": "Monographic"
+    {
+        "type": "KIP",
+        "parsed_data": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+        "idx": 1
     },
-    "idx": 2
+    {
+            "type": "has_record",
+            "parsed_data": {
+                "category": "avefi:WorkVariant",
+                "has_primary_title": {
+                    "has_name": "DIE HEIMAT DES DON QUIJOTE",
+                    "type": "PreferredTitle",
+                    "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE"
+                },
+                "described_by": {
+                    "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                    "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                },
+                "has_event": [
+                    {
+                        "category": "avefi:ProductionEvent",
+                        "has_activity": [
+                            {
+                                "category": "avefi:DirectingActivity",
+                                "has_agent": [
+                                    {
+                                        "category": "avefi:Agent",
+                                        "has_name": "Hinke, Gisbert",
+                                        "type": "Person"
+                                    }
+                                ],
+                                "type": "Director"
+                            }
+                        ],
+                        "has_date": "1953",
+                        "located_in": [
+                            {
+                                "category": "avefi:GeographicName",
+                                "has_name": "Deutschland"
+                            }
+                        ]
+                    }
+                ],
+                "type": "Monographic"
+            },
+            "idx": 2
+        }
+  ]
+
+
+
+// OUTPUT 
+
+{
+    "handle": "21.T11998/PRANAY2",
+    "values": [
+      {
+        "idx": 1,
+        "type": "KIP",
+        "parsed_data": {
+          "format": "string",
+          "value": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df"
+        },
+        "data": "aHR0cDovL3R5cGVhcGkubGFiLnBpZGNvbnNvcnRpdW0ubmV0L3YxL3R5cGVzL3NjaGVtYS8yMS5UMTE5NjkvODczZDVjOWY2ZWJiZmZlY2YxZGY=",
+        "privs": "rwr-",
+        "timestamp": "2025-02-03T08:51:05Z",
+        "ttl_type": 0,
+        "ttl": 86400
+      },
+      {
+        "idx": 2,
+        "type": "has_record",
+        "parsed_data": {
+          "format": "string",
+          "value": "{\"category\":\"avefi:WorkVariant\",\"has_primary_title\":{\"has_name\":\"DIE HEIMAT DES DON QUIJOTE\",\"type\":\"PreferredTitle\",\"has_ordering_name\":\"HEIMAT DES DON QUIJOTE, DIE\"},\"described_by\":{\"has_issuer_id\":\"https://w3id.org/isil/DE-MUS-432511\",\"has_issuer_name\":\"Filmmuseum der Landeshauptstadt Düsseldorf\"},\"has_event\":[{\"category\":\"avefi:ProductionEvent\",\"has_activity\":[{\"category\":\"avefi:DirectingActivity\",\"has_agent\":[{\"category\":\"avefi:Agent\",\"has_name\":\"Hinke, Gisbert\",\"type\":\"Person\"}],\"type\":\"Director\"}],\"has_date\":\"1953\",\"located_in\":[{\"category\":\"avefi:GeographicName\",\"has_name\":\"Deutschland\"}]}],\"type\":\"Monographic\"}"
+        },
+        "data": "eyJjYXRlZ29yeSI6ImF2ZWZpOldvcmtWYXJpYW50IiwiaGFzX3ByaW1hcnlfdGl0bGUiOnsiaGFzX25hbWUiOiJESUUgSEVJTUFUIERFUyBET04gUVVJSk9URSIsInR5cGUiOiJQcmVmZXJyZWRUaXRsZSIsImhhc19vcmRlcmluZ19uYW1lIjoiSEVJTUFUIERFUyBET04gUVVJSk9URSwgRElFIn0sImRlc2NyaWJlZF9ieSI6eyJoYXNfaXNzdWVyX2lkIjoiaHR0cHM6Ly93M2lkLm9yZy9pc2lsL0RFLU1VUy00MzI1MTEiLCJoYXNfaXNzdWVyX25hbWUiOiJGaWxtbXVzZXVtIGRlciBMYW5kZXNoYXVwdHN0YWR0IETDvHNzZWxkb3JmIn0sImhhc19ldmVudCI6W3siY2F0ZWdvcnkiOiJhdmVmaTpQcm9kdWN0aW9uRXZlbnQiLCJoYXNfYWN0aXZpdHkiOlt7ImNhdGVnb3J5IjoiYXZlZmk6RGlyZWN0aW5nQWN0aXZpdHkiLCJoYXNfYWdlbnQiOlt7ImNhdGVnb3J5IjoiYXZlZmk6QWdlbnQiLCJoYXNfbmFtZSI6IkhpbmtlLCBHaXNiZXJ0IiwidHlwZSI6IlBlcnNvbiJ9XSwidHlwZSI6IkRpcmVjdG9yIn1dLCJoYXNfZGF0ZSI6IjE5NTMiLCJsb2NhdGVkX2luIjpbeyJjYXRlZ29yeSI6ImF2ZWZpOkdlb2dyYXBoaWNOYW1lIiwiaGFzX25hbWUiOiJEZXV0c2NobGFuZCJ9XX1dLCJ0eXBlIjoiTW9ub2dyYXBoaWMifQ==",
+        "privs": "rwr-",
+        "timestamp": "2025-02-03T08:51:05Z",
+        "ttl_type": 0,
+        "ttl": 86400
+      },
+      {
+        "idx": 100,
+        "type": "HS_ADMIN",
+        "parsed_data": {
+          "format": "admin",
+          "value": {
+            "handle": "21.T11998/USER57",
+            "index": 300,
+            "perms": {
+              "add_handle": true,
+              "delete_handle": true,
+              "add_derived_prefix": true,
+              "delete_derived_prefix": true,
+              "modify_value": true,
+              "remove_value": true,
+              "add_value": true,
+              "read_value": true,
+              "modify_admin": true,
+              "remove_admin": true,
+              "add_admin": true,
+              "list_handles": true
+            }
+          }
+        },
+        "data": "D/8AAAAQMjEuVDExOTk4L1VTRVI1NwAAASw=",
+        "privs": "rwr-",
+        "timestamp": "2025-02-03T08:51:12Z",
+        "ttl_type": 0,
+        "ttl": 86400
+      }
+    ]
   }
-]
