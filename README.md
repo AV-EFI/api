@@ -59,6 +59,15 @@ pull images from the project. Otherwise, an `Access Denied` error will be thrown
 - Run `poetry install`.
 - The project is ready for development.
 
+## Index maintenance
+
+A rebuild of search indices can be triggered manually by issuing the
+following command:
+
+```shell
+$ poetry run rebuild_search_index
+```
+
 [1]: https://fastapi.tiangolo.com/
 
 [2]: https://docs.pytest.org/en/8.0.x/
