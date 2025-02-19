@@ -37,16 +37,63 @@ async def multi_search(search_request: SearchRequest):
         response = execute_search(es_query)
         logger.debug(f"Elasticsearch response: {response}")
 
-        hits = transform_hits(response["hits"]["hits"])
+        hits = transform_hits(response["hits"]["hits"], search_request.query)
         total_hits = response["hits"]["total"]["value"]
         facets = transform_facets(response["aggregations"])
-
         return {
             "hits": hits,
             "facets": facets,
             "page": search_request.page,
             "nbPages": (total_hits + search_request.hitsPerPage - 1) // search_request.hitsPerPage,
-            "nbHits": total_hits
+            "nbHits": total_hits,
+            "appliedRules": [],
+            "exhaustiveNbHits": True,
+            "exhaustiveFacetsCount": True,
+            "exhaustiveTypo": True,
+            "exhaustive": {
+                "facetsCount": True,
+                "nbHits": True,
+                "typo": True
+            },
+            "hitsPerPage": search_request.hitsPerPage,
+            "processingTimeMS": 18,
+            "query": search_request.query,
+            "renderingContent": {
+                "facetOrdering": {
+                    "facets": {
+                        "order": [
+                            "has_sound_type",
+                            "in_language_code",
+                            "has_genre_has_name",
+                            "subjects",
+                            "directors_or_editors",
+                            "castmembers",
+                            "production",
+                            "years",
+                            "located_in_has_name",
+                            "has_duration_has_value",
+                            "has_issuer_name",
+                            "has_format_type",
+                            "has_colour_type"
+                        ]
+                    },
+                    "values": {
+                        "has_sound_type": {"sortRemainingBy": "count"},
+                        "in_language_code": {"sortRemainingBy": "count"},
+                        "has_genre_has_name": {"sortRemainingBy": "count"},
+                        "subjects": {"sortRemainingBy": "count"},
+                        "directors_or_editors": {"sortRemainingBy": "count"},
+                        "castmembers": {"sortRemainingBy": "count"},
+                        "production": {"sortRemainingBy": "count"},
+                        "years": {"sortRemainingBy": "count"},
+                        "located_in_has_name": {"sortRemainingBy": "count"},
+                        "has_duration_has_value": {"sortRemainingBy": "count"},
+                        "has_issuer_name": {"sortRemainingBy": "count"},
+                        "has_format_type": {"sortRemainingBy": "count"},
+                        "has_colour_type": {"sortRemainingBy": "count"}
+                    }
+                }
+            }
         }
     
     except Exception as e:
