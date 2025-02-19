@@ -1,3 +1,4 @@
+.env
 .idea/
 .venv/
 venv/
@@ -5,3 +6,4 @@ venv/
 **/__pycache__
 outputs/
 code_analysis/
+*~
