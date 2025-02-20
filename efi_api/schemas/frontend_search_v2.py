@@ -5,17 +5,36 @@ from typing import List, Optional, Dict
 class SearchRequest(BaseModel):
     query: str = Field(
         description="Search query string to match against titles and content",
-        example="DIE HEIMAT DES DON QUIJOTE"
+        example="test"
     )
     facetFilters: Optional[List[List[str]]] = Field(
         default=None,
         description="Nested list of facet filters in format ['field:value']. Inner lists are OR'ed, outer lists are AND'ed",
-        example=[["countries:Frankreich"]]
+        example=[
+            ["production:Hermann Schlenker Filmproduktion"],
+            ["years:1977"]
+        ]
     )
     facets: Optional[List[str]] = Field(
         default=None,
         description="List of facet fields to aggregate results by",
-        example=["castmembers", "categories", "category_clean", "countries", "directors", "producers", "productionyears", "subjects"]
+        example=[
+            "castmembers",
+            "directors_or_editors",
+            "has_colour_type",
+            "has_duration_has_value",
+            "has_format_type",
+            "has_genre_has_name",
+            "has_issuer_name",
+            "has_sound_type",
+            "in_language_code",
+            "item_element_type",
+            "located_in_has_name",
+            "manifestation_event_type",
+            "production",
+            "subjects",
+            "years"
+        ]
     )
     highlightPreTag: Optional[str] = Field(
         default="__ais-highlight__",
