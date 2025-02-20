@@ -65,17 +65,42 @@ def build_es_query(search_request: SearchRequest) -> Dict:
     }
 
     nested_aggs = {
-        "manifestations": ["has_sound_type", "in_language_code", "has_duration_has_value", "has_issuer_name", "has_colour_type"],
-        "has_record.has_event": ["located_in_has_name"],
-        "manifestations.items": ["has_format_type"]
+        "manifestations": {
+            "path": "manifestations",
+            "fields": {
+                "has_sound_type": "has_record.has_sound_type",
+                "in_language_code": "has_record.in_language.code",
+                "has_duration_has_value": "has_record.has_duration.has_value",
+                "has_issuer_name": "has_record.described_by.has_issuer_name",
+                "has_colour_type": "has_record.has_colour_type"
+            }
+        },
+        "has_record.has_event": {
+            "path": "has_record.has_event",
+            "fields": {
+                "located_in_has_name": "located_in.has_name"
+            }
+        },
+        "manifestations.items": {
+            "path": "manifestations.items",
+            "fields": {
+                "has_format_type": "has_record.has_format.type"
+            }
+        }
     }
 
-    for path, fields in nested_aggs.items():
-        for field in fields:
-            aggs[field] = {
-                "nested": {"path": path},
+    # Add nested aggregations to the main aggs dictionary
+    for path_info in nested_aggs.values():
+        for agg_name, field in path_info["fields"].items():
+            aggs[agg_name] = {
+                "nested": {"path": path_info["path"]},
                 "aggs": {
-                    field: {"terms": {"field": f"{path}.{field}.keyword", "size": search_request.maxValuesPerFacet}}
+                    agg_name: {
+                        "terms": {
+                            "field": f"{path_info['path']}.{field}.keyword",
+                            "size": search_request.maxValuesPerFacet
+                        }
+                    }
                 }
             }
 
@@ -158,13 +183,11 @@ def transform_facets(aggregations: Dict) -> Dict:
         
     transformed_facets = {}
     for facet_name, facet_data in aggregations.items():
-        # Handle regular aggregations
         if "buckets" in facet_data:
             transformed_facets[facet_name] = {
                 bucket["key"]: bucket["doc_count"]
                 for bucket in facet_data["buckets"]
             }
-        # Handle nested aggregations (simplified)
         elif facet_name in facet_data:
             nested_buckets = facet_data[facet_name]["buckets"]
             transformed_facets[facet_name] = {

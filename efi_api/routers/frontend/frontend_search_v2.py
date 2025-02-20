@@ -32,10 +32,10 @@ logger = logging.getLogger(__name__)
 async def multi_search(search_request: SearchRequest):
     try:
         es_query = build_es_query(search_request)
-        logger.debug(f"Elasticsearch query: {es_query}")
+        # logger.debug(f"Elasticsearch query: {es_query}")
         
         response = execute_search(es_query)
-        logger.debug(f"Elasticsearch response: {response}")
+        # logger.debug(f"Elasticsearch response: {response}")
 
         hits = transform_hits(response["hits"]["hits"], search_request.query)
         total_hits = response["hits"]["total"]["value"]
