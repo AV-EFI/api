@@ -25,12 +25,11 @@ ENV PYTHONUNBUFFERED=1 \
     \
     # paths
     # this is where our requirements + virtual environment will live
-    PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+    PYSETUP_PATH="/opt/pysetup"
 
 
 # prepend poetry and venv to path
-ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
+ENV PATH="$POETRY_HOME/bin:$PATH"
 
 
 # `builder-base` stage is used to build deps + create our virtual environment
@@ -70,4 +69,4 @@ COPY ./efi_api /code/efi_api
 EXPOSE $HTTP_PORT
 
 # --proxy-headers to trust headers from the proxy (e.g. Traefik)
-CMD ["uvicorn", "efi_api.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
+CMD exec $PYSETUP_PATH/.venv/bin/uvicorn efi_api.main:app --proxy-headers --host 0.0.0.0 --port $HTTP_PORT
