@@ -3,7 +3,7 @@
 ## Project setup
 
 This is the backend for the AV-EFI project. It uses [FastAPI][1] as a server framework and [Pytest][2] for unit test.
-The backend code is under the `app` directory, while unit tests are under the `tests` one.
+The backend code is under the `efi_api` directory, while unit tests are under the `tests` one.
 
 ### Dependency management
 
@@ -39,7 +39,14 @@ with the development progress. The content of this file is used as a release not
 The project is dockerized and its images are stored in the [project container registry][5]. To run it on your machine,
 make sure that [Docker][6] is installed.
 
-To start the server, execute the commands below.
+In a local checkout of the repository, the easiest way to bring up the
+server is via docker-compose as follows:
+
+```shell
+$ docker-compose up -d
+```
+
+Alternatively, to start the server, execute the commands below:
 
 ```shell
 # Log in to GitLab
