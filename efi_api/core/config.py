@@ -23,6 +23,6 @@ class Settings(BaseSettings):
     PID_PASSWORD: str = "" #TODO: UPDATE PASSWORD TO AUTHENTICATE AGAINST PID SYSTEM; CAN BE DONE IN .ENV FILE
     
     class Config:
-        env_file = ".env"
+        env_file = ".api_config.env"
 
 settings = Settings()
