@@ -3,7 +3,7 @@ from typing import List, Dict
 import logging
 
 from efi_api.core.elasticsearch import get_elasticsearch_client
-from efi_api.schemas.frontend_search_v2 import SearchRequest
+from efi_api.schemas.frontend_search import SearchRequest
 from efi_api.core.config import settings
 
 logging.basicConfig(level=logging.DEBUG)

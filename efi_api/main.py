@@ -2,9 +2,10 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .routers import hello,efi,health,search,transform,auth
-from .routers.frontend import frontend_search, frontend_search_v2, get_manifest_by_id, get_work_by_id
+from .routers.frontend import frontend_search, get_manifest_by_id, get_work_by_id
 from .routers.pid import create,update, pid
 
 ROOT_PATH = "/api/v1"
@@ -32,6 +33,14 @@ app = FastAPI(
     openapi_tags=tags_metadata,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to your needs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 api = APIRouter(prefix=ROOT_PATH)
 
 api.include_router(hello.router, prefix='/hello', tags=['hello'])
@@ -42,7 +51,6 @@ api.include_router(create.router, prefix="/efi/pid", tags=["PID"])
 api.include_router(update.router, prefix="/efi/pid", tags=["PID"])
 api.include_router(pid.router, prefix="", tags=["PID"])
 api.include_router(frontend_search.router, prefix="", tags=["Frontend"])
-api.include_router(frontend_search_v2.router, prefix="", tags=["Frontend"])
 api.include_router(get_manifest_by_id.router, prefix="", tags=["Frontend"])
 api.include_router(get_work_by_id.router, prefix="", tags=["Frontend"])
 api.include_router(search.router, prefix="", tags=["Search"])

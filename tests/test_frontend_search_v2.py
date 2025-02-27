@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from efi_api.schemas.frontend_search_v2 import SearchRequest
+from efi_api.schemas.frontend_search import SearchRequest
 from efi_api.helpers.frontend_search_v2 import build_es_query, execute_search, transform_hits, transform_facets
 
 

@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 
 
-class SearchRequest(BaseModel):
+class SearchParams(BaseModel):
     query: str = Field(
         description="Search query string to match against titles and content",
         example="test"
@@ -23,6 +23,7 @@ class SearchRequest(BaseModel):
             "directors_or_editors",
             "has_colour_type",
             "has_duration_has_value",
+            "has_form",
             "has_format_type",
             "has_genre_has_name",
             "has_issuer_name",
@@ -67,20 +68,15 @@ class SearchRequest(BaseModel):
         example=0
     )
 
+class SearchRequest(BaseModel):
+    indexName: str = Field(
+        description="Name of the search index to query",
+        example="21.11155-denormalised-work"
+    )
+    params: SearchParams
+
 class SearchResponse(BaseModel):
-    hits: List[dict] = Field(
-        description="List of search results with metadata and highlighting"
-    )
-    facets: dict = Field(
-        description="Aggregated facet values and their counts"
-    )
-    page: int = Field(
-        description="Current page number"
-    )
-    nbPages: int = Field(
-        description="Total number of pages available"
-    )
-    nbHits: int = Field(
-        description="Total number of matching documents"
+    results: List[dict] = Field(
+        description="List of search results containing hits, facets, pagination and other metadata"
     )
 
