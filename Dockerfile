@@ -1,6 +1,6 @@
 # Adapted from https://github.com/orgs/python-poetry/discussions/1879#discussioncomment-216865
 
-FROM python:3.12-slim as python-base
+FROM python:3.12-slim AS python-base
 
     # python
 ENV PYTHONUNBUFFERED=1 \
@@ -33,7 +33,7 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 
 
 # `builder-base` stage is used to build deps + create our virtual environment
-FROM python-base as builder-base
+FROM python-base AS builder-base
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
         # deps for installing poetry
@@ -53,7 +53,7 @@ RUN poetry install --only main --no-root
 
 
 # `production` image used for runtime
-FROM python-base as production
+FROM python-base AS production
 
 WORKDIR /code
 
