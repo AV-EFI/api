@@ -28,6 +28,7 @@ app = FastAPI(
     version=version,
     docs_url=f"{ROOT_PATH}/docs",
     redoc_url=f"{ROOT_PATH}/redoc",
+    openapi_url=f"{ROOT_PATH}/openapi.json",
     openapi_tags=tags_metadata,
 )
 
