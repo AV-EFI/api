@@ -1,0 +1,19 @@
+services:
+  av-efi-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - './.env:/code/.env:ro'
+    networks:
+      proxy-network:
+        aliases:
+          - av-efi-backend
+
+networks:
+  proxy-network:
+    name: proxy-network
+    external: true

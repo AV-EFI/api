@@ -1,8 +1,6 @@
 services:
   av-efi-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${API_IMAGE:-docker.gitlab.gwdg.de/av-efi/api}
     restart: unless-stopped
     ports:
       - "127.0.0.1:8000:8000"
