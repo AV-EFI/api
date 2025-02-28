@@ -7,7 +7,6 @@ from efi_api.core.config import settings
 import logging
 router = APIRouter()
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 async def get_items_by_manifest_id(manifest_id: str):
@@ -64,4 +63,3 @@ async def get_manifest_by_id(id: str):
     except Exception as e:
         logger.error(f"Error getting manifest for work {id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
-  

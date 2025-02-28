@@ -1,3 +1,5 @@
+import logging
+import os
 from pathlib import Path
 
 import uvicorn
@@ -16,6 +18,14 @@ tags_metadata = [
         'description': 'Say hello to the world!'
     }
 ]
+
+loglevel = os.environ.get(
+    f"{__package__.upper()}_LOGLEVEL", 'WARNING').upper()
+num_level = getattr(logging, loglevel, None)
+if not isinstance(num_level, int):
+    raise ValueError(f"Invalid log level: {loglevel}")
+logging.basicConfig(
+    level=num_level, format='%(levelname)s:%(name)s: %(message)s')
 
 # Read version from the VERSION file
 path_to_app = Path(__file__).parent

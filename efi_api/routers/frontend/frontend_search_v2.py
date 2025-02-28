@@ -10,7 +10,6 @@ from efi_api.helpers.frontend_search_v2 import build_es_query, execute_search, t
 router = APIRouter()
 url = settings.PID_SERVICE_URL
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @router.options(

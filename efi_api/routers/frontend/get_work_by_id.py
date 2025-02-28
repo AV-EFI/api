@@ -7,7 +7,6 @@ from efi_api.core.config import settings
 import logging
 router = APIRouter()
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 @router.post(

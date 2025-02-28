@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - EFI_API_LOGLEVEL=${EFI_API_LOGLEVEL:-DEBUG}
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

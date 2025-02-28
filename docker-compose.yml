@@ -2,6 +2,8 @@ services:
   av-efi-backend:
     image: ${API_IMAGE:-docker.gitlab.gwdg.de/av-efi/api}
     restart: unless-stopped
+    environment:
+      - EFI_API_LOGLEVEL=${EFI_API_LOGLEVEL:-WARNING}
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

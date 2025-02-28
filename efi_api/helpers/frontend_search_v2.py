@@ -6,7 +6,6 @@ from efi_api.core.elasticsearch import get_elasticsearch_client
 from efi_api.schemas.frontend_search import SearchRequest
 from efi_api.core.config import settings
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 es_client = get_elasticsearch_client()
