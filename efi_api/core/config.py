@@ -2,7 +2,6 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "EFI API"
-    API_V1_STR: str = "/efi/v1"
 
     # Elasticsearch settings
     ES_HOST: str = "pid.av-efi.net"
