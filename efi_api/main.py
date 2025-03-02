@@ -5,8 +5,10 @@ from pathlib import Path
 import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
-from .routers import hello,efi,health,search,transform,auth
+from .core.config import settings
+from .routers import auth, efi, health, hello, search, transform, user
 from .routers.frontend import frontend_search, get_manifest_by_id, get_work_by_id
 from .routers.pid import create,update, pid
 
@@ -42,6 +44,9 @@ app = FastAPI(
     openapi_url=f"{ROOT_PATH}/openapi.json",
     openapi_tags=tags_metadata,
 )
+app.add_middleware(
+    SessionMiddleware, secret_key=settings.SESSION_SECRET,
+    same_site='lax', https_only=True, max_age=16 * 60 * 60)
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,7 +60,7 @@ api = APIRouter(prefix=ROOT_PATH)
 
 api.include_router(hello.router, prefix='/hello', tags=['hello'])
 api.include_router(health.router, tags=["Health"])
-api.include_router(auth.router, prefix="", tags=["Auth"])
+api.include_router(user.router, prefix="/user", tags=["User"])
 api.include_router(efi.router, prefix="/efi/v1", tags=["EFI"])
 api.include_router(create.router, prefix="/efi/pid", tags=["PID"])
 api.include_router(update.router, prefix="/efi/pid", tags=["PID"])
@@ -67,6 +72,7 @@ api.include_router(search.router, prefix="", tags=["Search"])
 api.include_router(transform.router, prefix="", tags=["Transform"])
 
 app.include_router(api)
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 if __name__ == '__main__':
     uvicorn.run("efi_api.main:app", host='0.0.0.0', port=8000)

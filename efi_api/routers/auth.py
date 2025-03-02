@@ -1,35 +1,55 @@
+from datetime import datetime
+
+from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import APIRouter, HTTPException, Depends
-from ..schemas.auth import Token,UserCredentials
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
+
+from ..core.config import settings
+from ..helpers.auth import SESSION_TIMEOUT, valid_access_token
 from ..helpers.mock_auth import mock_pid_system_auth,create_access_token
-from fastapi.security import OAuth2PasswordRequestForm
-from ..helpers.auth import verify_token
+from ..schemas.auth import Token, User
 
 
 router = APIRouter()
+FRONTEND_CALLBACK = '/'
+oauth = OAuth()
+oauth.register(
+    'academiccloud',
+    client_id=settings.AC_CLIENT_ID,
+    client_secret=settings.AC_SECRET_KEY,
+    server_metadata_url=settings.AC_METADATA_URL,
+    client_kwargs={
+        'scope': 'openid email profile',
+        'code_challenge_method': "S256",
+    }
+)
 
-@router.post("/av-efi/auth", response_model=Token)
-async def authenticate_user(form_data: OAuth2PasswordRequestForm = Depends()):
-    # Authenticate with PID system
-    user_data = mock_pid_system_auth(form_data.username, form_data.password)
-    
-    if not user_data:
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+
+@router.get('/academiccloud/login')
+async def login(request: Request):
+    redirect_uri = request.url_for('auth')
+    return await oauth.academiccloud.authorize_redirect(request, redirect_uri)
+
+
+@router.get('/academiccloud/auth')
+async def auth(request: Request):
+    token = await oauth.academiccloud.authorize_access_token(request)
+    userinfo = token.get('userinfo')
+    if userinfo:
+        current_time = int(datetime.utcnow().timestamp())
+        scopes = token['scope'].split()
+        user = dict(
+            name=userinfo['name'],
+            email=userinfo['email'],
+            uid=userinfo['uid'],
+            orgid=userinfo['ou'],
         )
-    
-    # Generate JWT token
-    access_token, expires_at = create_access_token(user_data)
-    
-    return Token(
-        access_token=access_token,
-        token_type="bearer",
-        expires_at=expires_at
-    )
-
-# Example protected endpoint
-@router.get("/av-efi/protected")
-async def protected_route(current_user: dict = Depends(verify_token)):
-    return {"message": "Access granted", "user": current_user}
-
+        request.session['token'] = dict(
+            user=user,
+            audience=userinfo['aud'],
+            scopes=scopes,
+            timestamp=current_time,
+            timeout=SESSION_TIMEOUT,
+        )
+    return RedirectResponse(url=FRONTEND_CALLBACK)

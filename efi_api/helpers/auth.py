@@ -1,7 +1,45 @@
-from fastapi import HTTPException, Depends
+from datetime import datetime
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, status
+from starlette.requests import Request
 from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer
+
 from ..core.config import settings
+from ..schemas.auth import Token
+
+
+SESSION_TIMEOUT = 20 * 60       # Seconds of inactivity before forced logout
+
+
+def is_expired(token: Annotated[dict, Token]) -> bool:
+    current_time = int(datetime.utcnow().timestamp())
+    if current_time - token.get('timestamp', 0) > SESSION_TIMEOUT:
+        return True
+    token['timestamp'] = current_time
+    return False
+
+
+def valid_access_token(request: Request):
+    token = request.session.get('token')
+    if not token or is_expired(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Not logged in'
+        )
+    return token
+
+
+def has_role(role_name: str):
+    async def check_role(
+        token: Annotated[dict, Depends(valid_access_token)]
+    ):
+        if role_name not in token.get('scopes', []):
+            raise HTTPException(status_code=403, detail='Unauthorized access')
+
+    return check_role
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="av-efi/auth")
 
