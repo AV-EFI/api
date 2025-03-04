@@ -1,4 +1,6 @@
 from datetime import datetime
+import logging
+from urllib import parse
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import APIRouter, HTTPException, Depends
@@ -11,6 +13,7 @@ from ..helpers.mock_auth import mock_pid_system_auth,create_access_token
 from ..schemas.auth import Token, User
 
 
+log = logging.getLogger(__name__)
 router = APIRouter()
 FRONTEND_CALLBACK = '/'
 oauth = OAuth()
@@ -29,6 +32,12 @@ oauth.register(
 @router.get('/academiccloud/login')
 async def login(request: Request):
     redirect_uri = request.url_for('auth')
+    proxy_host = request.headers.get('x-forwarded-host')
+    if proxy_host:
+        redirect_uri = parse.urljoin(
+            f"{request.headers.get('x-forwarded-proto')}://{proxy_host}",
+            redirect_uri.path)
+    log.debug(f"Passing as callback: {redirect_uri}")
     return await oauth.academiccloud.authorize_redirect(request, redirect_uri)
 
 
