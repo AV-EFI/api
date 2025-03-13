@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union, Any
 
 
 class SearchParams(BaseModel):
@@ -15,9 +15,9 @@ class SearchParams(BaseModel):
             ["years:1977"]
         ]
     )
-    facets: Optional[List[str]] = Field(
+    facets: Optional[Union[List[str], str]] = Field(
         default=None,
-        description="List of facet fields to aggregate results by",
+        description="List of facet fields to aggregate results by, or single facet field",
         example=[
             "castmembers",
             "directors_or_editors",
@@ -50,7 +50,7 @@ class SearchParams(BaseModel):
     hitsPerPage: Optional[int] = Field(
         default=20,
         description="Number of results to return per page",
-        ge=1,
+        ge=0,
         le=100,
         example=20
     )
@@ -66,6 +66,14 @@ class SearchParams(BaseModel):
         description="Zero-based page number for pagination",
         ge=0,
         example=0
+    )
+    analytics: Optional[bool] = Field(
+        default=True,
+        description="Whether to enable analytics"
+    )
+    clickAnalytics: Optional[bool] = Field(
+        default=True,
+        description="Whether to enable click analytics"
     )
 
 class SearchRequest(BaseModel):

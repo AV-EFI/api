@@ -31,35 +31,31 @@ async def search_options():
     - Result highlighting
     - Pagination
     
-    The search query matches against both titles (boosted) and all text fields with fuzzy matching enabled.
-    Results can be filtered using facets, and facet counts are returned for refinement.
+    Multiple search requests can be processed in parallel for efficiency.
     """,
     response_model=SearchResponse,
     tags=["Frontend"],
 )
 async def multi_search(search_requests: List[SearchRequest]):
     try:
-        # For now, we'll just handle the first request in the array
-        search_request = search_requests[0]
-        
-        # logger.debug(f"Search request: {search_request.params}")
-        es_query = build_es_query(search_request.params)
-        # logger.debug(f"Elasticsearch query: {es_query}")
-        
-        response = execute_search(es_query)
-        # logger.debug(f"Elasticsearch response: {response}")
-
-        hits = transform_hits(response["hits"]["hits"], search_request.params.query)
-        total_hits = response["hits"]["total"]["value"]
-        facets = transform_facets(response["aggregations"])
-        
-        # Wrap the response in a results array
-        return {
-            "results": [{
+        results = []
+        for search_request in search_requests:
+            es_query = build_es_query(search_request.params)
+            response = execute_search(es_query)
+            
+            hits = transform_hits(response["hits"]["hits"], search_request.params.query)
+            total_hits = response["hits"]["total"]["value"]
+            facets = transform_facets(response["aggregations"])
+            
+            # Handle case where hitsPerPage is 0
+            hits_per_page = max(1, search_request.params.hitsPerPage)
+            nb_pages = (total_hits + hits_per_page - 1) // hits_per_page if hits_per_page > 0 else 0
+            
+            results.append({
                 "hits": hits,
                 "facets": facets,
                 "page": search_request.params.page,
-                "nbPages": (total_hits + search_request.params.hitsPerPage - 1) // search_request.params.hitsPerPage,
+                "nbPages": nb_pages,
                 "nbHits": total_hits,
                 "appliedRules": [],
                 "exhaustiveNbHits": True,
@@ -116,8 +112,9 @@ async def multi_search(search_requests: List[SearchRequest]):
                         }
                     }
                 }
-            }]
-        }
+            })
+        
+        return {"results": results}
     
     except Exception as e:
         logger.error(f"Unexpected error during search: {str(e)}", exc_info=True)
