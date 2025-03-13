@@ -17,3 +17,4 @@ networks:
   proxy-network:
     name: proxy-network
     external: true
+    # Create once: docker network create --opt mtu=1450 proxy-network
