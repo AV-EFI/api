@@ -2,6 +2,7 @@ stages:
   - build
   - prepare
   - release
+  - deploy
 
 # Build a docker image when a push is made to a non-default branch.
 build_docker:
@@ -67,6 +68,45 @@ release_docker:
     - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile
       --destination $CI_REGISTRY_IMAGE:$TAG
       --destination $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# New deployment job
+deploy:
+  stage: deploy
+  image: alpine:latest
+  needs:
+    - job: release_docker
+      optional: true
+    - job: prepare_job
+      artifacts: true
+  variables:
+    DEPLOY_SERVER: 141.5.108.227
+    DEPLOY_USER: cloud
+    DEPLOY_PATH: /home/cloud
+  before_script:
+    # Install required packages
+    - apk add --no-cache gettext openssh-client
+    # Setup SSH
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - touch ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/known_hosts
+    - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
+  script:
+    # Create docker-compose.yml from template
+    - envsubst < docker-compose.tmpl > docker-compose.yml
+    # Upload docker-compose.yml to server
+    - scp docker-compose.yml $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
+    # Login to Docker registry and restart containers
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "cd $DEPLOY_PATH && 
+      docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+      docker compose pull &&
+      docker compose up -d"
   rules:
     - if: $CI_COMMIT_TAG
       when: never

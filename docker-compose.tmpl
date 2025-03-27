@@ -1,0 +1,20 @@
+services:
+  av-efi-backend:
+    image: ${CI_REGISTRY_IMAGE}:${TAG:-$CI_COMMIT_SHA}
+    restart: unless-stopped
+    environment:
+      - EFI_API_LOGLEVEL=${EFI_API_LOGLEVEL:-WARNING}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - './.api_config.env:/code/.api_config.env:ro'
+    networks:
+      proxy-network:
+        aliases:
+          - av-efi-backend
+
+networks:
+  proxy-network:
+    name: proxy-network
+    external: true
+    # Create once: docker network create --opt mtu=1450 proxy-network
