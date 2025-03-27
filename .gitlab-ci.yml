@@ -91,7 +91,6 @@ deploy:
     - chmod 600 ~/.ssh/known_hosts
     - ssh-keyscan $DEPLOY_SERVER >> ~/.ssh/known_hosts
   script:
-    - echo "Using image: $CI_REGISTRY_IMAGE with tag: $TAG"
     - envsubst < docker-compose.tmpl > docker-compose.yml
     - cat docker-compose.yml
     # Create the new deployment directory if it doesn't exist
