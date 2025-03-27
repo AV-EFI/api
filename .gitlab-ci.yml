@@ -79,6 +79,7 @@ deploy:
     DEPLOY_SERVER: 141.5.108.227
     DEPLOY_USER: cloud
     DEPLOY_PATH: /home/cloud/avefi-backend
+    TAG: $CI_COMMIT_REF_SLUG 
   before_script:
     # Install required packages
     - apk add --no-cache gettext openssh-client
