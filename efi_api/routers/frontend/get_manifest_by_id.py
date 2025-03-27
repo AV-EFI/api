@@ -31,7 +31,7 @@ async def get_items_by_manifest_id(manifest_id: str):
         return None
     
 @router.post(
-    "/getManifestByID/{id}",
+    "/get_manifest_by_id/{id}",
     summary="Get manifest by ID",
     tags=["Frontend"]
 )

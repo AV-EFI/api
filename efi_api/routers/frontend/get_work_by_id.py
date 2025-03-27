@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.post(
-    "/getWorkByID/{id}",
+    "/get_work_by_id/{id}",
     summary="Get manifest by work ID",
     tags=["Frontend"]
 )
