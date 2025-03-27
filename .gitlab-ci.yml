@@ -2,7 +2,7 @@ stages:
   - build
   - prepare
   - release
-  - deploy  # Added deployment stage
+  - deploy
 
 # Build a docker image when a push is made to a non-default branch.
 build_docker:
@@ -77,7 +77,7 @@ deploy:
   variables:
     DEPLOY_SERVER: 141.5.108.227
     DEPLOY_USER: cloud
-    DEPLOY_PATH: /home/cloud
+    DEPLOY_PATH: /home/cloud/avefi-backend 
   before_script:
     # Install required packages
     - apk add --no-cache gettext openssh-client
@@ -92,6 +92,10 @@ deploy:
   script:
     # Create docker-compose.yml from template
     - envsubst < docker-compose.tmpl > docker-compose.yml
+    # Create the new deployment directory if it doesn't exist
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $DEPLOY_PATH"
+    # Copy configuration files from the old location to the new one
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "cd /home/cloud/api/ && cp .env .api_config.env $DEPLOY_PATH/"
     # Upload docker-compose.yml to server
     - scp docker-compose.yml $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
     # Login to Docker registry and restart containers
