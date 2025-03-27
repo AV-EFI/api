@@ -72,14 +72,14 @@ release_docker:
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-deploy:
+.deploy:
   stage: deploy
   image: alpine:latest
   variables:
-    DEPLOY_SERVER: 141.5.108.227
-    DEPLOY_USER: cloud
-    DEPLOY_PATH: /home/cloud/avefi-backend
     TAG: $CI_COMMIT_REF_SLUG 
+    ## To be set as CI/CD variables:
+    #DEPLOY_USER
+    #DEPLOY_PATH
   before_script:
     # Install required packages
     - apk add --no-cache gettext openssh-client
@@ -108,3 +108,11 @@ deploy:
       docker compose up -d"
   rules:
     - if: $CI_COMMIT_BRANCH == "testbed"
+
+deploy-staging:
+  variables:
+    DEPLOY_SERVER: $STAGING_SERVER
+    SSH_PRIVATE_KEY: $STAGING_PRIVATE_KEY
+  rules:
+    - if: $CI_COMMIT_BRANCH == "testbed"
+  extends: .deploy
