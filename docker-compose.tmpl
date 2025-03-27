@@ -1,6 +1,6 @@
 services:
   av-efi-backend:
-    image: ${CI_REGISTRY_IMAGE}:${TAG:-$CI_COMMIT_SHA}
+    image: ${CI_REGISTRY_IMAGE}:${TAG:-latest}
     restart: unless-stopped
     environment:
       - EFI_API_LOGLEVEL=${EFI_API_LOGLEVEL:-WARNING}
