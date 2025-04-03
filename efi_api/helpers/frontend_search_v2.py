@@ -11,10 +11,13 @@ logger = logging.getLogger(__name__)
 es_client = get_elasticsearch_client()
 
 def build_es_query(search_request: SearchRequest) -> Dict:
-    query_parts = []
+    query_parts = {
+        "must": [],
+        "filter": []
+    }
 
     if search_request.query:
-        query_parts.append({
+        query_parts["must"].append({
             "bool": {
                 "should": [
                     {"match": {"has_record.has_primary_title.has_name": {
@@ -46,13 +49,23 @@ def build_es_query(search_request: SearchRequest) -> Dict:
 
     if search_request.facetFilters:
         for filter_group in search_request.facetFilters:
-            filter_conditions = [{"match": {f.split(":")[0]: f.split(":")[1]}} for f in filter_group]
-            query_parts.append({
-                "bool": {
-                    "should": filter_conditions,
-                    "minimum_should_match": 1
-                }
-            })
+            if len(filter_group) == 1:
+                # Single filter in the group - add directly to filter clause
+                field, value = filter_group[0].split(":")
+                query_parts["filter"].append({"term": {f"{field}.keyword": value}})
+            else:
+                # Multiple filters in the group - these should be OR'd together
+                filter_conditions = []
+                for f in filter_group:
+                    field, value = f.split(":")
+                    filter_conditions.append({"term": {f"{field}.keyword": value}})
+                
+                query_parts["filter"].append({
+                    "bool": {
+                        "should": filter_conditions,
+                        "minimum_should_match": 1
+                    }
+                })
 
     aggs = {
         "directors_or_editors": {"terms": {"field": "directors_or_editors.keyword", "size": search_request.maxValuesPerFacet}},
@@ -104,7 +117,7 @@ def build_es_query(search_request: SearchRequest) -> Dict:
             }
 
     return {
-        "query": {"bool": {"must": query_parts}},
+        "query": {"bool": query_parts},
         "size": search_request.hitsPerPage,
         "from": search_request.page * search_request.hitsPerPage,
         "aggs": aggs,
