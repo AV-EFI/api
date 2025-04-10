@@ -118,11 +118,9 @@ INGEST_PROCESSORS = [
 
 
 def rebuild_nested_index():
-    es_client.indices.delete(index=NESTED_INDEX, ignore_unavailable=True)
-    if AVEFI_PIPELINE in es_client.ingest.get_pipeline():
-        es_client.ingest.delete_pipeline(id=AVEFI_PIPELINE)
     es_client.ingest.put_pipeline(
         id=AVEFI_PIPELINE, processors=INGEST_PROCESSORS)
+    es_client.indices.delete(index=NESTED_INDEX, ignore_unavailable=True)
     es_client.indices.create(
         index=NESTED_INDEX, mappings=NESTED_MAPPINGS, settings={
             'index.default_pipeline': AVEFI_PIPELINE
