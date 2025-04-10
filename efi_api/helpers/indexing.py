@@ -51,11 +51,56 @@ INGEST_PROCESSORS = [
             "if": "ctx?.has_record?.has_event != null",
             "lang": "painless",
             "source": """
+              def extractYear(def datePart) {
+                def yearComponent = /^(\d+)([?~]?)/.matcher(datePart);
+                if (yearComponent.matches() && yearComponent.group(1) != '') {
+                  Map result = new HashMap();
+                  result['year'] = Integer.parseInt(yearComponent.group(1));
+                  if (yearComponent.group(2) == '?') {
+                    result['uncertainty'] = 5;
+                  } else if (yearComponent.group(2) == '~') {
+                    result['uncertainty'] = 1;
+                  } else {
+                    result['uncertainty'] = 0;
+                  }
+                  return result;
+                }
+                return null;
+              }
+              Map yearOfEvent(def event) {
+                def date = event?.has_date;
+                if (date != null) {
+                  def parts = date.splitOnToken('/');
+                  Map part0 = extractYear(parts[0]);
+                  if (part0 != null) {
+                    Map dateRange;
+                    if (parts.length == 1) {
+                      dateRange = [
+                        "gte": part0['year'] - part0['uncertainty'],
+                        "lte": part0['year'] + part0['uncertainty']
+                      ];
+                    } else {
+                      Map part1 = extractYear(parts[1]);
+                      if (part1 == null) {
+                        part1 = part0;
+                      }
+                      dateRange = [
+                        "gte": part0['year'] - part0['uncertainty'],
+                        "lte": part1['year'] + part1['uncertainty']
+                      ];
+                    }
+                    return dateRange;
+                  }
+                }
+                return null;
+              }
               List castmembers = new ArrayList();
               List countries = new ArrayList();
               List directors_or_editors = new ArrayList();
               List production = new ArrayList();
               List years = new ArrayList();
+              List event_in_year = new ArrayList();
+              Map year;
               for (event in ctx.has_record.has_event) {
                 if (event?.has_activity != null) {
                   for (activity in event.has_activity) {
@@ -78,8 +123,13 @@ INGEST_PROCESSORS = [
                     }
                   }
                 }
-                if (event?.has_date != null) {
-                  years.add(event.has_date)
+                if (event?.has_date != null
+                    && event?.category == 'avefi:ProductionEvent') {
+                  years.add(event.has_date);
+                  year = yearOfEvent(event);
+                  if (year != null) {
+                    event_in_year.add(year)
+                  }
                 }
               }
               if (!castmembers.empty) {
@@ -96,6 +146,9 @@ INGEST_PROCESSORS = [
               }
               if (!years.empty) {
                 ctx.years = years
+              }
+              if (!event_in_year.empty) {
+                ctx.production_in_year = event_in_year;
               }
             """
         }
