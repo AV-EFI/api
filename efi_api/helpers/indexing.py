@@ -17,6 +17,9 @@ NESTED_MAPPINGS = {
                     }
                 }
             }
+        },
+        "production_in_year": {
+            "type": "integer_range"
         }
     }
 }
