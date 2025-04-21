@@ -299,6 +299,9 @@ def denormalise_work(index, doc):
     return True
 
 
+BULK_SIZE = 40
+
+
 def full_reindex(source_idx, target_idx):
     """Populate target index with denormalised work documents.
 
@@ -325,12 +328,24 @@ def full_reindex(source_idx, target_idx):
             }
         }
     }
+    request_stack = []
     # Increase scroll value for full index
     for doc in es_iter(index=source_idx, query=query, scroll='10m'):
-        source_doc = doc["_source"]
-        if denormalise_work(source_idx, source_doc):
-            es_client.index(
-                index=target_idx, document=source_doc, id=doc['_id'])
+        doc_source = doc["_source"]
+        if denormalise_work(source_idx, doc_source):
+            request = {
+                '_op_type': 'index',
+                '_index': target_idx,
+                '_id': doc['_id'],
+                '_source': doc_source,
+            }
+            request_stack.append(request)
+            if len(request_stack) > BULK_SIZE:
+                helpers.bulk(es_client, request_stack)
+                del request_stack[:]
+    if request_stack:
+        helpers.bulk(es_client, request_stack)
+        del request_stack[:]
 
 
 def rebuild_denormalised_index():
