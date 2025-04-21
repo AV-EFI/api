@@ -14,7 +14,7 @@ async def update_pid(
     handle_suffix: str,
     data: dict = Body(
         ...,
-        example={
+        examples={
             "category": "SOME CATEGORY",
             "type": "SOME TYPE"
         },
