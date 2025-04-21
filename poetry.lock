@@ -50,6 +50,29 @@ files = [
 cryptography = "*"
 
 [[package]]
+name = "avefi-schema"
+version = "0.1.0"
+description = "Schema for persistent film identifiers developed in the AVefi project"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+pydantic = ">=2.10.0"
+
+[package.extras]
+dataclasses = ["linkml-runtime (>=1.8.0)"]
+docs = ["linkml (>=1.8.0)", "mkdocs-material (>=9.5.17)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/AV-EFI/av-efi-schema.git"
+reference = "HEAD"
+resolved_reference = "f44dadbc2cfeda23fc0bb613250350e68c794584"
+
+[[package]]
 name = "certifi"
 version = "2025.1.31"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -793,4 +816,4 @@ standard = ["colorama (>=0.4)", "httptools (>=0.6.3)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4"
-content-hash = "30ae3bf7f0674bae0d4dbab3b3e81b18863da4e099ec628297c680b262064ddc"
+content-hash = "a96531981f791dedaf7f7cde3c5271c22d02f4a2d6c82de40a921cf1ff4a05b9"

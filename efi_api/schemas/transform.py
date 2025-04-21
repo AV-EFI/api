@@ -1,39 +1,15 @@
-from pydantic import BaseModel
-from typing import List, Any
+from typing import Annotated, Union
 
-class Title(BaseModel):
-    has_name: str
-    type: str
-    has_ordering_name: str
+from pydantic import BaseModel, Field
 
-class Agent(BaseModel):
-    category: str
-    has_name: str
-    type: str
+from .efi_schema import efi
 
-class Activity(BaseModel):
-    category: str
-    has_agent: List[Agent]
-    type: str
-
-class Location(BaseModel):
-    category: str
-    has_name: str
-
-class Event(BaseModel):
-    category: str
-    has_activity: List[Activity]
-    has_date: str
-    located_in: List[Location]
-
-class InputData(BaseModel):
-    category: str
-    has_primary_title: Title
-    has_event: List[Event]
-    type: str
+InputData = Annotated[
+        Union[efi.WorkVariant, efi.Manifestation, efi.Item],
+        Field(discriminator='category')]
 
 # Output models
 class TransformedRecord(BaseModel):
     type: str
-    parsed_data: Any
+    parsed_data: str
     idx: int

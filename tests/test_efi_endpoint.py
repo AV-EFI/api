@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from efi_api.main import app
+from efi_api.main import app, ROOT_PATH
 
 client = TestClient(app)
 
@@ -102,27 +102,28 @@ def efi_data():
     }
 
 def test_process_efi_endpoint(efi_data):
-    response = client.post("/efi/v1/", json=efi_data)
-    assert response.status_code == 201
+    response = client.post(f"{ROOT_PATH}/efi", json=efi_data)
+    assert response.status_code == 201, response.json()
     assert response.json()["message"] == "EFI data processed successfully"
     assert response.json()["data"] == efi_data
 
 def test_process_efi_endpoint_invalid_data():
     invalid_data = {"invalid": "data"}
-    response = client.post("/efi/v1/", json=invalid_data)
-    assert response.status_code == 422  # Unprocessable Entity
+    response = client.post(f"{ROOT_PATH}/efi", json=invalid_data)
+    assert response.status_code == 422, response.json() # Unprocessable Entity
 
 def test_process_efi_endpoint_missing_required_field(efi_data):
-    del efi_data["category"]
-    response = client.post("/efi/v1/", json=efi_data)
-    assert response.status_code == 422  # Unprocessable Entity
+    del efi_data["has_primary_title"]
+    response = client.post(f"{ROOT_PATH}/efi", json=efi_data)
+    assert response.status_code == 422, response.json() # Unprocessable Entity
 
 def test_process_efi_endpoint_additional_field(efi_data):
-    efi_data["additional_field"] = "This should be ignored"
-    response = client.post("/efi/v1/", json=efi_data)
-    assert response.status_code == 201
-    assert "additional_field" not in response.json()["data"]
+    # efi_data["additional_field"] = "This should be ignored"
+    efi_data["additional_field"] = "This should be rejected"
+    response = client.post(f"{ROOT_PATH}/efi", json=efi_data)
+    assert response.status_code == 422, response.json()
+    #assert "additional_field" not in response.json()["data"]
 
 def test_process_efi_endpoint_empty_payload():
-    response = client.post("/efi/v1/", json={})
-    assert response.status_code == 422  # Unprocessable Entity
+    response = client.post(f"{ROOT_PATH}/efi", json={})
+    assert response.status_code == 422, response.json() # Unprocessable Entity

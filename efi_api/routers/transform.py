@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException
+from ..schemas.efi_schema import efi
 from ..schemas.transform import TransformedRecord,InputData
 from typing import List
 
 router = APIRouter()
 
-@router.post("/transform", response_model=List[TransformedRecord])
-async def transform_data(input_data: InputData):
+@router.post("/transform")
+async def transform_data(input_data: InputData) -> list[TransformedRecord]:
     try:
         # Create the first record (KIP)
         kip_record = TransformedRecord(
@@ -16,15 +17,13 @@ async def transform_data(input_data: InputData):
 
         # Create the second record (has_record)
         # Add the described_by field that wasn't in the input
-        input_dict = input_data.dict()
-        input_dict["described_by"] = {
-            "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
-            "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
-        }
+        input_data.described_by = efi.DescriptionResource(
+            has_issuer_id="https://w3id.org/isil/DE-MUS-432511",
+            has_issuer_name="Filmmuseum der Landeshauptstadt Düsseldorf")
 
         has_record = TransformedRecord(
             type="has_record",
-            parsed_data=input_dict,
+            parsed_data=input_data.model_dump_json(exclude_unset=True),
             idx=2
         )
 

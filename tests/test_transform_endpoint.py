@@ -1,6 +1,9 @@
+import json
+
 from fastapi.testclient import TestClient
 import pytest
-from efi_api.main import app
+from efi_api.main import app, ROOT_PATH
+from efi_api.schemas.efi_schema import efi
 
 client = TestClient(app)
 
@@ -51,7 +54,7 @@ def expected_output():
         },
         {
             "type": "has_record",
-            "parsed_data": {
+            "parsed_data": efi.WorkVariant.model_validate({
                 "category": "avefi:WorkVariant",
                 "has_primary_title": {
                     "has_name": "DIE HEIMAT DES DON QUIJOTE",
@@ -88,15 +91,15 @@ def expected_output():
                     }
                 ],
                 "type": "Monographic"
-            },
+            }).model_dump_json(exclude_unset=True),
             "idx": 2
         }
     ]
 
 def test_successful_transformation(valid_input_data, expected_output):
     """Test successful transformation of valid input data"""
-    response = client.post("/transform", json=valid_input_data)
-    assert response.status_code == 200
+    response = client.post(f"{ROOT_PATH}/transform", json=valid_input_data)
+    assert response.status_code == 200, response.json()
     assert response.json() == expected_output
 
 def test_missing_required_field():
@@ -107,7 +110,7 @@ def test_missing_required_field():
         "has_event": [],
         "type": "Monographic"
     }
-    response = client.post("/transform", json=invalid_data)
+    response = client.post(f"{ROOT_PATH}/transform", json=invalid_data)
     assert response.status_code == 422  # Validation error
 
 def test_invalid_data_type():
@@ -122,17 +125,17 @@ def test_invalid_data_type():
         "has_event": [],
         "type": "Monographic"
     }
-    response = client.post("/transform", json=invalid_data)
+    response = client.post(f"{ROOT_PATH}/transform", json=invalid_data)
     assert response.status_code == 422
 
 def test_empty_input():
     """Test handling of empty input"""
-    response = client.post("/transform", json={})
+    response = client.post(f"{ROOT_PATH}/transform", json={})
     assert response.status_code == 422
 
 def test_output_structure(valid_input_data):
     """Test the structure of the output"""
-    response = client.post("/transform", json=valid_input_data)
+    response = client.post(f"{ROOT_PATH}/transform", json=valid_input_data)
     data = response.json()
     
     # Check if output is a list with exactly 2 items
@@ -146,7 +149,7 @@ def test_output_structure(valid_input_data):
     
     # Check second item (has_record)
     assert data[1]["type"] == "has_record"
-    assert isinstance(data[1]["parsed_data"], dict)
+    assert isinstance(data[1]["parsed_data"], str)
     assert data[1]["idx"] == 2
     
     # Check if described_by was added
@@ -154,13 +157,14 @@ def test_output_structure(valid_input_data):
 
 def test_described_by_content(valid_input_data):
     """Test if described_by field is correctly added"""
-    response = client.post("/transform", json=valid_input_data)
-    described_by = response.json()[1]["parsed_data"]["described_by"]
-    
+    response = client.post(f"{ROOT_PATH}/transform", json=valid_input_data)
+    payload = json.loads(response.json()[1]["parsed_data"])
+    described_by = payload["described_by"]
+
     assert described_by["has_issuer_id"] == "https://w3id.org/isil/DE-MUS-432511"
     assert described_by["has_issuer_name"] == "Filmmuseum der Landeshauptstadt Düsseldorf"
 
 def test_invalid_json():
     """Test handling of invalid JSON"""
-    response = client.post("/transform", data="invalid json")
+    response = client.post(f"{ROOT_PATH}/transform", content="invalid json")
     assert response.status_code == 422
