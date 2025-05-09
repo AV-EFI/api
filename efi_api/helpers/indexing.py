@@ -269,7 +269,7 @@ def denormalise_work(index, doc):
     If there are no manifestations associated with the work to begin
     with, leave the document unchanged and return False. Otherwise,
     check wether the passed document is linked to other WorkVariant
-    documents via is_part_of or is_variant_of and those documents
+    documents via is_part_of or is_variant_of and add those documents
     under the parents key, recursively.
 
     Args:
