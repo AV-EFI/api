@@ -15,6 +15,13 @@ NESTED_MAPPINGS = {
                             "type": "nested"
                         }
                     }
+                },
+                "has_extent": {
+                    "properties": {
+                        "has_value": {
+                            "type": "float"
+                        }
+                    }
                 }
             }
         },
