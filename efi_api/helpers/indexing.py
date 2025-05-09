@@ -343,10 +343,15 @@ def full_reindex(source_idx, target_idx):
             }
             request_stack.append(request)
             if len(request_stack) > BULK_SIZE:
-                helpers.bulk(es_client, request_stack)
+                res = helpers.bulk(
+                    es_client, request_stack, raise_on_error=False)
+                if res[1]:
+                    raise RuntimeError(f"Bulk indexing failed: {res}")
                 del request_stack[:]
     if request_stack:
-        helpers.bulk(es_client, request_stack)
+        res = helpers.bulk(es_client, request_stack, raise_on_error=False)
+        if res[1]:
+            raise RuntimeError(f"Bulk indexing failed: {res}")
         del request_stack[:]
 
 
