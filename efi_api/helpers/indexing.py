@@ -257,8 +257,8 @@ def collect_parents(index, doc, parents=None):
             }
         }
     }
-    for parent_doc in [
-            parent['_source'] for parent in es_iter(index, query)]:
+    for parent in es_iter(index, query):
+        parent_doc = parent['_source']
         parents.append(parent_doc)
         collect_parents(index, parent_doc, parents)
     return parents
