@@ -232,10 +232,12 @@ def collect_children(index, parent_ref, child_category, reference_key):
 def collect_parents(index, doc, parents=None):
     if parents is None:
         parents = []
-    references = doc.get('is_part_of', []) or doc.get('is_variant_of', [])
+    record = doc.get('has_record', {})
+    references = record.get('is_part_of', []) or record.get(
+        'is_variant_of', [])
     if not references:
         return parents
-    if not isinstance(references):
+    if not isinstance(references, list):
         references = [references]
     parent_ids = [
         parent.get('id') for parent in references if parent.get('id')]
