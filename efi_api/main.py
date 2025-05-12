@@ -9,7 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .core.config import settings
 from .routers import auth, efi, health, hello, search, transform, user, view
-from .routers.frontend import frontend_search, get_manifest_by_id, get_work_by_id
+from .routers.frontend import frontend_search
 from .routers.pid import create,update, pid
 
 ROOT_PATH = "/api/v1"
@@ -66,8 +66,6 @@ api.include_router(create.router, prefix="/pid", tags=["PID"])
 api.include_router(update.router, prefix="/pid", tags=["PID"])
 api.include_router(pid.router, prefix="", tags=["PID"])
 api.include_router(frontend_search.router, prefix="", tags=["Frontend"])
-api.include_router(get_manifest_by_id.router, prefix="", tags=["Frontend"])
-api.include_router(get_work_by_id.router, prefix="", tags=["Frontend"])
 api.include_router(view.router, prefix="", tags=["Frontend"])
 api.include_router(search.router, prefix="", tags=["Search"])
 api.include_router(transform.router, prefix="", tags=["Transform"])
