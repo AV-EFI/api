@@ -2,13 +2,11 @@ from http.client import HTTPException
 from typing import List, Dict
 import logging
 
-from efi_api.core.elasticsearch import get_elasticsearch_client
+from efi_api.core.elasticsearch import es_client
 from efi_api.schemas.frontend_search import SearchRequest
 from efi_api.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-es_client = get_elasticsearch_client()
 
 def build_es_query(search_request: SearchRequest) -> Dict:
     query_parts = []
