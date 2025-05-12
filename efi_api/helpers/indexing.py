@@ -1,9 +1,12 @@
-from efi_api.core.elasticsearch import es_client
 from elasticsearch import helpers
 
-PRIMARY_INDEX = '21.11155'
-NESTED_INDEX = '21.11155-nested'
-DENORMALISED_INDEX = '21.11155-denormalised-work'
+from ..core.config import settings
+from ..core.elasticsearch import collect_children, collect_parents, \
+    es_client, es_iter, filter_by_category
+
+PRIMARY_INDEX = settings.ES_PRIMARY_INDEX
+NESTED_INDEX = settings.ES_LOOKUP_INDEX
+DENORMALISED_INDEX = settings.ES_INDEX
 NESTED_MAPPINGS = {
     "properties": {
         "has_record": {
@@ -198,72 +201,6 @@ def rebuild_nested_index():
         refresh=True)
 
 
-def es_iter(index=None, query=None, scroll='2m'):
-    return helpers.scan(
-        client=es_client, index=index, scroll=scroll, query=query)
-
-
-def filter_by_pids(pids):
-    return {
-        "terms": {
-            "handle.keyword": pids
-        }
-    }
-
-
-def filter_by_category(category):
-    return {
-        "term": {
-            "has_record.category.keyword": category
-        }
-    }
-
-
-def collect_children(index, parent_ref, child_category, reference_key):
-    query = {
-        "query": {
-            "bool": {
-                "filter": [
-                    {
-                        "term": {
-                            reference_key: parent_ref
-                        }
-                    }
-                ]
-            }
-        }
-    }
-    return [child['_source'] for child in es_iter(index, query)]
-
-
-def collect_parents(index, doc, parents=None):
-    if parents is None:
-        parents = []
-    record = doc.get('has_record', {})
-    references = record.get('is_part_of', []) or record.get(
-        'is_variant_of', [])
-    if not references:
-        return parents
-    if not isinstance(references, list):
-        references = [references]
-    parent_ids = [
-        parent.get('id') for parent in references if parent.get('id')]
-    query = {
-        "query": {
-            "bool": {
-                "filter": [
-                    filter_by_pids(parent_ids)
-                ]
-            }
-        }
-    }
-    for parent in es_iter(index, query):
-        parent_doc = parent['_source']
-        parents.append(parent_doc)
-        collect_parents(index, parent_doc, parents)
-    return parents
-
-
 def denormalise_work(index, doc):
     """Add associated manifestations, items and parents to the document.
 
@@ -290,11 +227,8 @@ def denormalise_work(index, doc):
     """
     manifestations = []
     for manifestation in collect_children(
-            index, doc['handle'], 'avefi:Manifestation',
-            'has_record.is_manifestation_of.id.keyword'):
-        items = collect_children(
-            index, manifestation['handle'], 'avefi:Item',
-            'has_record.is_item_of.id.keyword')
+            index, doc['handle'], 'is_manifestation_of'):
+        items = collect_children(index, manifestation['handle'], 'is_item_of')
         if not items:
             continue
         manifestation['items'] = items
@@ -302,7 +236,8 @@ def denormalise_work(index, doc):
     if not manifestations:
         return False
     doc['manifestations'] = manifestations
-    parents = collect_parents(index, doc)
+    parents = collect_parents(
+        index, doc, ['is_part_of', 'is_variant_of'], recursive=True)
     if parents:
         doc['parents'] = parents
     return True

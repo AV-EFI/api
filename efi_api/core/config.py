@@ -10,8 +10,10 @@ class Settings(BaseSettings):
     # ES_INDEX: str = "21.11155_test_nested"
     # ES_INDEX: str = "21.11155-dev-runtime"
     ES_INDEX: str = "21.11155-denormalised-work"
+    ES_LOOKUP_INDEX: str = "21.11155-nested"
+    ES_PRIMARY_INDEX: str = "21.11155"
     ES_SCHEME: str = "http"
-    
+
     # Auth settings to be configured in local env
     AC_CLIENT_ID: str = ""
     AC_SECRET_KEY: str = ""
