@@ -13,7 +13,7 @@ url = settings.PID_SERVICE_URL
 logger = logging.getLogger(__name__)
 
 @router.options(
-    "/frontend/v2/search",
+    "/search",
     summary="Search content options",
     tags=["Frontend"],
     include_in_schema=False  # Hide from API docs since it's just for CORS
@@ -22,7 +22,7 @@ async def search_options():
     return {"message": "OK"} 
 
 @router.post(
-    "/frontend/search",
+    "/search",
     summary="Search content using Elasticsearch",
     description="""
     Performs a multi-faceted search across the content index with support for:
