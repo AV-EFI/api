@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Path
 
-from ..core.elasticsearch import collect_children, collect_parents, es_client
-from ..schemas.search import SearchRequest,SearchResponse
-from ..core.config import settings
+from ...core.elasticsearch import collect_children, collect_parents, es_client
+from ...schemas.search import SearchRequest,SearchResponse
+from ...core.config import settings
 
 
 router = APIRouter()
