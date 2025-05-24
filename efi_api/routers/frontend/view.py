@@ -2,15 +2,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Path
 
-from ...core.elasticsearch import collect_children, collect_parents, es_client
-from ...schemas.search import SearchRequest,SearchResponse
 from ...core.config import settings
+from ...core.elasticsearch import collect_children, collect_parents, es_client
+from ...schemas.view import DetailView
 
 
 router = APIRouter()
 
 
-@router.get("/view/{prefix}/{id}")
+@router.get("/view/{prefix}/{id}", response_model=DetailView)
 async def get_detail(
         prefix: Annotated[str, Path(pattern="^21\\.\\d+$")],
         id: Annotated[str, Path(pattern="^[!-~]+$")]) -> dict:
