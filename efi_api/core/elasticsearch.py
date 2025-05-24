@@ -25,7 +25,7 @@ def es_iter(index=None, query=None, scroll='2m'):
         client=es_client, index=index, scroll=scroll, query=query)
 
 
-def filter_by_pids(pids):
+def filter_by_pids(pids: list[str]) -> dict:
     return {
         "terms": {
             "handle.keyword": pids
@@ -33,7 +33,7 @@ def filter_by_pids(pids):
     }
 
 
-def filter_by_category(category):
+def filter_by_category(category: str) -> dict:
     return {
         "term": {
             "has_record.category.keyword": category
