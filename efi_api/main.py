@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from .core.config import settings
-from .routers import auth, efi, health, hello, matches, transform, user
+from .routers import auth, efi, health, hello, matches, transform
 from .routers.frontend import frontend_search, view
 from .routers.pid import create,update, pid
 
@@ -60,7 +60,6 @@ api = APIRouter(prefix=ROOT_PATH)
 
 api.include_router(hello.router, prefix='/hello', tags=['hello'])
 api.include_router(health.router, tags=["Health"])
-api.include_router(user.router, prefix="/user", tags=["User"])
 api.include_router(efi.router, tags=["EFI"])
 api.include_router(create.router, prefix="/pid", tags=["PID"])
 api.include_router(update.router, prefix="/pid", tags=["PID"])
