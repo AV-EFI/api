@@ -20,6 +20,7 @@ dependencies = [
     "authlib (>=1.5.0,<2.0.0)",
     "itsdangerous (>=2.2.0,<3.0.0)",
     "avefi-schema @ git+https://github.com/AV-EFI/av-efi-schema.git",
+    "fastapi-csrf-protect (>=1.0.3,<2.0.0)",
 ]
 
 [tool.poetry.dependencies]

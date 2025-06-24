@@ -1,3 +1,4 @@
+from fastapi_csrf_protect import CsrfProtect
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -28,4 +29,18 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".api_config.env"
 
+
 settings = Settings()
+
+
+class CsrfSettings(BaseSettings):
+    secret_key: str = settings.SESSION_SECRET
+    cookie_samesite: str = "none"
+    cookie_secure: bool = True
+    token_location: str = "body"
+    token_key: str = "csrf-token"
+
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    return CsrfSettings()

@@ -15,3 +15,7 @@ class Token(BaseModel):
     scopes: list[str]
     timestamp: int
     timeout: int
+
+
+class CsrfToken(BaseModel):
+    csrfToken: str
