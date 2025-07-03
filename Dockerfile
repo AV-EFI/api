@@ -2,6 +2,8 @@
 
 FROM python:3.12-slim AS python-base
 
+RUN apt-get update && apt-get -y upgrade
+
     # python
 ENV PYTHONUNBUFFERED=1 \
     # prevents python creating .pyc files
@@ -34,8 +36,7 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 
 # `builder-base` stage is used to build deps + create our virtual environment
 FROM python-base AS builder-base
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y \
+RUN apt-get install --no-install-recommends -y \
         # deps for installing poetry
         curl \
         # deps for building python deps
