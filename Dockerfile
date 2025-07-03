@@ -27,7 +27,7 @@ ENV PYTHONUNBUFFERED=1 \
     \
     # paths
     # this is where our requirements + virtual environment will live
-    PYSETUP_PATH="/opt/pysetup"
+    PYSETUP_PATH="/code"
 
 
 # prepend poetry and venv to path
@@ -47,16 +47,20 @@ RUN curl -sSL https://install.python-poetry.org | python -
 
 # copy project requirement files here to ensure they will be cached.
 WORKDIR $PYSETUP_PATH
-COPY poetry.lock pyproject.toml ./
+COPY poetry.lock pyproject.toml README.md ./
 
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
 RUN poetry install --only main --no-root
 
+# Copy the source code
+COPY ./efi_api ./efi_api
+
+# install main app
+RUN poetry install --only-root
+
 
 # `production` image used for runtime
 FROM python-base AS production
-
-WORKDIR /code
 
 ENV FASTAPI_ENV=production
 ENV HTTP_PORT=8000
@@ -64,8 +68,7 @@ ENV HTTP_PORT=8000
 # Copy the dependencies
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
-# Copy the source code
-COPY ./efi_api /code/efi_api
+WORKDIR $PYSETUP_PATH
 
 EXPOSE $HTTP_PORT
 
