@@ -16,6 +16,15 @@ NESTED_MAPPINGS = {
                     "properties": {
                         "has_activity": {
                             "type": "nested"
+                        },
+                        "has_date": {
+                            "type": "text",
+                            "fields": {
+                                "keyword": {
+                                    "type": "keyword",
+                                    "ignore_above": 256
+                                }
+                            }
                         }
                     }
                 },
@@ -30,6 +39,15 @@ NESTED_MAPPINGS = {
         },
         "production_in_year": {
             "type": "integer_range"
+        },
+        "years": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
         }
     }
 }
