@@ -5,7 +5,7 @@ from http.client import HTTPException
 
 from ...core.config import settings
 from ...schemas.frontend_search import SearchRequest, SearchResponse
-from ...helpers.frontend_search_v2 import process_search_request
+from ...helpers.frontend_search import process_search_request
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
