@@ -9,7 +9,7 @@ class SearchParams(BaseModel):
         description="Search query string to match against titles and content",
         example="test"
     )
-    facetFilters: list[list[str]] | None = Field(
+    facetFilters: list[list[str]] | list[str] | None = Field(
         default=None,
         description="Nested list of facet filters in format ['field:value']. Inner lists are OR'ed, outer lists are AND'ed",
         example=[

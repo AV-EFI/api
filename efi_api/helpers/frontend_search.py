@@ -302,23 +302,39 @@ class SearchAdapter:
         """Build filter clause.
 
         API references:
-        https://www.algolia.com/doc/api-reference/api-parameters/filters/
+        https://www.algolia.com/doc/api-reference/api-parameters/facetFilters/
         https://www.algolia.com/doc/api-reference/api-parameters/numericFilters/
+        https://www.algolia.com/doc/api-reference/api-parameters/filters/
 
         """
-        filter_dict = defaultdict(list)
-        for filter_group in params.facet_filters:
-            try:
-                key, term = filter_group.split(':', maxsplit=1)
-            except ValueError:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Cannot handle facet filter: {filter_group}")
-            if not key in self.facet_by_name:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Unknown facet filter: {filter_group}")
-            filter_dict[key].append(term)
+        filter_list = []
+        for filter_group in params.facetFilters:
+            if isinstance(filter_group, list):
+                subfilter_dict = defaultdict(list)
+                for subfilter in filter_group:
+                    try:
+                        key, term = subfilter.split(':', maxsplit=1)
+                    except ValueError:
+                        raise HTTPException(
+                            status_code=422,
+                            detail=f"Cannot handle facet filter: {subfilter}")
+                    subfilter_dict[key].append(term)
+                subfilter_list = []
+                for key, val in subfilter_dict.items():
+                    subfilter_list.append(self._es_filter_from_facet(key, val))
+                if len(subfilter_list) == 1:
+                    entry = subfilter_list[0]
+                elif len(subfilter_list) > 1:
+                    entry = {"bool": {"should": subfilter_list}}
+            else:
+                try:
+                    key, term = filter_group.split(':', maxsplit=1)
+                except ValueError:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Cannot handle facet filter: {filter_group}")
+                entry = self._es_filter_from_facet(key, term)
+            filter_list.append(entry)
         if params.numericRefinements:
             for key, refinement in params.numericRefinements.items():
                 range_dict = {
@@ -330,29 +346,31 @@ class SearchAdapter:
                     }[k]: v
                     for k, v in refinement.items()
                 }
-                filter_dict[key] = range_dict
-        filter_list = []
-        for facet_attr in self.facet_attributes:
-            try:
-                value = filter_dict.get(facet_attr['attribute'])
-            except KeyError:
-                continue
-            facet_type = facet_attr['type']
-            path_segments = facet_attr.get("nested_paths", [])
-            path_segments.append(facet_attr["field"])
-            if facet_type == 'string':
-                entry = {"terms": {'.'.join(path_segments): value}}
-            elif facet_type == 'numericRefinement':
-                entry = {"range": {'.'.join(path_segments): value}}
-            for i in range(len(path_segments)-1, 0, -1):
-                entry = {
-                    "nested": {
-                        "path": '.'.join(path_segments[:i]),
-                        "query": entry,
-                    }
-                }
-            filter_list.append(entry)
+                entry = self._es_filter_from_facet(key, range_dict)
+                filter_list.append(entry)
         return filter_list
+
+    def _es_filter_from_facet(self, facet_name: str, value):
+        try:
+            facet_attr = self.facet_by_name[facet_name]
+        except KeyError:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unknown facet filter: {facet_name}")
+        path_segments = facet_attr.get("nested_paths", []).copy()
+        path_segments.append(facet_attr["field"])
+        if facet_attr['type'] == 'string':
+            entry = {"terms": {'.'.join(path_segments): value}}
+        elif facet_attr['type'] == 'numericRefinement':
+            entry = {"range": {'.'.join(path_segments): value}}
+        for i in range(len(path_segments)-1, 0, -1):
+            entry = {
+                "nested": {
+                    "path": '.'.join(path_segments[:i]),
+                    "query": entry,
+                }
+            }
+        return entry
 
     def get_must_clause(self, query):
         return {"must": [
