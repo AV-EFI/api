@@ -386,7 +386,10 @@ class SearchAdapter:
     def get_aggs_clause(self, params: SearchParams) -> dict:
         # Copy facets and remove them one by one
         if params.facets:
-            facets = params.facets.copy()
+            if isinstance(params.facets, list):
+                facets = params.facets.copy()
+            else:
+                facets = [params.facets]
         else:
             facets = []
         if params.numericRefinements:
