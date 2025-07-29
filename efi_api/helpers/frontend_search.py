@@ -413,7 +413,7 @@ class SearchAdapter:
 
     def add_aggregation(
             self, aggs: dict, facet_attr: dict, facet_type: str):
-        path_segments = facet_attr.get("nested_paths", [])
+        path_segments = facet_attr.get("nested_paths", []).copy()
         path_segments.append(facet_attr["field"])
         level = 0
         while level < len(path_segments) - 1:
