@@ -108,6 +108,10 @@ class SearchAdapter:
             "field": "production.keyword",
             "type": "string"
         },{
+            "attribute": "years",
+            "field": "years.keyword",
+            "type": "string"
+        },{
             "attribute": "located_in_has_name",
             "field": "located_in.has_name.keyword",
             "type": "string",
