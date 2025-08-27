@@ -353,8 +353,11 @@ class SearchAdapter:
         path_segments.append(facet_attr["field"])
         if facet_attr['type'] == 'string':
             entry = {"terms": {'.'.join(path_segments): value}}
-        elif facet_attr['type'] == 'numericRefinement':
+        elif facet_attr['type'] == 'numeric-refinement':
             entry = {"range": {'.'.join(path_segments): value}}
+        else:
+            raise ValueError(
+                f"Cannot handle facet attribute type: {facet_attr['type']}")
         for i in range(len(path_segments)-1, 0, -1):
             entry = {
                 "nested": {
