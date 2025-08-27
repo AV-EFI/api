@@ -12,7 +12,8 @@ from .routers import auth, efi, health, hello, matches, transform
 from .routers.frontend import frontend_search, view
 from .routers.pid import create,update, pid
 
-ROOT_PATH = "/api/v1"
+ROOT_PATH = "/rest"
+V1_PATH = f"{ROOT_PATH}/v1"
 
 tags_metadata = [
     {
@@ -42,7 +43,6 @@ app = FastAPI(
     docs_url=f"{ROOT_PATH}/docs",
     redoc_url=f"{ROOT_PATH}/redoc",
     openapi_url=f"{ROOT_PATH}/openapi.json",
-    openapi_tags=tags_metadata,
 )
 app.add_middleware(
     SessionMiddleware, secret_key=settings.SESSION_SECRET,
@@ -56,7 +56,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-api = APIRouter(prefix=ROOT_PATH)
+api = FastAPI(
+    title='AV-EFI API',
+    description='This is the backend for the AV-EFI project.',
+    version=version,
+    # openapi_tags=tags_metadata,
+)
 
 api.include_router(hello.router, prefix='/hello', tags=['hello'])
 api.include_router(health.router, tags=["Health"])
@@ -69,7 +74,8 @@ api.include_router(view.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 api.include_router(transform.router, prefix="", tags=["Transform"])
 
-app.include_router(api)
+app.mount('/api/v1', api)       # TODO: Remove after frontend migration
+app.mount(V1_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 if __name__ == '__main__':
