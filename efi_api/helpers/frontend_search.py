@@ -92,7 +92,7 @@ class SearchAdapter:
             "field": "has_record.has_genre.has_name.keyword",
             "type": "string"
         },{
-            "attribute": "subjects", 
+            "attribute": "subjects",
             "field": "subjects.keyword",
             "type": "string"
         },{
@@ -137,7 +137,7 @@ class SearchAdapter:
             "type": "string",
             "nested_paths": ["manifestations", "has_record.has_event"]
         },{
-            "attribute": "has_colour_type", 
+            "attribute": "has_colour_type",
             "field": "has_record.has_colour_type.keyword",
             "type": "string",
             "nested_paths": ["manifestations"]
@@ -166,23 +166,15 @@ class SearchAdapter:
         "_title_asc": {
             "field": "has_record.has_primary_title.has_name",
             "order": "asc"
-        },        
+        },
         "_title_desc": {
             "field": "has_record.has_primary_title.has_name",
             "order": "desc"
         },
-        "_country_asc": {
-            "field": "country",
-            "order": "asc"
-        },
-        "_country_desc": {
-            "field": "country",
-            "order": "desc"
-        },        
         "_year_asc": {
             "field": "year",
             "order": "asc"
-        },        
+        },
         "_year_desc": {
             "field": "year",
             "order": "desc"
@@ -194,7 +186,7 @@ class SearchAdapter:
         "_directors_desc": {
             "field": "directors_or_editors",
             "order": "desc"
-        },        
+        },
         "_production_asc": {
             "field": "production",
             "order": "asc"
