@@ -81,12 +81,12 @@ class SearchAdapter:
             "attribute": "has_sound_type",
             "field": "has_record.has_sound_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations"]
+            "nested_paths": ["manifestations", "items"]
         },{
             "attribute": "in_language_code",
             "field": "has_record.in_language.code.keyword",
             "type": "string",
-            "nested_paths": ["manifestations"]
+            "nested_paths": ["manifestations", "items"]
         },{
             "attribute": "has_genre_has_name",
             "field": "has_record.has_genre.has_name.keyword",
@@ -120,7 +120,7 @@ class SearchAdapter:
             "attribute": "has_duration_has_value",
             "field": "has_record.has_duration.has_value.keyword",
             "type": "string",
-            "nested_paths": ["manifestations"]
+            "nested_paths": ["manifestations", "items"]
         },{
             "attribute": "has_issuer_name",
             "field": "has_record.described_by.has_issuer_name.keyword",
@@ -140,7 +140,7 @@ class SearchAdapter:
             "attribute": "has_colour_type",
             "field": "has_record.has_colour_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations"]
+            "nested_paths": ["manifestations", "items"]
         },{
             "attribute": "item_element_type",
             "field": "has_record.element_type.keyword",
