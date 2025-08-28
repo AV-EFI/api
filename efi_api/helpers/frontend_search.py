@@ -481,7 +481,8 @@ class SearchAdapter:
             "renderingContent": self.renderingContent,
         }
 
-    def transform_hits(self, hits: list[dict], params: SearchParams) -> dict:
+    def transform_hits(
+            self, hits: list[dict], params: SearchParams) -> list[dict]:
         """Make hits interpretable for instantsearch.
 
         See the following reference for API specifications with regard
