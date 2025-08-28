@@ -7,20 +7,20 @@ class SearchParams(BaseModel):
     query: str | None = Field(
         default=None,
         description="Search query string to match against titles and content",
-        example="test"
+        examples=["test"],
     )
-    facetFilters: list[list[str]] | list[str] | None = Field(
+    facetFilters: list[list[str] | str] | None = Field(
         default=None,
         description="Nested list of facet filters in format ['field:value']. Inner lists are OR'ed, outer lists are AND'ed",
-        example=[
+        examples=[
             ["production:Hermann Schlenker Filmproduktion"],
             ["years:1977"]
-        ]
+        ],
     )
     facets: list[str] | str | None = Field(
         default=None,
         description="List of facet fields to aggregate results by, or single facet field",
-        example=[
+        examples=[
             "castmembers",
             "directors_or_editors",
             "has_colour_type",
@@ -36,48 +36,48 @@ class SearchParams(BaseModel):
             "manifestation_event_type",
             "production",
             "subjects",
-        ]
+        ],
     )
     numericRefinements: dict[str, dict[str,int]] | None = Field(
         default=None,
         alias='numeric-refinements',
         description="Custom workaround for a range facet",
-        example={
+        examples=[{
             "production_in_year": {
                 ">=": 1956,
                 "<=": 1965
             }
-        },
+        }],
     )
     highlightPreTag: str | None = Field(
         default="__ais-highlight__",
         description="Opening HTML tag for highlighting matched terms",
-        example="__ais-highlight__"
+        examples="__ais-highlight__",
     )
     highlightPostTag: str | None = Field(
         default="__/ais-highlight__",
         description="Closing HTML tag for highlighting matched terms",
-        example="__/ais-highlight__"
+        examples="__/ais-highlight__",
     )
     hitsPerPage: int | None = Field(
         default=20,
         description="Number of results to return per page",
         ge=0,
         le=100,
-        example=20
+        examples=20,
     )
     maxValuesPerFacet: int | None = Field(
         default=10,
         description="Maximum number of values to return for each facet",
         ge=1,
         le=100,
-        example=10
+        examples=10,
     )
     page: int | None = Field(
         default=0,
         description="Zero-based page number for pagination",
         ge=0,
-        example=0
+        examples=0,
     )
     analytics: bool | None = Field(
         default=True,
@@ -92,7 +92,7 @@ class SearchParams(BaseModel):
 class SearchRequest(BaseModel):
     indexName: str = Field(
         description="Name of the search index to query",
-        example="21.11155-denormalised-work"
+        examples="21.11155-denormalised-work",
     )
     params: SearchParams
 

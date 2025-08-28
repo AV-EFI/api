@@ -1,4 +1,5 @@
 from fastapi_csrf_protect import CsrfProtect
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -26,8 +27,9 @@ class Settings(BaseSettings):
     PID_USERNAME: str = "" #TODO: UPDATE USERNAME TO AUTHENTICATE AGAINST PID SYSTEM; CAN BE DONE IN .ENV FILE
     PID_PASSWORD: str = "" #TODO: UPDATE PASSWORD TO AUTHENTICATE AGAINST PID SYSTEM; CAN BE DONE IN .ENV FILE
 
-    class Config:
-        env_file = ".api_config.env"
+    model_config = ConfigDict(
+        env_file = ".api_config.env",
+    )
 
 
 settings = Settings()
