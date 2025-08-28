@@ -317,7 +317,10 @@ class SearchAdapter:
                 if len(subfilter_list) == 1:
                     entry = subfilter_list[0]
                 elif len(subfilter_list) > 1:
-                    entry = {"bool": {"should": subfilter_list}}
+                    entry = {"bool": {
+                        "should": subfilter_list,
+                        "minimum_should_match": 1,
+                    }}
             else:
                 try:
                     key, term = filter_group.split(':', maxsplit=1)
