@@ -2,7 +2,7 @@ import json
 
 from fastapi.testclient import TestClient
 import pytest
-from efi_api.main import app, ROOT_PATH
+from efi_api.main import app, EFI_PATH
 from efi_api.schemas.efi_schema import efi
 
 client = TestClient(app)
@@ -98,7 +98,7 @@ def expected_output():
 
 def test_successful_transformation(valid_input_data, expected_output):
     """Test successful transformation of valid input data"""
-    response = client.post(f"{ROOT_PATH}/transform", json=valid_input_data)
+    response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     assert response.status_code == 200, response.json()
     assert response.json() == expected_output
 
@@ -110,7 +110,7 @@ def test_missing_required_field():
         "has_event": [],
         "type": "Monographic"
     }
-    response = client.post(f"{ROOT_PATH}/transform", json=invalid_data)
+    response = client.post(f"{EFI_PATH}/transform", json=invalid_data)
     assert response.status_code == 422  # Validation error
 
 def test_invalid_data_type():
@@ -125,17 +125,17 @@ def test_invalid_data_type():
         "has_event": [],
         "type": "Monographic"
     }
-    response = client.post(f"{ROOT_PATH}/transform", json=invalid_data)
+    response = client.post(f"{EFI_PATH}/transform", json=invalid_data)
     assert response.status_code == 422
 
 def test_empty_input():
     """Test handling of empty input"""
-    response = client.post(f"{ROOT_PATH}/transform", json={})
+    response = client.post(f"{EFI_PATH}/transform", json={})
     assert response.status_code == 422
 
 def test_output_structure(valid_input_data):
     """Test the structure of the output"""
-    response = client.post(f"{ROOT_PATH}/transform", json=valid_input_data)
+    response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     data = response.json()
     
     # Check if output is a list with exactly 2 items
@@ -157,7 +157,7 @@ def test_output_structure(valid_input_data):
 
 def test_described_by_content(valid_input_data):
     """Test if described_by field is correctly added"""
-    response = client.post(f"{ROOT_PATH}/transform", json=valid_input_data)
+    response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     payload = json.loads(response.json()[1]["parsed_data"])
     described_by = payload["described_by"]
 
@@ -166,5 +166,5 @@ def test_described_by_content(valid_input_data):
 
 def test_invalid_json():
     """Test handling of invalid JSON"""
-    response = client.post(f"{ROOT_PATH}/transform", content="invalid json")
+    response = client.post(f"{EFI_PATH}/transform", content="invalid json")
     assert response.status_code == 422

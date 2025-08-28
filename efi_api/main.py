@@ -13,7 +13,7 @@ from .routers.frontend import frontend_search, view
 from .routers.pid import create,update, pid
 
 ROOT_PATH = "/rest"
-V1_PATH = f"{ROOT_PATH}/v1"
+EFI_PATH = f"{ROOT_PATH}/v1"
 
 tags_metadata = [
     {
@@ -75,7 +75,7 @@ api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 api.include_router(transform.router, prefix="", tags=["Transform"])
 
 app.mount('/api/v1', api)       # TODO: Remove after frontend migration
-app.mount(V1_PATH, api)
+app.mount(EFI_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 if __name__ == '__main__':

@@ -1,11 +1,11 @@
 from fastapi.testclient import TestClient
-from efi_api.main import app, ROOT_PATH
+from efi_api.main import app, EFI_PATH
 
 client = TestClient(app)
 
 def test_protected_route_without_token():
     """Test accessing protected route without token"""
-    response = client.get(f"{ROOT_PATH}/user/session")
+    response = client.get(f"/auth/session")
     
     assert response.status_code == 401, response.json()
     assert response.json()["detail"] == "Not logged in"
