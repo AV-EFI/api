@@ -7,7 +7,7 @@ The backend code is under the `efi_api` directory, while unit tests are under th
 
 ### Dependency management
 
-[Poetry][4] is used for dependency management. Besides the main dependencies, the ones that required during development
+[UV][4] is used for dependency management. Besides the main dependencies, the ones that required during development
 only are put under the `dev` group. Please make sure to assign new dependencies to the proper group to reduce the
 package size in production.
 
@@ -61,9 +61,9 @@ pull images from the project. Otherwise, an `Access Denied` error will be thrown
 
 ## For developer
 
-- Install [Poetry][4]. Make sure that it is **not** installed in the same virtual environment of this project, since it might
-  cause some side effects. Please check the [documentation][7] for more information.
-- Run `poetry install`.
+- [Install UV][7]. Make sure that it is **not** installed in the same virtual environment of this project, since it might
+  cause some side effects.
+- Run `uv sync`.
 - The project is ready for development.
 
 ## Index maintenance
@@ -72,7 +72,7 @@ A rebuild of search indices can be triggered manually by issuing the
 following command:
 
 ```shell
-$ poetry run rebuild_search_index
+$ uv run rebuild_search_index
 ```
 
 [1]: https://fastapi.tiangolo.com/
@@ -81,10 +81,10 @@ $ poetry run rebuild_search_index
 
 [3]: https://gitlab.gwdg.de/av-efi/api/-/releases
 
-[4]: https://python-poetry.org/
+[4]: https://docs.astral.sh/uv/
 
 [5]: https://gitlab.gwdg.de/av-efi/api/container_registry/3087
 
 [6]: https://www.docker.com/
 
-[7]: https://python-poetry.org/docs/
+[7]: https://docs.astral.sh/uv/getting-started/installation/
