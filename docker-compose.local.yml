@@ -8,7 +8,8 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - './:/code/:ro'
+      - './.api_config.env:/code/.api_config.env:ro'
+      - './efi_api/:/code/efi_api/:ro'
     networks:
       proxy-network:
         aliases:
