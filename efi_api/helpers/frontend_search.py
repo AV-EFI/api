@@ -370,6 +370,14 @@ class SearchAdapter:
                     "query": entry,
                     "inner_hits": {
                         "size": params.hitsPerPage,
+                        "highlight": {
+                            "fields": {
+                                "*": {
+                                    "pre_tags": [params.highlightPreTag],
+                                    "post_tags": [params.highlightPostTag],
+                                }
+                            }
+                        }
                     }
                 }
             }
