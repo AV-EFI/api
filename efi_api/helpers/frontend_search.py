@@ -460,7 +460,7 @@ class SearchAdapter:
         params = request.params
         hits = self.transform_hits(response['hits']['hits'], params)
         total_hits = response['hits']['total']['value']
-        facets = self.transform_facets(response['aggregations'])
+        facets = self.transform_facets(response.get('aggregations', {}))
 
         # Handle case where hitsPerPage is 0
         hits_per_page = max(1, params.hitsPerPage)
