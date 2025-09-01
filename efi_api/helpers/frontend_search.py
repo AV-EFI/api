@@ -313,7 +313,8 @@ class SearchAdapter:
                     subfilter_dict[key].append(term)
                 subfilter_list = []
                 for key, val in subfilter_dict.items():
-                    subfilter_list.append(self._es_filter_from_facet(key, val))
+                    subfilter_list.append(
+                        self._es_filter_from_facet(key, val, params))
                 if len(subfilter_list) == 1:
                     entry = subfilter_list[0]
                 elif len(subfilter_list) > 1:
@@ -328,7 +329,7 @@ class SearchAdapter:
                     raise HTTPException(
                         status_code=422,
                         detail=f"Cannot handle facet filter: {filter_group}")
-                entry = self._es_filter_from_facet(key, term)
+                entry = self._es_filter_from_facet(key, term, params)
             filter_list.append(entry)
         if params.numericRefinements:
             for key, refinement in params.numericRefinements.items():
@@ -341,11 +342,12 @@ class SearchAdapter:
                     }[k]: v
                     for k, v in refinement.items()
                 }
-                entry = self._es_filter_from_facet(key, range_dict)
+                entry = self._es_filter_from_facet(key, range_dict, params)
                 filter_list.append(entry)
         return filter_list
 
-    def _es_filter_from_facet(self, facet_name: str, value):
+    def _es_filter_from_facet(
+            self, facet_name: str, value, params: SearchParams):
         try:
             facet_attr = self.facet_by_name[facet_name]
         except KeyError:
@@ -366,6 +368,9 @@ class SearchAdapter:
                 "nested": {
                     "path": '.'.join(path_segments[:i]),
                     "query": entry,
+                    "inner_hits": {
+                        "size": params.hitsPerPage,
+                    }
                 }
             }
         return entry
@@ -530,6 +535,8 @@ class SearchAdapter:
                             'matchLevel': match_level,
                             'fullyHighlighted': fully_highlighted,
                         })
+            if hit.get('inner_hits'):
+                t_hit['inner_hits'] = hit['inner_hits']
             result.append(t_hit)
         return result
 
