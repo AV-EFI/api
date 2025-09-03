@@ -493,7 +493,7 @@ class SearchAdapter:
             "hitsPerPage": params.hitsPerPage,
             "processingTimeMS": response['took'],
             "query": params.query,
-            "params": parse.urlencode(params.model_dump()),
+            "params": parse.urlencode(params.model_dump(exclude=None)),
             "renderingContent": self.renderingContent,
         }
 
