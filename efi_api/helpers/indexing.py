@@ -43,6 +43,9 @@ NESTED_MAPPINGS = {
                 }
             }
         },
+        "duration_in_minutes": {
+            "type": "integer"
+        },
         "production_in_year": {
             "type": "integer_range"
         },
@@ -201,6 +204,22 @@ INGEST_PROCESSORS = [
                 subjects.add(subject.has_name)
               }
               ctx.subjects = subjects;
+            """
+        }
+    },
+    {
+        "script": {
+            "description": "Store duration in number of seconds",
+            "if": "ctx?.has_record?.has_duration?.has_value != null",
+            "lang": "painless",
+            "source": """
+              int result = 0;
+              def durationComponent = /^PT(\\d+)H(\\d+)M([0-5][0-9])S$/.matcher(ctx.has_record.has_duration.has_value);
+              if (durationComponent.matches() && durationComponent.group(1) != '') {
+                result = Integer.parseInt(durationComponent.group(1)) * 60;
+                result = Integer.parseInt(durationComponent.group(2)) + result;
+                ctx.duration_in_minutes = result;
+              }
             """
         }
     }
