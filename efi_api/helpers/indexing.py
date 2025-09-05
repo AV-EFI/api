@@ -83,7 +83,7 @@ INGEST_PROCESSORS = [
             "lang": "painless",
             "source": """
               def extractYear(def datePart) {
-                def yearComponent = /^(\d+)([?~]?)/.matcher(datePart);
+                def yearComponent = /^(\\d+)([?~]?)/.matcher(datePart);
                 if (yearComponent.matches() && yearComponent.group(1) != '') {
                   Map result = new HashMap();
                   result['year'] = Integer.parseInt(yearComponent.group(1));
