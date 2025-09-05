@@ -31,7 +31,13 @@ NESTED_MAPPINGS = {
                 "has_extent": {
                     "properties": {
                         "has_value": {
-                            "type": "float"
+                            "type": "text",
+                            "fields": {
+                                "keyword": {
+                                    "type": "keyword",
+                                    "ignore_above": 256
+                                }
+                            }
                         }
                     }
                 }
