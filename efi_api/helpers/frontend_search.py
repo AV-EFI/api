@@ -363,12 +363,13 @@ class SearchAdapter:
         else:
             raise ValueError(
                 f"Cannot handle facet attribute type: {facet_attr['type']}")
-        for i in range(len(path_segments)-1, 0, -1):
+        if len(path_segments) > 1:
             entry = {
                 "nested": {
-                    "path": '.'.join(path_segments[:i]),
+                    "path": '.'.join(path_segments[:-2]),
                     "query": entry,
                     "inner_hits": {
+                        "name": facet_name,
                         "size": params.hitsPerPage,
                         "highlight": {
                             "fields": {
