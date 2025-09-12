@@ -512,6 +512,7 @@ class SearchAdapter:
         nb_query_words = len(params.query.split())
         result = []
         for hit in hits:
+            self.process_inner_hits(hit)
             t_hit = {
                 'objectID': hit['_id'],
                 '_index': hit['_index'],
@@ -544,10 +545,44 @@ class SearchAdapter:
                             'matchLevel': match_level,
                             'fullyHighlighted': fully_highlighted,
                         })
-            if hit.get('inner_hits'):
-                t_hit['inner_hits'] = hit['inner_hits']
             result.append(t_hit)
         return result
+
+    def process_inner_hits(self, hit: dict):
+        """Check for inner_hits and drop superfluous manifestations and items.
+
+        Make in place adjustments to ``hit``, dropping all
+        manifestations and items that are not required by any of the
+        inner_hits. Drop the `inner_hits` key with it since the
+        offsets will be inaccurate after this operation.
+
+        """
+        try:
+            inner_hits = hit.pop('inner_hits')
+        except KeyError:
+            return
+        nested = {}
+        for val in inner_hits.values():
+            for ihit in val['hits']['hits']:
+                if ihit['_nested']['field'] != 'manifestations':
+                    continue
+                m_offset = ihit['_nested']['offset']
+                nested.setdefault(m_offset, set())
+                subnested = ihit['_nested'].get('_nested')
+                if subnested and subnested['field'] == 'items':
+                    nested[m_offset].add(subnested['offset'])
+        if nested:
+            manifestations = []
+            for m_offset in sorted(nested.keys()):
+                manifestation = hit['_source']['manifestations'][m_offset]
+                item_offsets = sorted(nested[m_offset])
+                if item_offsets:
+                    items = []
+                    for i_offset in item_offsets:
+                        items.append(manifestation['items'][i_offset])
+                    manifestation['items'] = items
+                manifestations.append(manifestation)
+            hit['_source']['manifestations'] = manifestations
 
     def transform_facets(self, es_aggregations: dict) -> dict:
         facets = {}
