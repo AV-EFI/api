@@ -9,11 +9,16 @@ def get_elasticsearch_client() -> Elasticsearch:
     """
     Create and return Elasticsearch client instance
     """
-    return Elasticsearch([{
-        'host': settings.ES_HOST,
-        'port': settings.ES_PORT,
-        'scheme': settings.ES_SCHEME
-    }])
+    return Elasticsearch(
+        [{
+            'host': settings.ES_HOST,
+            'port': settings.ES_PORT,
+            'scheme': settings.ES_SCHEME
+        }],
+        request_timeout=30,
+        max_retries=4,
+        retry_on_timeout=True,
+    )
 
 
 # Initialize Elasticsearch client
