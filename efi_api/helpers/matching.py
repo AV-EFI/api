@@ -88,8 +88,8 @@ def build_match_query(work: efi.WorkVariant) -> dict | None:
     if all([date_ranges, location_clauses, activity_clauses]):
         title_clauses = []
         title_strings = [work.has_primary_title.has_name]
-        title_strings.extend(
-            title.has_name for title in work.has_alternative_title or [])
+        # title_strings.extend(
+        #     title.has_name for title in work.has_alternative_title or [])
         for title_str in title_strings:
             title_clauses.extend([
                 {"match_phrase": {
