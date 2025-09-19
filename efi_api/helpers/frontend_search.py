@@ -523,10 +523,15 @@ class SearchAdapter:
                 for field, values in hit['highlight'].items():
                     subdict = t_hit.setdefault('_highlightResult', {})
                     path = field.split('.')
+                    if path[-1] == 'keyword':
+                        del path[-1]
                     for name in path[:-1]:
                         subdict = subdict.setdefault(name, {})
-                    value_list = subdict[path[-1]] = []
+                    value_list = subdict.setdefault(path[-1], [])
+                    value_keys = [v['value'] for v in value_list]
                     for value in values:
+                        if value in value_keys:
+                            continue
                         matched_words = re.findall(
                             f"{pre_pattern}(.*?){post_pattern}", value)
                         if len(matched_words) == nb_query_words:
