@@ -12,10 +12,12 @@ def efi_data():
             "has_name": "Menschen am Sonntag – Das Dokument der Gegenwart",
             "type": "PreferredTitle"
         },
-        "described_by": {
-            "has_issuer_id": "https://w3id.org/isil/DE-MUS-407010",
-            "has_issuer_name": "Deutsche Kinemathek - Museum für Film und Fernsehen"
-        },
+        "described_by": [
+            {
+                "has_issuer_id": "https://w3id.org/isil/DE-MUS-407010",
+                "has_issuer_name": "Deutsche Kinemathek - Museum für Film und Fernsehen"
+            }
+        ],
         "has_event": [
             {
                 "category": "avefi:ProductionEvent",

@@ -54,8 +54,7 @@ def test_build_es_query_with_facet_filters():
         "terms": {"directors_or_editors.keyword": ["Director 1"]},
     }
     assert len(query["query"]["bool"]["filter"]) == 2
-    assert query["query"]["bool"]["filter"][1]["nested"]["query"][
-        "nested"]["query"]["terms"][
+    assert query["query"]["bool"]["filter"][1]["nested"]["query"]["terms"][
             "manifestations.items.has_record.has_format.type.keyword"] == [
                 "16mmFilm", "35mmFilm"]
 

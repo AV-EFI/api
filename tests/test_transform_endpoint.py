@@ -61,10 +61,12 @@ def expected_output():
                     "type": "PreferredTitle",
                     "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE"
                 },
-                "described_by": {
-                    "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
-                    "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
-                },
+                "described_by": [
+                    {
+                        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                    }
+                ],
                 "has_event": [
                     {
                         "category": "avefi:ProductionEvent",
@@ -161,8 +163,8 @@ def test_described_by_content(valid_input_data):
     payload = json.loads(response.json()[1]["parsed_data"])
     described_by = payload["described_by"]
 
-    assert described_by["has_issuer_id"] == "https://w3id.org/isil/DE-MUS-432511"
-    assert described_by["has_issuer_name"] == "Filmmuseum der Landeshauptstadt Düsseldorf"
+    assert described_by[0]["has_issuer_id"] == "https://w3id.org/isil/DE-MUS-432511"
+    assert described_by[0]["has_issuer_name"] == "Filmmuseum der Landeshauptstadt Düsseldorf"
 
 def test_invalid_json():
     """Test handling of invalid JSON"""
