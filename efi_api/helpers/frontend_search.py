@@ -366,7 +366,7 @@ class SearchAdapter:
         if len(path_segments) > 1:
             entry = {
                 "nested": {
-                    "path": '.'.join(path_segments[:-2]),
+                    "path": '.'.join(path_segments[:-1]),
                     "query": entry,
                     "inner_hits": {
                         "name": facet_name,
