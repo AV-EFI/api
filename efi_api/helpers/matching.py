@@ -233,15 +233,8 @@ def names_clause(elem: BaseModel, path: str) -> list[dict]:
 def same_as_clause(elem: BaseModel, path: str) -> list[dict]:
     query = []
     for ref in elem.same_as or []:
-        query.append({"bool": {"filter": [{"bool": {
-            "should": [
-                {"term": {f"{path}.same_as.id.keyword": ref.id}},
-                {"bool": {"must_not": [
-                    {"term": {
-                        f"{path}.same_as.category.keyword": ref.category,
-                    }},
-                ]}},
-            ],
-            "minimum_should_match": 1,
-        }}]}})
+        query.append({"bool": {"filter": [
+            {"term": {f"{path}.same_as.id.keyword": ref.id}},
+            {"term": {f"{path}.same_as.category.keyword": ref.category}},
+        ]}})
     return query
