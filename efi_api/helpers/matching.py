@@ -4,11 +4,50 @@ import re
 from pydantic import BaseModel
 
 from ..core.config import settings
-from ..core.elasticsearch import es_client
+from ..core.elasticsearch import es_client, es_iter
 from ..schemas.efi_schema import efi
 
 
 logger = logging.getLogger(__name__)
+
+
+def find_matches(index: str) -> dict:
+    """Iterate over WorkVariants and find matches by AVefi criteria.
+
+    Do a full index scan for merge candidates according to the AVefi
+    criteria title, country, date and director.
+
+    Return a dict containing merge candidates in a dict and a list of
+    errors that may have occurred along the way.
+
+    """
+    matches = {}
+    errors = []
+    work_variant_query = {"query": {"bool": {"filter": [{
+        "term": {"has_record.category.keyword": {"value": "avefi:WorkVariant"}}
+    }]}}}
+    for doc in es_iter(index=index, query=work_variant_query, scroll='10m'):
+        _make_described_by_list(doc['_source'])
+        try:
+            work = efi.WorkVariant.model_validate(doc['_source']['has_record'])
+        except Exception as e:
+            errors.append({'error': e, '_source': doc['_source']})
+            continue
+        hits = get_works_matching(work)
+        if hits['total']['value'] > 1:
+            for hit in hits['hits']:
+                _make_described_by_list(hit['_source'])
+            matches[doc['_source']['handle']] = hits['hits']
+    return {'matches': matches, 'errors': errors}
+
+
+def _make_described_by_list(doc_source: dict):
+    """Helper function fixing old style described_by in WorkVariants.
+
+    """
+    if isinstance(doc_source.get('has_record', {}).get('described_by'), dict):
+        doc_source['has_record']['described_by'] = [
+            doc_source['has_record']['described_by']]
 
 
 def get_works_matching(work: efi.WorkVariant) -> dict:
