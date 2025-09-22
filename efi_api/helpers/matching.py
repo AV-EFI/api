@@ -9,16 +9,26 @@ from ..schemas.efi_schema import efi
 
 
 logger = logging.getLogger(__name__)
+DEFAULT_SIZE = 10
 
 
-def find_matches(index: str) -> dict:
+def find_matches(index: str, max_matches: int = DEFAULT_SIZE) -> dict:
     """Iterate over WorkVariants and find matches by AVefi criteria.
 
     Do a full index scan for merge candidates according to the AVefi
     criteria title, country, date and director.
 
-    Return a dict containing merge candidates in a dict and a list of
-    errors that may have occurred along the way.
+    Parameters
+    ----------
+    index : str
+        Name of the index to scan for merge candidates.
+
+    Returns
+    -------
+    dict
+        {'matches': {...}, 'errors': [...]} where typically are
+        validation errors due to records not compliant with the latest
+        schema version.
 
     """
     matches = {}
@@ -33,7 +43,7 @@ def find_matches(index: str) -> dict:
         except Exception as e:
             errors.append({'error': e, '_source': doc['_source']})
             continue
-        hits = get_works_matching(work)
+        hits = get_works_matching(work, max_matches=max_matches)
         if hits['total']['value'] > 1:
             for hit in hits['hits']:
                 _make_described_by_list(hit['_source'])
@@ -50,20 +60,48 @@ def _make_described_by_list(doc_source: dict):
             doc_source['has_record']['described_by']]
 
 
-def get_works_matching(work: efi.WorkVariant) -> dict:
+def get_works_matching(
+        work: efi.WorkVariant, max_matches: int = DEFAULT_SIZE) -> dict:
     """Return Elasticsearch hits matching `work` by AVefi criteria.
 
     See doc-string of `build_match_query()` for details about matching
     criteria.
 
-    Returns:
-    
+    Parameters
+    ----------
+    work : efi.WorkVariant
+        WorkVariant to be matched against the corpus.
+    max_matches : int
+        If there are more than this many hits, log the incident but do
+        not return any of them as matching results. 0 will always return
+        all hits as valid results but the incident will still be logged
+        in case DEFAULT_SIZE is exceeded.
+
+    Returns
+    -------
+    dict
+        Hits section of the Elasticsearch response.
 
     """
     query = build_match_query(work)
     if query:
+        query['size'] = max_matches or DEFAULT_SIZE
         response = es_client.search(index=settings.ES_LOOKUP_INDEX, body=query)
-        return response['hits']
+        total_hits = response['hits']['total']['value']
+        if max_matches and total_hits > max_matches:
+            logger.warning(
+                f"Too many match results: {total_hits} instead of"
+                f" {max_matches}; ignoring them all for work:"
+                f" '{work.has_primary_title.has_name}'")
+        else:
+            if total_hits > DEFAULT_SIZE and max_matches == 0:
+                logger.warning(
+                    f"{total_hits} match results for one work, may be worth"
+                    f" investigating: '{work.has_primary_title.has_name}'")
+                query['size'] = total_hits
+                response = es_client.search(
+                    index=settings.ES_LOOKUP_INDEX, body=query)
+            return response['hits']
     return {'hits': [], 'total': {'value': 0, 'relation': 'eq'}}
 
 
