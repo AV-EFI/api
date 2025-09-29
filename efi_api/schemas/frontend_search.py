@@ -4,8 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field
 class SearchParams(BaseModel):
     model_config = ConfigDict(serialize_by_alias=True)
 
-    query: str | None = Field(
-        default=None,
+    query: str = Field(
+        default="",
         description="Search query string to match against titles and content",
         examples=["test"],
     )
