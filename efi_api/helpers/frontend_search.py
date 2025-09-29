@@ -78,16 +78,6 @@ class SearchAdapter:
             "field": "production_in_year",
             "type": "numeric-refinement"
         },{
-            "attribute": "has_sound_type",
-            "field": "has_record.has_sound_type.keyword",
-            "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
-            "attribute": "in_language_code",
-            "field": "has_record.in_language.code.keyword",
-            "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
             "attribute": "has_genre_has_name",
             "field": "has_record.has_genre.has_name.keyword",
             "type": "string"
@@ -108,19 +98,19 @@ class SearchAdapter:
             "field": "production.keyword",
             "type": "string"
         },{
-            "attribute": "years",
-            "field": "years.keyword",
-            "type": "string"
-        },{
             "attribute": "located_in_has_name",
             "field": "located_in.has_name.keyword",
             "type": "string",
             "nested_paths": ["has_record.has_event"]
         },{
-            "attribute": "has_duration_has_value",
-            "field": "has_record.has_duration.has_value.keyword",
+            "attribute": "has_form",
+            "field": "has_record.has_form.keyword",
+            "type": "string"
+        },{
+            "attribute": "manifestation_event_type",
+            "field": "type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"]
+            "nested_paths": ["manifestations", "has_record.has_event"]
         },{
             "attribute": "has_issuer_name",
             "field": "has_record.described_by.has_issuer_name.keyword",
@@ -132,24 +122,40 @@ class SearchAdapter:
             "type": "string",
             "nested_paths": ["manifestations", "items"]
         },{
-            "attribute": "manifestation_event_type",
-            "field": "type.keyword",
-            "type": "string",
-            "nested_paths": ["manifestations", "has_record.has_event"]
-        },{
             "attribute": "has_colour_type",
             "field": "has_record.has_colour_type.keyword",
             "type": "string",
             "nested_paths": ["manifestations", "items"]
         },{
-            "attribute": "item_element_type",
-            "field": "has_record.element_type.keyword",
+            "attribute": "has_sound_type",
+            "field": "has_record.has_sound_type.keyword",
             "type": "string",
             "nested_paths": ["manifestations", "items"]
         },{
-            "attribute": "has_form",
-            "field": "has_record.has_form.keyword",
-            "type": "string"
+            "attribute": "in_language_code",
+            "field": "has_record.in_language.code.keyword",
+            "type": "string",
+            "nested_paths": ["manifestations", "items"]
+        },{
+            "attribute": "has_duration_has_value",
+            "field": "has_record.has_duration.has_value.keyword",
+            "type": "string",
+            "nested_paths": ["manifestations", "items"]
+        },{
+            "attribute": "has_extent_has_value",
+            "field": "has_record.has_extent.has_value.keyword",
+            "type": "string",
+            "nested_paths": ["manifestations", "items"],
+        },{
+            "attribute": "item_duration_in_minutes",
+            "field": "duration_in_minutes",
+            "type": "numeric-refinement",
+            "nested_paths": ["manifestations", "items"],
+        },{
+            "attribute": "item_element_type",
+            "field": "has_record.element_type.keyword",
+            "type": "string",
+            "nested_paths": ["manifestations", "items"],
         }
     ]
 
