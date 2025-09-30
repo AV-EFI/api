@@ -614,8 +614,9 @@ class SearchAdapter:
                 self._transform_facets(
                     agg, facets, field)
             else:
-                attr_name = self.facet_by_path[field]['attribute']
-                if attr_name == 'production_in_year':
+                attr = self.facet_by_path[field]
+                attr_name = attr['attribute']
+                if attr['type'] == 'numeric-refinement':
                     get_key = lambda x: int(x['key'])
                 else:
                     get_key = lambda x: x['key']
