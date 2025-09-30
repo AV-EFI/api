@@ -290,8 +290,9 @@ class SearchAdapter:
                 }
             }
         }
-        if params.facetFilters:
-            query['query']['bool']['filter'] = self.get_filter_clause(params)
+        filter_clause = self.get_filter_clause(params)
+        if filter_clause:
+            query['query']['bool']['filter'] = filter_clause
         if params.facets:
             query['aggs'] = self.get_aggs_clause(params)
         return query
@@ -306,7 +307,7 @@ class SearchAdapter:
 
         """
         filter_list = []
-        for filter_group in params.facetFilters:
+        for filter_group in params.facetFilters or []:
             if isinstance(filter_group, list):
                 subfilter_dict = defaultdict(list)
                 for subfilter in filter_group:
