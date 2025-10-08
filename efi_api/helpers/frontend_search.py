@@ -156,6 +156,11 @@ class SearchAdapter:
             "field": "has_record.element_type.keyword",
             "type": "string",
             "nested_paths": ["manifestations", "items"],
+        },{
+            "attribute": "item_access_status",
+            "field": "has_record.has_access_status.keyword",
+            "type": "string",
+            "nested_paths": ["manifestations", "items"],
         }
     ]
 
