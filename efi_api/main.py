@@ -74,7 +74,6 @@ api.include_router(view.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 api.include_router(transform.router, prefix="", tags=["Transform"])
 
-app.mount('/api/v1', api)       # TODO: Remove after frontend migration
 app.mount(EFI_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
