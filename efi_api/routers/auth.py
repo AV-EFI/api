@@ -76,8 +76,9 @@ oauth.register(
 )
 
 
+@router.post('/signin/keycloak', deprecated=True)
 @router.post(
-    '/signin/keycloak',
+    '/signin/academiccloud',
     summary="Authenticate user via Academiccloud.",
     description="""Authenticate user via external identity provider.""",
     response_description="""Redirect to external identity provider and
@@ -90,8 +91,9 @@ async def signin_ac(
     return await redirect_to_ac(request)
 
 
+@router.get('/signin/keycloak', deprecated=True)
 @router.get(
-    '/signin/keycloak',
+    '/signin/academiccloud',
     summary="Authenticate user via Academiccloud.",
     description="""Authenticate user via external identity provider.""",
     response_description="""Redirect to external identity provider and
@@ -112,7 +114,7 @@ async def redirect_to_ac(request: Request):
     return await oauth.academiccloud.authorize_redirect(request, redirect_uri)
 
 
-@router.get('/academiccloud/auth')
+@router.get('/callback/academiccloud')
 async def auth(request: Request):
     token = await oauth.academiccloud.authorize_access_token(request)
     userinfo = token.get('userinfo')
