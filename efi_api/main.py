@@ -12,8 +12,7 @@ from .routers import auth, efi, health, hello, matches, transform
 from .routers.frontend import frontend_search, view
 from .routers.pid import create,update, pid
 
-ROOT_PATH = "/rest"
-EFI_PATH = f"{ROOT_PATH}/v1"
+EFI_PATH = f"/rest/v1"
 
 tags_metadata = [
     {
@@ -40,9 +39,9 @@ app = FastAPI(
     title='AV-EFI API',
     description='This is the backend for the AV-EFI project.',
     version=version,
-    docs_url=f"{ROOT_PATH}/docs",
-    redoc_url=f"{ROOT_PATH}/redoc",
-    openapi_url=f"{ROOT_PATH}/openapi.json",
+    docs_url=f"{EFI_PATH}/docs",
+    redoc_url=f"{EFI_PATH}/redoc",
+    openapi_url=f"{EFI_PATH}/openapi.json",
 )
 app.add_middleware(
     SessionMiddleware, secret_key=settings.SESSION_SECRET,
