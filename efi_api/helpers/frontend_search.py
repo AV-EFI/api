@@ -416,21 +416,13 @@ class SearchAdapter:
                 facets = [params.facets]
         else:
             facets = []
-        if params.numericRefinements:
-            refinements = list(params.numericRefinements.keys())
-        else:
-            refinements = []
         aggs_dict = defaultdict(dict)
         for facet_attr in self.facet_attributes:
             try:
-                facet_type = facet_attr['type']
-                if facet_type == 'numeric-refinement':
-                    refinements.remove(facet_attr["attribute"])
-                else:
-                    facets.remove(facet_attr["attribute"])
+                facets.remove(facet_attr["attribute"])
             except ValueError:
                 continue
-            self.add_aggregation(aggs_dict, facet_attr, facet_type)
+            self.add_aggregation(aggs_dict, facet_attr)
 
         if facets:
             raise HTTPException(
@@ -438,8 +430,7 @@ class SearchAdapter:
                 detail=f"Request for undefined facet(s): {facets}")
         return aggs_dict
 
-    def add_aggregation(
-            self, aggs: dict, facet_attr: dict, facet_type: str):
+    def add_aggregation(self, aggs: dict, facet_attr: dict):
         path_segments = facet_attr.get("nested_paths", []).copy()
         path_segments.append(facet_attr["field"])
         level = 0
@@ -460,7 +451,7 @@ class SearchAdapter:
             level += 1
 
         agg_spec = {'field': '.'.join(path_segments)}
-        if facet_type == 'numeric-refinement':
+        if facet_attr['type'] == 'numeric-refinement':
             agg_type = 'histogram'
             agg_spec.update({
                 "interval": 1,
