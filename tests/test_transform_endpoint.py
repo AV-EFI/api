@@ -2,8 +2,8 @@ import json
 
 from fastapi.testclient import TestClient
 import pytest
-from efi_api.main import app, EFI_PATH
-from efi_api.schemas.efi_schema import efi
+from app.main import app, EFI_PATH
+from app.schemas.efi_schema import efi
 
 client = TestClient(app)
 

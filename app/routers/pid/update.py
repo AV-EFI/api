@@ -2,9 +2,9 @@ from http.client import HTTPException
 import os
 from fastapi import APIRouter, Depends, Body
 import httpx 
-from efi_api.helpers.auth import verify_token
-from efi_api.helpers.pid_create_tranfrom import wrap_pid_data
-from efi_api.core.config import settings
+from app.helpers.auth import verify_token
+from app.helpers.pid_create_tranfrom import wrap_pid_data
+from app.core.config import settings
 
 router = APIRouter()
 url = settings.PID_SERVICE_URL

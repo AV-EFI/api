@@ -3,9 +3,9 @@ import os
 from fastapi import APIRouter, Depends
 import httpx 
 
-from efi_api.helpers.auth import verify_token
-from efi_api.helpers.pid_create_tranfrom import wrap_pid_data
-from efi_api.core.config import settings
+from ...helpers.auth import verify_token
+from ...helpers.pid_create_tranfrom import wrap_pid_data
+from ...core.config import settings
 
 
 router = APIRouter()

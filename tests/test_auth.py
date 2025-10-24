@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from efi_api.main import app, EFI_PATH
+from app.main import app, EFI_PATH
 
 client = TestClient(app)
 

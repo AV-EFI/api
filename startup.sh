@@ -1,14 +1,14 @@
 #!/bin/sh
 set -e
 
-echo "Install Poetry"
-curl -sSL https://install.python-poetry.org | python3 -
+echo "Install uv"
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-echo "Check Poetry version"
-poetry --version
+echo "Check uv version"
+uv --version
 
 echo "Starting installation and setup"
-poetry install --no-dev
+uv sync
 
 echo "Starting FASTAPI"
-poetry run uvicorn efi_api.main:app --reload
+uv run uvicorn app.main:app --reload

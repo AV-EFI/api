@@ -2,7 +2,7 @@
 set -e
 
 echo "*********************** Activating venv ***********************"
-poetry install
+uv sync
 
 echo "*********************** Running pytest ***********************"
-poetry run pytest
+uv run pytest

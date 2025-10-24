@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
 
-from efi_api.core.config import settings
-from efi_api.helpers.frontend_search import (
+from app.core.config import settings
+from app.helpers.frontend_search import (
     process_search_request, SearchAdapter,
 )
-from efi_api.schemas.frontend_search import SearchParams, SearchRequest
+from app.schemas.frontend_search import SearchParams, SearchRequest
 
 def test_build_es_query_basic_search():
     request = SearchRequest(
@@ -115,7 +115,7 @@ def test_transform_facets():
 
 @pytest.fixture
 def mock_es_client():
-    with patch('efi_api.helpers.frontend_search.es_client') as mock:
+    with patch('app.helpers.frontend_search.es_client') as mock:
         yield mock
 
 @pytest.fixture

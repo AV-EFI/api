@@ -2,8 +2,8 @@
 set -e
 
 echo "*********************** Activating venv ***********************"
-poetry install
+uv sync
 
 echo "*********************** Starting FASTAPI ***********************"
 echo "Swagger Documentation: http://127.0.0.1:8000/docs"
-poetry run uvicorn efi_api.main:app --reload
+uv run uvicorn app.main:app --reload

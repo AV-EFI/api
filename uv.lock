@@ -26,6 +26,47 @@ wheels = [
 ]
 
 [[package]]
+name = "api"
+version = "0.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "authlib" },
+    { name = "avefi-schema" },
+    { name = "elasticsearch" },
+    { name = "fastapi" },
+    { name = "fastapi-csrf-protect" },
+    { name = "httpx" },
+    { name = "itsdangerous" },
+    { name = "pydantic-settings" },
+    { name = "python-jose", extra = ["cryptography"] },
+    { name = "python-multipart" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "authlib", specifier = ">=1.5.0,<2.0.0" },
+    { name = "avefi-schema", git = "https://github.com/AV-EFI/av-efi-schema.git" },
+    { name = "elasticsearch", specifier = ">=8.15.1,<9.0.0" },
+    { name = "fastapi", specifier = ">=0.110.0,<1.0.0" },
+    { name = "fastapi-csrf-protect", specifier = ">=1.0.3,<2.0.0" },
+    { name = "httpx", specifier = ">=0.28.1,<0.29.0" },
+    { name = "itsdangerous", specifier = ">=2.2.0,<3.0.0" },
+    { name = "pydantic-settings", specifier = ">=2.6.0,<3.0.0" },
+    { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3.0,<4.0.0" },
+    { name = "python-multipart", specifier = ">=0.0.20,<0.0.21" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0,<1.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.4.1" }]
+
+[[package]]
 name = "authlib"
 version = "1.6.3"
 source = { registry = "https://pypi.org/simple" }
@@ -172,47 +213,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/c0/1f/924e3caae75f471ea
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/a3/460c57f094a4a165c84a1341c373b0a4f5ec6ac244b998d5021aade89b77/ecdsa-0.19.1-py2.py3-none-any.whl", hash = "sha256:30638e27cf77b7e15c4c4cc1973720149e1033827cfd00661ca5c8cc0cdb24c3", size = 150607, upload-time = "2025-03-13T11:52:41.757Z" },
 ]
-
-[[package]]
-name = "efi-api"
-version = "0.0.1"
-source = { editable = "." }
-dependencies = [
-    { name = "authlib" },
-    { name = "avefi-schema" },
-    { name = "elasticsearch" },
-    { name = "fastapi" },
-    { name = "fastapi-csrf-protect" },
-    { name = "httpx" },
-    { name = "itsdangerous" },
-    { name = "pydantic-settings" },
-    { name = "python-jose", extra = ["cryptography"] },
-    { name = "python-multipart" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "authlib", specifier = ">=1.5.0,<2.0.0" },
-    { name = "avefi-schema", git = "https://github.com/AV-EFI/av-efi-schema.git" },
-    { name = "elasticsearch", specifier = ">=8.15.1,<9.0.0" },
-    { name = "fastapi", specifier = ">=0.110.0,<1.0.0" },
-    { name = "fastapi-csrf-protect", specifier = ">=1.0.3,<2.0.0" },
-    { name = "httpx", specifier = ">=0.28.1,<0.29.0" },
-    { name = "itsdangerous", specifier = ">=2.2.0,<3.0.0" },
-    { name = "pydantic-settings", specifier = ">=2.6.0,<3.0.0" },
-    { name = "python-jose", extras = ["cryptography"], specifier = ">=3.3.0,<4.0.0" },
-    { name = "python-multipart", specifier = ">=0.0.20,<0.0.21" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0,<1.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.4.1" }]
 
 [[package]]
 name = "elastic-transport"

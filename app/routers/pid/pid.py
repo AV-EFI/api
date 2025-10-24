@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from typing import Optional, List
 import base64
 import httpx
-from efi_api.helpers.auth import verify_token, get_auth_headers
-from efi_api.helpers.pid_create_tranfrom import wrap_pid_data
-from efi_api.core.config import settings
+from ...helpers.auth import verify_token, get_auth_headers
+from ...helpers.pid_create_tranfrom import wrap_pid_data
+from ...core.config import settings
 
 router = APIRouter()
 url = settings.PID_SERVICE_ADDRESS

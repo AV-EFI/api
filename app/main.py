@@ -77,4 +77,4 @@ app.mount(EFI_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 if __name__ == '__main__':
-    uvicorn.run("efi_api.main:app", host='0.0.0.0', port=8000)
+    uvicorn.run("app.main:app", host='0.0.0.0', port=8000)

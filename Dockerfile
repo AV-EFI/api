@@ -34,7 +34,7 @@ COPY uv.lock pyproject.toml README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy the source code
-COPY ./efi_api ./efi_api
+COPY ./app ./app
 
 # install main app
 RUN uv sync --frozen --no-dev
@@ -54,4 +54,4 @@ WORKDIR $PYSETUP_PATH
 EXPOSE $HTTP_PORT
 
 # --proxy-headers to trust headers from the proxy (e.g. Traefik)
-CMD exec $PYSETUP_PATH/.venv/bin/uvicorn efi_api.main:app --proxy-headers --host 0.0.0.0 --port $HTTP_PORT
+CMD exec $PYSETUP_PATH/.venv/bin/uvicorn app.main:app --proxy-headers --host 0.0.0.0 --port $HTTP_PORT

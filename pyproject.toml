@@ -1,5 +1,5 @@
 [project]
-name = "efi_api"
+name = "api"
 version = "0.0.1"
 description = "This is the backend for the AV-EFI project."
 authors = [
@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-rebuild_search_index = "efi_api.helpers.indexing:rebuild_search_index"
+rebuild_search_index = "app.helpers.indexing:rebuild_search_index"
 
 [dependency-groups]
 dev = [
@@ -37,7 +37,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = ""
-module-name = "efi_api"
+module-name = "app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

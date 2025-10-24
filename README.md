@@ -3,11 +3,11 @@
 ## Project setup
 
 This is the backend for the AV-EFI project. It uses [FastAPI][1] as a server framework and [Pytest][2] for unit test.
-The backend code is under the `efi_api` directory, while unit tests are under the `tests` one.
+The backend code is under the `app` directory, while unit tests are under the `tests` one.
 
 ### Dependency management
 
-[UV][4] is used for dependency management. Besides the main dependencies, the ones that required during development
+[uv][4] is used for dependency management. Besides the main dependencies, the ones that required during development
 only are put under the `dev` group. Please make sure to assign new dependencies to the proper group to reduce the
 package size in production.
 
@@ -61,7 +61,7 @@ pull images from the project. Otherwise, an `Access Denied` error will be thrown
 
 ## For developer
 
-- [Install UV][7]. Make sure that it is **not** installed in the same virtual environment of this project, since it might
+- [Install uv][7]. Make sure that it is **not** installed in the same virtual environment of this project, since it might
   cause some side effects.
 - Run `uv sync`.
 - The project is ready for development.

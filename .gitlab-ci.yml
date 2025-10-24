@@ -41,7 +41,7 @@ prepare_job:
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
-    - echo "TAG=$(cat efi_api/VERSION)" >> variables.env
+    - echo "TAG=$(cat app/VERSION)" >> variables.env
   artifacts:
     reports:
       dotenv: variables.env  # Use artifacts:reports:dotenv to expose the variables to other jobs
