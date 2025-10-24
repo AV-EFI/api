@@ -12,7 +12,8 @@ from .routers import auth, health, matches
 from .routers.frontend import frontend_search, view
 # from .routers.pid import create,update, pid
 
-EFI_PATH = f"/rest/v1"
+EFI_ROOT = "/rest"
+EFI_PATH = f"{EFI_ROOT}/v1"
 
 tags_metadata = [
     {
@@ -22,10 +23,6 @@ tags_metadata = [
     {
         'name': 'Frontend',
         'description': 'Internal endpoints for AVefi frontend.',
-    },
-    {
-        'name': 'Auth',
-        'description': 'Authenticate with OpenID Connect.',
     },
 ]
 
@@ -47,9 +44,15 @@ app = FastAPI(
     title='AV-EFI API',
     description='This is the backend for the AV-EFI project.',
     version=version,
-    docs_url=f"{EFI_PATH}/docs",
-    redoc_url=f"{EFI_PATH}/redoc",
-    openapi_url=f"{EFI_PATH}/openapi.json",
+    docs_url=f"{EFI_ROOT}/docs",
+    redoc_url=f"{EFI_ROOT}/redoc",
+    openapi_url=f"{EFI_ROOT}/openapi.json",
+    tags_metadata=[
+        {
+            'name': 'Auth',
+            'description': 'Authenticate with OpenID Connect.',
+        },
+    ],
 )
 app.add_middleware(
     SessionMiddleware, secret_key=settings.SESSION_SECRET,
