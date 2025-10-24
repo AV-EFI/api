@@ -10,7 +10,6 @@ from starlette.responses import JSONResponse, RedirectResponse
 
 from ..core.config import settings
 from ..helpers.auth import SESSION_TIMEOUT, valid_access_token
-from ..helpers.mock_auth import mock_pid_system_auth,create_access_token
 from ..schemas.auth import CsrfToken, Token, User
 
 
