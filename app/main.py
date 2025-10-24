@@ -16,9 +16,17 @@ EFI_PATH = f"/rest/v1"
 
 tags_metadata = [
     {
-        'name': 'hello',
-        'description': 'Say hello to the world!'
-    }
+        'name': 'Search',
+        'description': 'Search the database.',
+    },
+    {
+        'name': 'Frontend',
+        'description': 'Internal endpoints for AVefi frontend.',
+    },
+    {
+        'name': 'Auth',
+        'description': 'Authenticate with OpenID Connect.',
+    },
 ]
 
 loglevel = os.environ.get(
@@ -59,7 +67,7 @@ api = FastAPI(
     title='AV-EFI API',
     description='This is the backend for the AV-EFI project.',
     version=version,
-    # openapi_tags=tags_metadata,
+    openapi_tags=tags_metadata,
 )
 
 api.include_router(health.router, tags=["Health"])
