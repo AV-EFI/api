@@ -69,7 +69,7 @@ oauth.register(
     client_secret=settings.AC_SECRET_KEY,
     server_metadata_url=settings.AC_METADATA_URL,
     client_kwargs={
-        'scope': 'openid email profile',
+        'scope': 'openid email profile org',
         'code_challenge_method': "S256",
     }
 )
