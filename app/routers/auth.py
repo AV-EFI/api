@@ -121,10 +121,10 @@ async def auth(request: Request):
         current_time = int(datetime.utcnow().timestamp())
         scopes = token['scope'].split()
         user = dict(
-            name=userinfo['name'],
-            email=userinfo['email'],
-            uid=userinfo['uid'],
-            orgid=userinfo['ou'],
+            name=userinfo.get('name'),
+            email=userinfo.get('email'),
+            uid=userinfo.get('uid'),
+            orgid=userinfo.get('ou'),
         )
         request.session['token'] = dict(
             user=user,
