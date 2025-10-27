@@ -124,3 +124,11 @@ deploy-staging:
   rules:
     - if: $CI_COMMIT_BRANCH == "testbed"
   extends: .deploy
+
+deploy-production:
+  environment:
+    name: production
+    url: https://www.av-efi.net/rest/v1/docs
+  rules:
+    - if: $CI_COMMIT_BRANCH == "production"
+  extends: .deploy
