@@ -5,7 +5,6 @@ from pathlib import Path
 import elasticsearch
 import uvicorn
 from fastapi import APIRouter, FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -59,14 +58,6 @@ app = FastAPI(
 app.add_middleware(
     SessionMiddleware, secret_key=settings.SESSION_SECRET,
     same_site='lax', https_only=True, max_age=16 * 60 * 60)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust this to your needs
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 api = FastAPI(
     title='AV-EFI API',
