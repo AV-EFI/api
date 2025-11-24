@@ -2,9 +2,11 @@ import logging
 import os
 from pathlib import Path
 
+import elasticsearch
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from .core.config import settings
@@ -72,6 +74,11 @@ api = FastAPI(
     version=version,
     openapi_tags=tags_metadata,
 )
+
+@api.exception_handler(elasticsearch.NotFoundError)
+async def elastic_404_handler(
+        request: Request, exc: elasticsearch.NotFoundError) -> JSONResponse:
+    return JSONResponse(status_code=404, content="Not Found")
 
 api.include_router(health.router, tags=["Health"])
 # api.include_router(create.router, prefix="/pid", tags=["PID"])
