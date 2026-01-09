@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from unittest.mock import patch
 
@@ -123,7 +125,7 @@ def example_request():
     return SearchRequest(
         indexName=settings.ES_INDEX,
         params=SearchParams.model_validate({
-            "query": "DIE HEIMAT DES DON QUIJOTE",
+            "query": "Die Heimat des Don Quijote",
             "numeric-refinements": {
                 "production_in_year": {
                     ">=": 1953,
@@ -134,8 +136,10 @@ def example_request():
                 ["directors_or_editors:Hinke, Gisbert"]
             ],
             "facets": [
-                "castmembers", "production", "directors_or_editors",
-                "has_format_type", "subjects",
+                "has_colour_type",
+                "has_format_type",
+                "in_language_code",
+                "production_in_year"
             ],
             "highlightPreTag": "__ais-highlight__",
             "highlightPostTag": "__/ais-highlight__",
@@ -145,76 +149,9 @@ def example_request():
         }))
 
 @pytest.fixture
-def mock_es_response():
-    return {
-        "took": 10,
-        "hits": {
-            "total": {"value": 1, "relation": "eq"},
-            "max_score": 45.886757,
-            "hits": [{
-                "_index": "21.11155-denormalised-work",
-                "_id": "123",
-                "_score": 45.886757,
-                "_source": {
-                    "handle": "test/123",
-                    "has_record": {
-                        "has_primary_title": {
-                            "has_name": "DIE HEIMAT DES DON QUIJOTE"
-                        }
-                    },
-                    "castmembers": ["Actor 1"],
-                    "directors_or_editors": ["Gasquet, Nicole"],
-                    "subjects": ["Literature"],
-                    "production": ["Spain"],
-                    "production_in_year": [
-                        {
-                            "gte": 1953,
-                            "lte": 1953
-                        }
-                    ],
-                },
-                "highlight": {
-                    "directors_or_editors.keyword": [
-                        "__ais-highlight__Hinke, "
-                        "Gisbert__/ais-highlight__"
-                    ],
-                    "has_record.has_primary_title.has_name": [
-                        "__ais-highlight__DIE__/ais-highlight__ "
-                        "__ais-highlight__HEIMAT__/ais-highlight__ "
-                        "__ais-highlight__DES__/ais-highlight__ "
-                        "__ais-highlight__DON__/ais-highlight__ "
-                        "__ais-highlight__QUIJOTE__/ais-highlight__"
-                    ]
-                }
-            }]
-        },
-        "aggregations": {
-            "production.keyword": {
-                "buckets": [
-                    {"key": "Spain", "doc_count": 1}
-                ]
-            },
-            "directors_or_editors.keyword": {
-                "buckets": [
-                    {"key": "Gasquet, Nicole", "doc_count": 1}
-                ]
-            },
-            'manifestations': {
-                'doc_count': 1,
-                'items': {
-                    'doc_count': 6,
-                    'has_record.has_format.type.keyword': {
-                        'buckets': [
-                            {'doc_count': 5, 'key': '35mmFilm'},
-                            {'doc_count': 1, 'key': '17.5mmFilm'}
-                        ],
-                        'doc_count_error_upper_bound': 0,
-                        'sum_other_doc_count': 0
-                    }
-                }
-            }
-        }
-    }
+def mock_es_response(runtime_path_of):
+    with runtime_path_of('es_response_with_nested_facet.json').open() as f:
+        return json.load(f)
 
 def test_full_search_flow(mock_es_client, example_request, mock_es_response):
     # Setup mock ES response
@@ -234,14 +171,15 @@ def test_full_search_flow(mock_es_client, example_request, mock_es_response):
 
     # Verify transformed hits
     assert len(hits) == 1
-    assert hits[0]["objectID"] == "123"
-    assert hits[0]["directors_or_editors"] == ["Gasquet, Nicole"]
+    assert hits[0]["objectID"] == "6BF2032D-3640-4BF8-A5DF-0590526F875F"
+    assert hits[0]["directors_or_editors"] == ["Hinke, Gisbert"]
     assert hits[0]["production_in_year"][0]["gte"] == 1953
 
     # Verify transformed facets
-    assert facets["production"]["Spain"] == 1
-    assert facets["directors_or_editors"]["Gasquet, Nicole"] == 1
-    assert facets["has_format_type"] == {'35mmFilm': 5, '17.5mmFilm': 1}
+    assert facets['has_colour_type'] == {'BlackAndWhite': 2}
+    assert facets["has_format_type"] == {'35mmFilm': 1, '16mmFilm': 1}
+    assert facets["in_language_code"]["ger"] == 1
+    assert facets["production_in_year"][1953] == 1
 
 def test_empty_response_handling(mock_es_client):
     # Setup mock with empty response

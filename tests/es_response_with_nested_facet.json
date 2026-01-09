@@ -1,0 +1,288 @@
+{
+  "took": 15,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 1,
+      "relation": "eq"
+    },
+    "max_score": 45.885807,
+    "hits": [
+      {
+        "_index": "21.11155-denormalised-work",
+        "_id": "6BF2032D-3640-4BF8-A5DF-0590526F875F",
+        "_score": 45.885807,
+        "_source": {
+          "directors_or_editors": [
+            "Hinke, Gisbert"
+          ],
+          "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+          "@timestamp": 1758105308000,
+          "production_in_year": [
+            {
+              "gte": 1953,
+              "lte": 1953
+            }
+          ],
+          "has_record": {
+            "has_event": [
+              {
+                "has_activity": [
+                  {
+                    "category": "avefi:DirectingActivity",
+                    "type": "Director",
+                    "has_agent": [
+                      {
+                        "has_name": "Hinke, Gisbert",
+                        "category": "avefi:Agent",
+                        "type": "Person"
+                      }
+                    ]
+                  }
+                ],
+                "located_in": [
+                  {
+                    "has_name": "Deutschland",
+                    "category": "avefi:GeographicName"
+                  }
+                ],
+                "category": "avefi:ProductionEvent",
+                "has_date": "1953"
+              }
+            ],
+            "has_primary_title": {
+              "has_name": "DIE HEIMAT DES DON QUIJOTE",
+              "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE",
+              "type": "PreferredTitle"
+            },
+            "category": "avefi:WorkVariant",
+            "described_by": [
+              {
+                "has_source_key": [
+                  "1059751",
+                  "217303"
+                ],
+                "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+              }
+            ],
+            "type": "Monographic"
+          },
+          "handle": "21.11155/6BF2032D-3640-4BF8-A5DF-0590526F875F",
+          "url": "https://www.av-efi.net/film/6BF2032D-3640-4BF8-A5DF-0590526F875F",
+          "years": [
+            "1953"
+          ],
+          "manifestations": [
+            {
+              "handle": "21.11155/32296551-63B1-47B1-B816-A38BF2E02A74",
+              "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+              "@timestamp": 1758110151000,
+              "url": "https://www.av-efi.net/film/32296551-63B1-47B1-B816-A38BF2E02A74",
+              "has_record": {
+                "is_manifestation_of": [
+                  {
+                    "id": "21.11155/6BF2032D-3640-4BF8-A5DF-0590526F875F",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_item": [
+                  {
+                    "id": "21.11155/90500B55-CC10-4A24-8EC5-4BFB45939C44",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_primary_title": {
+                  "has_name": "DIE HEIMAT DES DON QUIJOTE",
+                  "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE",
+                  "type": "TitleProper"
+                },
+                "category": "avefi:Manifestation",
+                "described_by": {
+                  "has_source_key": [
+                    "1059751"
+                  ],
+                  "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                  "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                }
+              },
+              "items": [
+                {
+                  "handle": "21.11155/90500B55-CC10-4A24-8EC5-4BFB45939C44",
+                  "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+                  "@timestamp": 1758118331000,
+                  "url": "https://www.av-efi.net/film/90500B55-CC10-4A24-8EC5-4BFB45939C44",
+                  "has_record": {
+                    "is_item_of": {
+                      "id": "21.11155/32296551-63B1-47B1-B816-A38BF2E02A74",
+                      "category": "avefi:AVefiResource"
+                    },
+                    "has_format": [
+                      {
+                        "category": "avefi:Film",
+                        "type": "35mmFilm"
+                      }
+                    ],
+                    "has_colour_type": "BlackAndWhite",
+                    "has_primary_title": {
+                      "has_name": "DIE HEIMAT DES DON QUIJOTE",
+                      "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE",
+                      "type": "TitleProper"
+                    },
+                    "category": "avefi:Item",
+                    "described_by": {
+                      "has_source_key": [
+                        "1059751"
+                      ],
+                      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "handle": "21.11155/0502FC2E-3DEC-4E56-919B-BBE266829B1E",
+              "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+              "@timestamp": 1758110152000,
+              "url": "https://www.av-efi.net/film/0502FC2E-3DEC-4E56-919B-BBE266829B1E",
+              "has_record": {
+                "is_manifestation_of": [
+                  {
+                    "id": "21.11155/6BF2032D-3640-4BF8-A5DF-0590526F875F",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_item": [
+                  {
+                    "id": "21.11155/9E8D214A-3838-44D3-92FC-937002D6F264",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_primary_title": {
+                  "has_name": "DIE HEIMAT DES DON QUIJOTE",
+                  "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE",
+                  "type": "TitleProper"
+                },
+                "category": "avefi:Manifestation",
+                "described_by": {
+                  "has_source_key": [
+                    "217303"
+                  ],
+                  "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                  "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                }
+              },
+              "items": [
+                {
+                  "handle": "21.11155/9E8D214A-3838-44D3-92FC-937002D6F264",
+                  "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+                  "@timestamp": 1758118332000,
+                  "url": "https://www.av-efi.net/film/9E8D214A-3838-44D3-92FC-937002D6F264",
+                  "has_record": {
+                    "in_language": [
+                      {
+                        "code": "ger",
+                        "usage": [
+                          "SpokenLanguage"
+                        ]
+                      }
+                    ],
+                    "is_item_of": {
+                      "id": "21.11155/0502FC2E-3DEC-4E56-919B-BBE266829B1E",
+                      "category": "avefi:AVefiResource"
+                    },
+                    "has_format": [
+                      {
+                        "category": "avefi:Film",
+                        "type": "16mmFilm"
+                      }
+                    ],
+                    "has_colour_type": "BlackAndWhite",
+                    "has_primary_title": {
+                      "has_name": "DIE HEIMAT DES DON QUIJOTE",
+                      "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE",
+                      "type": "TitleProper"
+                    },
+                    "category": "avefi:Item",
+                    "described_by": {
+                      "has_source_key": [
+                        "217303"
+                      ],
+                      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "highlight": {
+          "directors_or_editors.keyword": [
+            "__ais-highlight__Hinke, Gisbert__/ais-highlight__"
+          ],
+          "has_record.has_primary_title.has_name": [
+            "__ais-highlight__DIE__/ais-highlight__ __ais-highlight__HEIMAT__/ais-highlight__ __ais-highlight__DES__/ais-highlight__ __ais-highlight__DON__/ais-highlight__ __ais-highlight__QUIJOTE__/ais-highlight__"
+          ]
+        }
+      }
+    ]
+  },
+  "aggregations": {
+    "manifestations": {
+      "doc_count": 2,
+      "items": {
+        "doc_count": 2,
+        "has_record.in_language.code.keyword": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "ger",
+              "doc_count": 1
+            }
+          ]
+        },
+        "has_record.has_colour_type.keyword": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "BlackAndWhite",
+              "doc_count": 2
+            }
+          ]
+        },
+        "has_record.has_format.type.keyword": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "16mmFilm",
+              "doc_count": 1
+            },
+            {
+              "key": "35mmFilm",
+              "doc_count": 1
+            }
+          ]
+        }
+      }
+    },
+    "production_in_year": {
+      "buckets": [
+        {
+          "key": 1953.0,
+          "doc_count": 1
+        }
+      ]
+    }
+  }
+}
