@@ -1,0 +1,32 @@
+[
+  {
+    "indexName": "test_index",
+    "params": {
+      "query": "Die Heimat des Don Quijote",
+      "facetFilters": [
+        [
+          "directors_or_editors:Hinke, Gisbert"
+        ]
+      ],
+      "facets": [
+        "production_in_year",
+        "has_colour_type",
+        "has_format_type",
+        "in_language_code"
+      ],
+      "numeric-refinements": {
+        "production_in_year": {
+          ">=": 1953,
+          "<=": 1953
+        }
+      },
+      "highlightPreTag": "__ais-highlight__",
+      "highlightPostTag": "__/ais-highlight__",
+      "hitsPerPage": 20,
+      "maxValuesPerFacet": 10,
+      "page": 0,
+      "analytics": true,
+      "clickAnalytics": true
+    }
+  }
+]
