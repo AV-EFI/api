@@ -299,7 +299,7 @@ class SearchAdapter:
         if filter_clause:
             query['query']['bool']['filter'] = filter_clause
         if params.facets:
-            query['aggs'] = self.get_aggs_clause(params)
+            query['aggs'] = self.get_aggs_clause(params, filter_clause)
         return query
 
     def get_filter_clause(self, params: SearchParams) -> List[dict]:
@@ -407,7 +407,8 @@ class SearchAdapter:
             }
         ]}
 
-    def get_aggs_clause(self, params: SearchParams) -> dict:
+    def get_aggs_clause(
+            self, params: SearchParams, filter_clause: List[dict]=[]) -> dict:
         # Copy facets and remove them one by one
         if params.facets:
             if isinstance(params.facets, list):
@@ -428,6 +429,14 @@ class SearchAdapter:
             raise HTTPException(
                 status_code=422,
                 detail=f"Request for undefined facet(s): {facets}")
+
+        nested_filters = defaultdict(list)
+        for entry in filter_clause:
+            nested = entry.get('nested')
+            if not nested:
+                continue
+            nested_filters[nested['path']].append(nested['query'])
+        self.add_filter_aggs(aggs_dict, nested_filters)
         return aggs_dict
 
     def add_aggregation(self, aggs: dict, facet_attr: dict):
@@ -461,6 +470,32 @@ class SearchAdapter:
         else:
             agg_type = "terms"
         aggs[path_segments[-1]] = {agg_type: agg_spec}
+
+    def add_filter_aggs(self, aggs: dict, nested_filters: dict, root_path=''):
+        for agg_key, agg in aggs.items():
+            nested = agg.get('nested')
+            if not nested:
+                continue
+            filter_list = []
+            check_path = root_path + agg_key
+            for filter_path, queries in nested_filters.items():
+                if filter_path == check_path:
+                    filter_list.extend(queries)
+                elif filter_path.startswith(f"{check_path}."):
+                    filter_list.append({
+                        "nested": {
+                            "path": filter_path,
+                            "query": {"bool": {"filter": queries}},
+                        }
+                    })
+            subaggs = agg['aggs']
+            agg['aggs'] = {
+                f"filtered_{agg_key}": {
+                    "filter": {"bool": {"filter": filter_list}},
+                    "aggs": subaggs,
+                }
+            }
+            self.add_filter_aggs(subaggs, nested_filters, f"{check_path}.")
 
     def transform_es_response(
             self, response: dict, request: SearchRequest) -> dict:
@@ -601,7 +636,9 @@ class SearchAdapter:
         for name, agg in es_aggregations.items():
             if not isinstance(agg, dict):
                 continue
-            if nested_path:
+            if name.startswith('filtered_'):
+                field = nested_path
+            elif nested_path:
                 field = f"{nested_path}.{name}"
             else:
                 field = name

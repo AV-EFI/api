@@ -1,5 +1,5 @@
 {
-  "took": 15,
+  "took": 11,
   "timed_out": false,
   "_shards": {
     "total": 1,
@@ -228,9 +228,83 @@
           "directors_or_editors.keyword": [
             "__ais-highlight__Hinke, Gisbert__/ais-highlight__"
           ],
+          "manifestations.items.has_record.has_format.type.keyword": [
+            "__ais-highlight__16mmFilm__/ais-highlight__"
+          ],
           "has_record.has_primary_title.has_name": [
             "__ais-highlight__DIE__/ais-highlight__ __ais-highlight__HEIMAT__/ais-highlight__ __ais-highlight__DES__/ais-highlight__ __ais-highlight__DON__/ais-highlight__ __ais-highlight__QUIJOTE__/ais-highlight__"
           ]
+        },
+        "inner_hits": {
+          "has_format_type": {
+            "hits": {
+              "total": {
+                "value": 1,
+                "relation": "eq"
+              },
+              "max_score": 1.0,
+              "hits": [
+                {
+                  "_index": "21.11155-denormalised-work",
+                  "_id": "6BF2032D-3640-4BF8-A5DF-0590526F875F",
+                  "_nested": {
+                    "field": "manifestations",
+                    "offset": 1,
+                    "_nested": {
+                      "field": "items",
+                      "offset": 0
+                    }
+                  },
+                  "_score": 1.0,
+                  "_source": {
+                    "handle": "21.11155/9E8D214A-3838-44D3-92FC-937002D6F264",
+                    "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+                    "@timestamp": 1758118332000,
+                    "url": "https://www.av-efi.net/film/9E8D214A-3838-44D3-92FC-937002D6F264",
+                    "has_record": {
+                      "in_language": [
+                        {
+                          "code": "ger",
+                          "usage": [
+                            "SpokenLanguage"
+                          ]
+                        }
+                      ],
+                      "is_item_of": {
+                        "id": "21.11155/0502FC2E-3DEC-4E56-919B-BBE266829B1E",
+                        "category": "avefi:AVefiResource"
+                      },
+                      "has_format": [
+                        {
+                          "category": "avefi:Film",
+                          "type": "16mmFilm"
+                        }
+                      ],
+                      "has_colour_type": "BlackAndWhite",
+                      "has_primary_title": {
+                        "has_name": "DIE HEIMAT DES DON QUIJOTE",
+                        "has_ordering_name": "HEIMAT DES DON QUIJOTE, DIE",
+                        "type": "TitleProper"
+                      },
+                      "category": "avefi:Item",
+                      "described_by": {
+                        "has_source_key": [
+                          "217303"
+                        ],
+                        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                      }
+                    }
+                  },
+                  "highlight": {
+                    "manifestations.items.has_record.has_format.type.keyword": [
+                      "__ais-highlight__16mmFilm__/ais-highlight__"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
         }
       }
     ]
@@ -238,41 +312,43 @@
   "aggregations": {
     "manifestations": {
       "doc_count": 2,
-      "items": {
-        "doc_count": 2,
-        "has_record.in_language.code.keyword": {
-          "doc_count_error_upper_bound": 0,
-          "sum_other_doc_count": 0,
-          "buckets": [
-            {
-              "key": "ger",
-              "doc_count": 1
-            }
-          ]
-        },
-        "has_record.has_colour_type.keyword": {
-          "doc_count_error_upper_bound": 0,
-          "sum_other_doc_count": 0,
-          "buckets": [
-            {
-              "key": "BlackAndWhite",
-              "doc_count": 2
-            }
-          ]
-        },
-        "has_record.has_format.type.keyword": {
-          "doc_count_error_upper_bound": 0,
-          "sum_other_doc_count": 0,
-          "buckets": [
-            {
-              "key": "16mmFilm",
-              "doc_count": 1
+      "filtered_manifestations": {
+        "doc_count": 1,
+        "items": {
+          "doc_count": 1,
+          "filtered_items": {
+            "doc_count": 1,
+            "has_record.in_language.code.keyword": {
+              "doc_count_error_upper_bound": 0,
+              "sum_other_doc_count": 0,
+              "buckets": [
+                {
+                  "key": "ger",
+                  "doc_count": 1
+                }
+              ]
             },
-            {
-              "key": "35mmFilm",
-              "doc_count": 1
+            "has_record.has_colour_type.keyword": {
+              "doc_count_error_upper_bound": 0,
+              "sum_other_doc_count": 0,
+              "buckets": [
+                {
+                  "key": "BlackAndWhite",
+                  "doc_count": 1
+                }
+              ]
+            },
+            "has_record.has_format.type.keyword": {
+              "doc_count_error_upper_bound": 0,
+              "sum_other_doc_count": 0,
+              "buckets": [
+                {
+                  "key": "16mmFilm",
+                  "doc_count": 1
+                }
+              ]
             }
-          ]
+          }
         }
       }
     },

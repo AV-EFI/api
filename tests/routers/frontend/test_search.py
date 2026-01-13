@@ -19,14 +19,14 @@ def mock_es_client():
 @pytest.fixture
 def example_request(runtime_path_of):
     with runtime_path_of(
-            'search_by_date_director_with_facets_request.json').open() as f:
+            'search_by_date_director_format_with_facets_request.json').open() as f:
         return json.load(f)
 
 
 def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     # Setup mock ES response
     with runtime_path_of(
-            'search_by_date_director_with_facets_response.json').open() as f:
+            'search_by_date_director_format_with_facets_response.json').open() as f:
         mock_es_client.search.return_value = json.load(f)
     response = client.post(f"{EFI_PATH}/frontend/search", json=example_request)
     assert response.status_code == 200, response.json()
@@ -44,8 +44,8 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     assert hits[0]["production_in_year"][0]["gte"] == 1953
 
     # Verify transformed facets
-    assert facets['has_colour_type'] == {'BlackAndWhite': 2}
-    assert facets["has_format_type"] == {'35mmFilm': 1, '16mmFilm': 1}
+    assert facets['has_colour_type'] == {'BlackAndWhite': 1}
+    assert facets["has_format_type"] == {'16mmFilm': 1}
     assert facets["in_language_code"]["ger"] == 1
     assert facets["production_in_year"]['1953'] == 1
 
