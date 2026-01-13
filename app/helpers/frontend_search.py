@@ -302,7 +302,7 @@ class SearchAdapter:
             query['aggs'] = self.get_aggs_clause(params)
         return query
 
-    def get_filter_clause(self, params: SearchParams) -> dict:
+    def get_filter_clause(self, params: SearchParams) -> List[dict]:
         """Build filter clause.
 
         API references:
