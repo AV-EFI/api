@@ -512,7 +512,7 @@ class SearchAdapter:
         # Handle case where hitsPerPage is 0
         hits_per_page = max(1, params.hitsPerPage)
         nb_pages = (total_hits + hits_per_page - 1) // hits_per_page
-        return {
+        result = {
             "index": request.indexName,
             "hits": hits,
             "facets": facets,
@@ -535,6 +535,14 @@ class SearchAdapter:
             "params": parse.urlencode(params.model_dump(exclude=None)),
             "renderingContent": self.renderingContent,
         }
+        manifestations = response.get('aggregations', {}).get(
+            'manifestations', {}).get('filtered_manifestations')
+        if manifestations:
+            result['nbManifestations'] = manifestations['doc_count']
+            items = manifestations.get('items', {}).get('filtered_items')
+            if items:
+                result['nbItems'] = items['doc_count']
+        return result
 
     def transform_hits(
             self, hits: list[dict], params: SearchParams) -> list[dict]:

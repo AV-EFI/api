@@ -37,6 +37,11 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     hits = result['hits']
     facets = result["facets"]
 
+    # Verify top-level numbers
+    assert result['nbHits'] == 1
+    assert result['nbManifestations'] == 1
+    assert result['nbItems'] == 1
+
     # Verify transformed hits
     assert len(hits) == 1
     assert hits[0]["objectID"] == "6BF2032D-3640-4BF8-A5DF-0590526F875F"
