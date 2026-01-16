@@ -28,15 +28,21 @@ class SearchAdapter:
             "weight": 2
         },{
             "field": "has_record.has_alternative_title.has_name",
-            "weight": 2
-        },{
-            "field": "production",
             "weight": 1
+        },{
+            "field": "parents.has_record.has_primary_title.has_name",
+            "weight": 1.5
         },{
             "field": "directors_or_editors",
-            "weight": 1
+            "weight": 2.5
         },{
             "field": "subjects",
+            "weight": 1
+        },{
+            "field": "years",
+            "weight": 1
+        },{
+            "field": "production",
             "weight": 1
         }
     ]
