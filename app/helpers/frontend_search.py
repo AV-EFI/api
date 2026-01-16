@@ -399,10 +399,12 @@ class SearchAdapter:
     def get_must_clause(self, query):
         return {"must": [
             {
-                "combined_fields": {
+                "multi_match": {
                     "query": query,
                     "fields": self.query_fields,
                     "zero_terms_query": "all",
+                    "fuzziness": "AUTO",
+                    "tie_breaker": 0.667,
                 }
             }
         ]}
