@@ -288,7 +288,7 @@ class SearchAdapter:
         params = request.params
         query = {
             "query": {
-                "bool": self.get_must_clause(params.query)
+                "bool": self.get_main_query_clause(params.query)
             },
             "size": params.hitsPerPage,
             "from": params.page * params.hitsPerPage,
@@ -402,18 +402,29 @@ class SearchAdapter:
             }
         return entry
 
-    def get_must_clause(self, query):
-        return {"must": [
-            {
-                "multi_match": {
-                    "query": query,
-                    "fields": self.query_fields,
-                    "zero_terms_query": "all",
-                    "fuzziness": "AUTO",
-                    "tie_breaker": 0.667,
+    def get_main_query_clause(self, query):
+        return {
+            "minimum_should_match": 1,
+            "should": [
+                {
+                    "multi_match": {
+                        "query": query,
+                        "fields": self.query_fields,
+                        "zero_terms_query": "all",
+                        "boost": 2,
+                    }
+                },
+                {
+                    "multi_match": {
+                        "query": query,
+                        "fields": self.query_fields,
+                        "zero_terms_query": "all",
+                        "fuzziness": "AUTO",
+                        "tie_breaker": 0.667,
+                    }
                 }
-            }
-        ]}
+            ]
+        }
 
     def get_aggs_clause(
             self, params: SearchParams, filter_clause: List[dict]=[]) -> dict:
