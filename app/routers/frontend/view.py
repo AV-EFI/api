@@ -10,14 +10,14 @@ from ...schemas.view import DetailView
 router = APIRouter()
 
 
-@router.get("/view/{prefix}/{id}", response_model=DetailView)
+@router.get("/view/{prefix}/{id_}", response_model=DetailView)
 async def get_detail(
         prefix: Annotated[str, Path(pattern="^21\\.\\d+$")],
-        id: Annotated[str, Path(pattern="^[!-~]+$")]) -> dict:
+        id_: Annotated[str, Path(pattern="^[!-~]+$")]) -> dict:
     """
     Get record by EFI.
     """
-    handle = f"{prefix}/{id}"
+    handle = f"{prefix}/{id_}"
     query = {"query": {"bool": {"filter": [{"bool": {"should": [
         {"term": {"handle.keyword": handle}},
         {"nested": {
@@ -40,14 +40,14 @@ async def get_detail(
             'handle': handle,
             'compound_record': response['hits']['hits'][0],
         }
-    response = es_client.get(index=settings.ES_LOOKUP_INDEX, id=id)
+    response = es_client.get(index=settings.ES_LOOKUP_INDEX, id=id_)
     result = response['_source']
     category = result.get('has_record', {}).get('category')
     if category == 'avefi:Item':
         manifestation_id = result['has_record']['is_item_of']['id']
-        prefix, id = manifestation_id.split('/', maxsplit=1)
+        prefix, id_ = manifestation_id.split('/', maxsplit=1)
         response = es_client.get(
-            index=settings.ES_LOOKUP_INDEX, id=id)
+            index=settings.ES_LOOKUP_INDEX, id=id_)
         result = response['_source']
         category = result.get('has_record', {}).get('category')
     if category == 'avefi:Manifestation':
@@ -60,7 +60,7 @@ async def get_detail(
                 f" indexed yet, try again later.")
         result['work_variants'] = work_variants
         items = collect_children(
-            settings.ES_LOOKUP_INDEX, f"{prefix}/{id}", 'is_item_of')
+            settings.ES_LOOKUP_INDEX, f"{prefix}/{id_}", 'is_item_of')
         if items:
             result['items'] = items
     elif category == 'avefi:WorkVariant':
@@ -70,17 +70,17 @@ async def get_detail(
         if parents:
             result['parents'] = parents
         parts = collect_children(
-            settings.ES_LOOKUP_INDEX, f"{prefix}/{id}", 'is_part_of')
+            settings.ES_LOOKUP_INDEX, f"{prefix}/{id_}", 'is_part_of')
         if parts:
             result['parts'] = parts
         variants = collect_children(
-            settings.ES_LOOKUP_INDEX, f"{prefix}/{id}", 'is_variant_of')
+            settings.ES_LOOKUP_INDEX, f"{prefix}/{id_}", 'is_variant_of')
         if variants:
             result['variants'] = variants
     else:
         raise RuntimeError(
             f"Unexpected category: {category} while resolving handle:"
-            f" {prefix}/{id}")
+            f" {prefix}/{id_}")
     return {
         'handle': handle,
         'compound_record': {
