@@ -100,7 +100,8 @@ def collect_children(index: str, parent_ref: str, reference_key: str):
     """Gather children linked to current document.
 
     Collect child documents referencing current document, e.g. items
-    linked to a manifestation.
+    linked to a manifestation. Disregard all items whose attribute
+    `has_access_status` is set to `Removed`.
 
     - `index`: Index to be used for lookup.
     - `parent_ref`: Handle identifying the parent doc.
@@ -116,7 +117,14 @@ def collect_children(index: str, parent_ref: str, reference_key: str):
                             f"has_record.{reference_key}.id.keyword": parent_ref
                         }
                     }
-                ]
+                ],
+                "must_not": [
+                    {
+                        "term": {
+                            "has_record.has_access_status.keyword": "Removed"
+                        }
+                    }
+                ],
             }
         }
     }

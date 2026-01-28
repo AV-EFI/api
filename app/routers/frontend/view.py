@@ -43,7 +43,10 @@ async def get_detail(
     response = es_client.get(index=settings.ES_LOOKUP_INDEX, id=id_)
     result = response['_source']
     category = result.get('has_record', {}).get('category')
+    removed_item = None
     if category == 'avefi:Item':
+        if result.get('has_record', {}).get('has_access_status') == 'Removed':
+            removed_item = result
         manifestation_id = result['has_record']['is_item_of']['id']
         prefix, id_ = manifestation_id.split('/', maxsplit=1)
         response = es_client.get(
@@ -51,19 +54,33 @@ async def get_detail(
         result = response['_source']
         category = result.get('has_record', {}).get('category')
     if category == 'avefi:Manifestation':
-        work_variants = collect_parents(
-            settings.ES_LOOKUP_INDEX, result, ['is_manifestation_of'])
-        if len(work_variants) < 2:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Works for manifestation {handle} not properly"
-                f" indexed yet, try again later.")
-        result['work_variants'] = work_variants
         items = collect_children(
             settings.ES_LOOKUP_INDEX, f"{prefix}/{id_}", 'is_item_of')
+        if removed_item:
+            items.append(removed_item)
         if items:
             result['items'] = items
-    elif category == 'avefi:WorkVariant':
+        work_variants = collect_parents(
+            settings.ES_LOOKUP_INDEX, result, ['is_manifestation_of'])
+        if len(work_variants) == 1:
+            manifestations = collect_children(
+                settings.ES_LOOKUP_INDEX,
+                work_variants[0]['handle'],
+                'is_manifestation_of')
+            if removed_item:
+                for i, manifestation in enumerate(manifestations):
+                    if manifestation.get('handle') == result['handle']:
+                        manifestations[i] = result
+                        break
+                else:
+                    manifestations.append(result)
+            result = work_variants[0]
+            category = result.get('has_record', {}).get('category')
+            if manifestations:
+                result['manifestations'] = manifestations
+        else:
+            result['work_variants'] = work_variants
+    if category == 'avefi:WorkVariant':
         parents = collect_parents(
             settings.ES_LOOKUP_INDEX, result, ['is_part_of', 'is_variant_of'],
             recursive=True)
@@ -77,10 +94,6 @@ async def get_detail(
             settings.ES_LOOKUP_INDEX, f"{prefix}/{id_}", 'is_variant_of')
         if variants:
             result['variants'] = variants
-    else:
-        raise RuntimeError(
-            f"Unexpected category: {category} while resolving handle:"
-            f" {prefix}/{id_}")
     return {
         'handle': handle,
         'compound_record': {
