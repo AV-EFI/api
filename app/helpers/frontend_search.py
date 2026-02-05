@@ -13,6 +13,7 @@ from ..schemas.frontend_search import SearchParams, SearchRequest
 
 
 logger = logging.getLogger(__name__)
+AGGREGATION_LIMIT = 1000
 
 
 class SearchAdapter:
@@ -437,6 +438,33 @@ class SearchAdapter:
         else:
             facets = []
         aggs_dict = defaultdict(dict)
+        aggs_dict = {
+            'manifestations': {
+                'nested': {'path': 'manifestations'},
+                'aggs': {
+                    'handle': {
+                        'terms': {
+                            'field': 'manifestations.handle.keyword',
+                            'min_doc_count': 1,
+                            'size': AGGREGATION_LIMIT,
+                        }
+                    },
+                    'items': {
+                        'nested': {'path': 'manifestations.items'},
+                        'aggs': {
+                            'handle': {
+                                'terms': {
+                                    'field':
+                                    'manifestations.items.handle.keyword',
+                                    'min_doc_count': 1,
+                                    'size': AGGREGATION_LIMIT,
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         for facet_attr in self.facet_attributes:
             try:
                 facets.remove(facet_attr["attribute"])
@@ -557,10 +585,20 @@ class SearchAdapter:
         manifestations = response.get('aggregations', {}).get(
             'manifestations', {}).get('filtered_manifestations')
         if manifestations:
-            result['nbManifestations'] = manifestations['doc_count']
+            result['nbManifestations'] = len(
+                manifestations['handle']['buckets'])
+            if result['nbManifestations'] >= AGGREGATION_LIMIT:
+                logger.error(
+                    f"nbManifestations exceeds {AGGREGATION_LIMIT}"
+                    f" (result={result})")
             items = manifestations.get('items', {}).get('filtered_items')
             if items:
-                result['nbItems'] = items['doc_count']
+                result['nbItems'] = len(
+                    items['handle']['buckets'])
+                if result['nbItems'] >= AGGREGATION_LIMIT:
+                    logger.error(
+                        f"nbItems exceeds {AGGREGATION_LIMIT}"
+                        f" (result={result})")
         return result
 
     def transform_hits(
@@ -675,7 +713,9 @@ class SearchAdapter:
                 self._transform_facets(
                     agg, facets, field)
             else:
-                attr = self.facet_by_path[field]
+                attr = self.facet_by_path.get(field)
+                if not attr:
+                    continue
                 attr_name = attr['attribute']
                 if attr['type'] == 'numeric-refinement':
                     get_key = lambda x: int(x['key'])
