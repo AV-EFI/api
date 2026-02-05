@@ -9,7 +9,7 @@ from fastapi import HTTPException
 
 from ..core.config import settings
 from ..core.elasticsearch import es_client
-from ..schemas.frontend_search import SearchParams, SearchRequest
+from ..schemas import frontend_search as sfs
 
 
 logger = logging.getLogger(__name__)
@@ -270,7 +270,7 @@ class SearchAdapter:
             field_path = '.'.join(path_segments)
             self.facet_by_path[field_path] = attr
 
-    def __call__(self, request: SearchRequest):
+    def __call__(self, request: sfs.SearchRequest):
         es_query = self.build_es_query(request)
         try:
             response = es_client.search(index=settings.ES_INDEX, body=es_query)
@@ -285,7 +285,7 @@ class SearchAdapter:
                 f"Error while parsing Elasticsearch response: {response}")
             raise
 
-    def build_es_query(self, request: SearchRequest) -> dict:
+    def build_es_query(self, request: sfs.SearchRequest) -> dict:
         params = request.params
         query = {
             "query": {
@@ -309,7 +309,7 @@ class SearchAdapter:
             query['aggs'] = self.get_aggs_clause(params, filter_clause)
         return query
 
-    def get_filter_clause(self, params: SearchParams) -> List[dict]:
+    def get_filter_clause(self, params: sfs.SearchParams) -> list[dict]:
         """Build filter clause.
 
         API references:
@@ -366,7 +366,7 @@ class SearchAdapter:
         return filter_list
 
     def _es_filter_from_facet(
-            self, facet_name: str, value, params: SearchParams):
+            self, facet_name: str, value, params: sfs.SearchParams):
         try:
             facet_attr = self.facet_by_name[facet_name]
         except KeyError:
@@ -428,7 +428,8 @@ class SearchAdapter:
         }
 
     def get_aggs_clause(
-            self, params: SearchParams, filter_clause: List[dict]=[]) -> dict:
+            self, params: sfs.SearchParams, filter_clause: list[dict]=[]
+    ) -> dict:
         # Copy facets and remove them one by one
         if params.facets:
             if isinstance(params.facets, list):
@@ -545,7 +546,8 @@ class SearchAdapter:
             self.add_filter_aggs(subaggs, nested_filters, f"{check_path}.")
 
     def transform_es_response(
-            self, response: dict, request: SearchRequest) -> dict:
+            self, response: dict, request: sfs.SearchRequest
+    ) -> sfs.SearchResult:
         """Return Algolia like response
 
         https://www.algolia.com/doc/api-reference/api-methods/search/
@@ -559,50 +561,49 @@ class SearchAdapter:
         # Handle case where hitsPerPage is 0
         hits_per_page = max(1, params.hitsPerPage)
         nb_pages = (total_hits + hits_per_page - 1) // hits_per_page
-        result = {
-            "index": request.indexName,
-            "hits": hits,
-            "facets": facets,
-            "facets_stats": {},
-            "page": params.page,
-            "nbPages": nb_pages,
-            "nbHits": total_hits,
-            "appliedRules": [],
+        result = sfs.SearchResult(
+            index=request.indexName,
+            hits=hits,
+            facets=facets,
+            facets_stats={},
+            page=params.page,
+            nbPages=nb_pages,
+            nbHits=total_hits,
+            appliedRules=[],
             # "exhaustiveNbHits": True,
             # "exhaustiveFacetsCount": True,
             # "exhaustiveTypo": True,
-            "exhaustive": {
-                "facetsCount": True,
-                "nbHits": True,
-                "typo": True
-            },
-            "hitsPerPage": params.hitsPerPage,
-            "processingTimeMS": response['took'],
-            "query": params.query,
-            "params": parse.urlencode(params.model_dump(exclude=None)),
-            "renderingContent": self.renderingContent,
-        }
+            exhaustive=sfs.Exhaustive(
+                facetsCount=True,
+                nbHits=True,
+                typo=True
+            ),
+            hitsPerPage=params.hitsPerPage,
+            processingTimeMS=response['took'],
+            query=params.query,
+            params=parse.urlencode(params.model_dump(exclude=None)),
+            renderingContent=self.renderingContent,
+        )
         manifestations = response.get('aggregations', {}).get(
             'manifestations', {}).get('filtered_manifestations')
         if manifestations:
-            result['nbManifestations'] = len(
+            result.nbManifestations = len(
                 manifestations['handle']['buckets'])
-            if result['nbManifestations'] >= AGGREGATION_LIMIT:
+            if result.nbManifestations >= AGGREGATION_LIMIT:
                 logger.error(
                     f"nbManifestations exceeds {AGGREGATION_LIMIT}"
                     f" (result={result})")
             items = manifestations.get('items', {}).get('filtered_items')
             if items:
-                result['nbItems'] = len(
-                    items['handle']['buckets'])
-                if result['nbItems'] >= AGGREGATION_LIMIT:
+                result.nbItems = len(items['handle']['buckets'])
+                if result.nbItems >= AGGREGATION_LIMIT:
                     logger.error(
                         f"nbItems exceeds {AGGREGATION_LIMIT}"
                         f" (result={result})")
         return result
 
     def transform_hits(
-            self, hits: list[dict], params: SearchParams) -> list[dict]:
+            self, hits: list[dict], params: sfs.SearchParams) -> list[dict]:
         """Make hits interpretable for instantsearch.
 
         See the following reference for API specifications with regard
