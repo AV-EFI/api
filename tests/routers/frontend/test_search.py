@@ -38,21 +38,21 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     facets = result["facets"]
 
     # Verify top-level numbers
-    assert result['nbHits'] == 1
-    assert result['nbManifestations'] == 1
-    assert result['nbItems'] == 1
+    assert result['nbHits'] == 2
+    assert result['nbManifestations'] == 2
+    assert result['nbItems'] == 2
 
     # Verify transformed hits
-    assert len(hits) == 1
+    assert len(hits) == 2
     assert hits[0]["objectID"] == "6BF2032D-3640-4BF8-A5DF-0590526F875F"
     assert hits[0]["directors_or_editors"] == ["Hinke, Gisbert"]
     assert hits[0]["production_in_year"][0]["gte"] == 1953
 
     # Verify transformed facets
-    assert facets['has_colour_type'] == {'BlackAndWhite': 1}
-    assert facets["has_format_type"] == {'16mmFilm': 1}
-    assert facets["in_language_code"]["ger"] == 1
-    assert facets["production_in_year"]['1953'] == 1
+    assert facets.get('has_colour_type') == {'BlackAndWhite': 2}
+    assert facets["has_format_type"] == {'16mmFilm': 2}
+    assert facets["in_language_code"]["ger"] == 2
+    assert facets["production_in_year"]['1953'] == 2
 
 
 def test_empty_response_handling(mock_es_client):

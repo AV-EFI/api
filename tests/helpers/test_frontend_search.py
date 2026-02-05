@@ -17,11 +17,19 @@ def test_build_es_query_basic_search():
 
     query = process_search_request.build_es_query(request)
 
-    assert query["query"]["bool"]["must"] == [
-        {"combined_fields": {
+    assert query["query"]["bool"]["should"] == [
+        {"multi_match": {
             "query": "test query",
             "fields": process_search_request.query_fields,
             "zero_terms_query": "all",
+            "boost": 2,
+        }},
+        {"multi_match": {
+            "query": "test query",
+            "fields": process_search_request.query_fields,
+            "zero_terms_query": "all",
+            "fuzziness": "AUTO",
+            "tie_breaker": 0.667,
         }},
     ]
     assert query["size"] == 20
@@ -43,9 +51,9 @@ def test_build_es_query_with_facet_filters():
     
     query = process_search_request.build_es_query(request)
     
-    assert len(query["query"]["bool"]["must"]) == 1
-    assert list(query["query"]["bool"]["must"][0].keys()) == [
-        "combined_fields"]
+    assert len(query["query"]["bool"]["should"]) == 2
+    assert list(query["query"]["bool"]["should"][0].keys()) == [
+        "multi_match"]
     assert len(query["query"]["bool"]["filter"]) == 2
     assert query["query"]["bool"]["filter"][0] == {
         "terms": {"directors_or_editors.keyword": ["Director 1"]},
@@ -101,9 +109,9 @@ def test_transform_facets():
             ]
         }
     }
-    
+
     transformed = process_search_request.transform_facets(mock_aggregations)
-    
+
     assert transformed["production"] == {
         "Germany": 10,
         "France": 5

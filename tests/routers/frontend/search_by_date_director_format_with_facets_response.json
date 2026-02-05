@@ -1,5 +1,5 @@
 {
-  "took": 11,
+  "took": 74,
   "timed_out": false,
   "_shards": {
     "total": 1,
@@ -9,15 +9,15 @@
   },
   "hits": {
     "total": {
-      "value": 1,
+      "value": 2,
       "relation": "eq"
     },
-    "max_score": 45.885807,
+    "max_score": 146.91513,
     "hits": [
       {
         "_index": "21.11155-denormalised-work",
         "_id": "6BF2032D-3640-4BF8-A5DF-0590526F875F",
-        "_score": 45.885807,
+        "_score": 146.91513,
         "_source": {
           "directors_or_editors": [
             "Hinke, Gisbert"
@@ -306,25 +306,334 @@
             }
           }
         }
+      },
+      {
+        "_index": "21.11155-denormalised-work",
+        "_id": "6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
+        "_score": 2.7627606,
+        "_source": {
+          "directors_or_editors": [
+            "Hinke, Gisbert"
+          ],
+          "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+          "@timestamp": 1758107895000,
+          "production_in_year": [
+            {
+              "gte": 1953,
+              "lte": 1953
+            }
+          ],
+          "has_record": {
+            "has_event": [
+              {
+                "has_activity": [
+                  {
+                    "category": "avefi:DirectingActivity",
+                    "type": "Director",
+                    "has_agent": [
+                      {
+                        "has_name": "Hinke, Gisbert",
+                        "category": "avefi:Agent",
+                        "type": "Person"
+                      }
+                    ]
+                  }
+                ],
+                "located_in": [
+                  {
+                    "has_name": "Deutschland",
+                    "category": "avefi:GeographicName"
+                  }
+                ],
+                "category": "avefi:ProductionEvent",
+                "has_date": "1953"
+              }
+            ],
+            "has_primary_title": {
+              "has_name": "DORF IN DER SIERRA",
+              "type": "PreferredTitle"
+            },
+            "category": "avefi:WorkVariant",
+            "described_by": [
+              {
+                "has_source_key": [
+                  "216558",
+                  "216559"
+                ],
+                "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+              }
+            ],
+            "type": "Monographic"
+          },
+          "handle": "21.11155/6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
+          "url": "https://www.av-efi.net/film/6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
+          "years": [
+            "1953"
+          ],
+          "manifestations": [
+            {
+              "handle": "21.11155/057CA1FD-DAD8-4DE2-A7BA-FA2776644A7A",
+              "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+              "@timestamp": 1758114738000,
+              "url": "https://www.av-efi.net/film/057CA1FD-DAD8-4DE2-A7BA-FA2776644A7A",
+              "has_record": {
+                "is_manifestation_of": [
+                  {
+                    "id": "21.11155/6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_item": [
+                  {
+                    "id": "21.11155/67D83EA8-8515-4DEA-B4AD-8FF6465BF9C1",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_primary_title": {
+                  "has_name": "DORF IN DER SIERRA",
+                  "type": "TitleProper"
+                },
+                "category": "avefi:Manifestation",
+                "described_by": {
+                  "has_source_key": [
+                    "216558"
+                  ],
+                  "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                  "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                }
+              },
+              "items": [
+                {
+                  "handle": "21.11155/67D83EA8-8515-4DEA-B4AD-8FF6465BF9C1",
+                  "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+                  "@timestamp": 1758122857000,
+                  "url": "https://www.av-efi.net/film/67D83EA8-8515-4DEA-B4AD-8FF6465BF9C1",
+                  "has_record": {
+                    "in_language": [
+                      {
+                        "code": "ger",
+                        "usage": [
+                          "SpokenLanguage"
+                        ]
+                      }
+                    ],
+                    "is_item_of": {
+                      "id": "21.11155/057CA1FD-DAD8-4DE2-A7BA-FA2776644A7A",
+                      "category": "avefi:AVefiResource"
+                    },
+                    "has_format": [
+                      {
+                        "category": "avefi:Film",
+                        "type": "16mmFilm"
+                      }
+                    ],
+                    "has_colour_type": "BlackAndWhite",
+                    "has_primary_title": {
+                      "has_name": "DORF IN DER SIERRA",
+                      "type": "TitleProper"
+                    },
+                    "category": "avefi:Item",
+                    "described_by": {
+                      "has_source_key": [
+                        "216558"
+                      ],
+                      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "handle": "21.11155/2396208D-17AD-43BD-B9A2-74D4D7253C57",
+              "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+              "@timestamp": 1758114743000,
+              "url": "https://www.av-efi.net/film/2396208D-17AD-43BD-B9A2-74D4D7253C57",
+              "has_record": {
+                "is_manifestation_of": [
+                  {
+                    "id": "21.11155/6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_item": [
+                  {
+                    "id": "21.11155/CF8F1E39-C6EC-42C4-9138-745E46649C94",
+                    "category": "avefi:AVefiResource"
+                  }
+                ],
+                "has_primary_title": {
+                  "has_name": "DORF IN DER SIERRA",
+                  "type": "TitleProper"
+                },
+                "category": "avefi:Manifestation",
+                "described_by": {
+                  "has_source_key": [
+                    "216559"
+                  ],
+                  "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                  "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                }
+              },
+              "items": [
+                {
+                  "handle": "21.11155/CF8F1E39-C6EC-42C4-9138-745E46649C94",
+                  "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+                  "@timestamp": 1758122868000,
+                  "url": "https://www.av-efi.net/film/CF8F1E39-C6EC-42C4-9138-745E46649C94",
+                  "has_record": {
+                    "in_language": [
+                      {
+                        "code": "ger",
+                        "usage": [
+                          "SpokenLanguage"
+                        ]
+                      }
+                    ],
+                    "is_item_of": {
+                      "id": "21.11155/2396208D-17AD-43BD-B9A2-74D4D7253C57",
+                      "category": "avefi:AVefiResource"
+                    },
+                    "has_format": [
+                      {
+                        "category": "avefi:Film",
+                        "type": "35mmFilm"
+                      }
+                    ],
+                    "has_colour_type": "BlackAndWhite",
+                    "has_primary_title": {
+                      "has_name": "DORF IN DER SIERRA",
+                      "type": "TitleProper"
+                    },
+                    "category": "avefi:Item",
+                    "described_by": {
+                      "has_source_key": [
+                        "216559"
+                      ],
+                      "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                      "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "highlight": {
+          "directors_or_editors.keyword": [
+            "__ais-highlight__Hinke, Gisbert__/ais-highlight__"
+          ],
+          "manifestations.items.has_record.has_format.type.keyword": [
+            "__ais-highlight__16mmFilm__/ais-highlight__"
+          ],
+          "has_record.has_primary_title.has_name": [
+            "DORF IN __ais-highlight__DER__/ais-highlight__ SIERRA"
+          ]
+        },
+        "inner_hits": {
+          "has_format_type": {
+            "hits": {
+              "total": {
+                "value": 1,
+                "relation": "eq"
+              },
+              "max_score": 1.0,
+              "hits": [
+                {
+                  "_index": "21.11155-denormalised-work",
+                  "_id": "6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
+                  "_nested": {
+                    "field": "manifestations",
+                    "offset": 0,
+                    "_nested": {
+                      "field": "items",
+                      "offset": 0
+                    }
+                  },
+                  "_score": 1.0,
+                  "_source": {
+                    "handle": "21.11155/67D83EA8-8515-4DEA-B4AD-8FF6465BF9C1",
+                    "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
+                    "@timestamp": 1758122857000,
+                    "url": "https://www.av-efi.net/film/67D83EA8-8515-4DEA-B4AD-8FF6465BF9C1",
+                    "has_record": {
+                      "in_language": [
+                        {
+                          "code": "ger",
+                          "usage": [
+                            "SpokenLanguage"
+                          ]
+                        }
+                      ],
+                      "is_item_of": {
+                        "id": "21.11155/057CA1FD-DAD8-4DE2-A7BA-FA2776644A7A",
+                        "category": "avefi:AVefiResource"
+                      },
+                      "has_format": [
+                        {
+                          "category": "avefi:Film",
+                          "type": "16mmFilm"
+                        }
+                      ],
+                      "has_colour_type": "BlackAndWhite",
+                      "has_primary_title": {
+                        "has_name": "DORF IN DER SIERRA",
+                        "type": "TitleProper"
+                      },
+                      "category": "avefi:Item",
+                      "described_by": {
+                        "has_source_key": [
+                          "216558"
+                        ],
+                        "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
+                        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                      }
+                    }
+                  },
+                  "highlight": {
+                    "manifestations.items.has_record.has_format.type.keyword": [
+                      "__ais-highlight__16mmFilm__/ais-highlight__"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     ]
   },
   "aggregations": {
     "manifestations": {
-      "doc_count": 2,
+      "doc_count": 4,
       "filtered_manifestations": {
-        "doc_count": 1,
+        "doc_count": 2,
+        "handle": {
+          "doc_count_error_upper_bound": 0,
+          "sum_other_doc_count": 0,
+          "buckets": [
+            {
+              "key": "21.11155/0502FC2E-3DEC-4E56-919B-BBE266829B1E",
+              "doc_count": 1
+            },
+            {
+              "key": "21.11155/057CA1FD-DAD8-4DE2-A7BA-FA2776644A7A",
+              "doc_count": 1
+            }
+          ]
+        },
         "items": {
-          "doc_count": 1,
+          "doc_count": 2,
           "filtered_items": {
-            "doc_count": 1,
+            "doc_count": 2,
             "has_record.in_language.code.keyword": {
               "doc_count_error_upper_bound": 0,
               "sum_other_doc_count": 0,
               "buckets": [
                 {
                   "key": "ger",
-                  "doc_count": 1
+                  "doc_count": 2
                 }
               ]
             },
@@ -334,6 +643,20 @@
               "buckets": [
                 {
                   "key": "BlackAndWhite",
+                  "doc_count": 2
+                }
+              ]
+            },
+            "handle": {
+              "doc_count_error_upper_bound": 0,
+              "sum_other_doc_count": 0,
+              "buckets": [
+                {
+                  "key": "21.11155/67D83EA8-8515-4DEA-B4AD-8FF6465BF9C1",
+                  "doc_count": 1
+                },
+                {
+                  "key": "21.11155/9E8D214A-3838-44D3-92FC-937002D6F264",
                   "doc_count": 1
                 }
               ]
@@ -344,7 +667,7 @@
               "buckets": [
                 {
                   "key": "16mmFilm",
-                  "doc_count": 1
+                  "doc_count": 2
                 }
               ]
             }
@@ -356,7 +679,7 @@
       "buckets": [
         {
           "key": 1953.0,
-          "doc_count": 1
+          "doc_count": 2
         }
       ]
     }
