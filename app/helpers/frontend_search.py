@@ -403,7 +403,26 @@ class SearchAdapter:
             }
         return entry
 
-    def get_main_query_clause(self, query):
+    def get_main_query_clause(self, query: str) -> dict:
+        """Build query for search string against appropriate fields.
+
+        Build a multi_match query for the search string against title,
+        alternative title, directors, etc. In fact, wrap two
+        multi_match queries, one exact and one with fuzziness enabled,
+        in a should query, boosting exact matches for a better search
+        experience.
+
+        Parameters
+        ----------
+        query : str
+            String originally entered into search input box.
+
+        Returns
+        -------
+        dict
+            Value part of a bool query.
+
+        """
         return {
             "minimum_should_match": 1,
             "should": [
@@ -430,6 +449,13 @@ class SearchAdapter:
     def get_aggs_clause(
             self, params: sfs.SearchParams, filter_clause: list[dict]=[]
     ) -> dict:
+        """Build complete aggregations section of the ES query.
+
+        Build aggregations according to requested facets.
+        Additionally, aggregate on manifestation and item handles in
+        order to count duplicate documents due to denormalisation. See 
+
+        """
         # Copy facets and remove them one by one
         if params.facets:
             if isinstance(params.facets, list):
@@ -548,9 +574,29 @@ class SearchAdapter:
     def transform_es_response(
             self, response: dict, request: sfs.SearchRequest
     ) -> sfs.SearchResult:
-        """Return Algolia like response
+        """Return Algolia like response.
 
+        Transform the ES response into an Algolia like search
+        response. See here for reference:
         https://www.algolia.com/doc/api-reference/api-methods/search/
+
+        Note that nbManifestations and nbItems are AVefi specific
+        additions. They are determined as the number of nested
+        manifestations / items with pairwise distinct handles. This
+        way, compilation manifestations appearing as nested documents
+        of multiple works are counted just once.
+
+        Parameters
+        ----------
+        response : dict
+            Response from Elasticsearch to be transformed.
+        request : sfs.SearchRequest
+            Original request received from client.
+
+        Returns
+        -------
+        sfs.SearchResult
+            Algolia compliant search result.
 
         """
         params = request.params
