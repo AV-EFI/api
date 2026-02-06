@@ -19,19 +19,17 @@ NESTED_MAPPINGS = {
                 "has_event": {
                     "type": "nested",
                     "properties": {
-                        "has_activity": {
-                            "type": "nested"
-                        },
+                        "has_activity": {"type": "nested"},
                         "has_date": {
                             "type": "text",
                             "fields": {
                                 "keyword": {
                                     "type": "keyword",
-                                    "ignore_above": 256
+                                    "ignore_above": 256,
                                 }
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 "has_extent": {
                     "properties": {
@@ -40,29 +38,20 @@ NESTED_MAPPINGS = {
                             "fields": {
                                 "keyword": {
                                     "type": "keyword",
-                                    "ignore_above": 256
+                                    "ignore_above": 256,
                                 }
-                            }
+                            },
                         }
                     }
-                }
+                },
             }
         },
-        "duration_in_minutes": {
-            "type": "integer"
-        },
-        "production_in_year": {
-            "type": "integer_range"
-        },
+        "duration_in_minutes": {"type": "integer"},
+        "production_in_year": {"type": "integer_range"},
         "years": {
             "type": "text",
-            "fields": {
-                "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                }
-            }
-        }
+            "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+        },
     }
 }
 DENORMALISED_MAPPINGS = {
@@ -74,21 +63,17 @@ DENORMALISED_MAPPINGS = {
                 **NESTED_MAPPINGS["properties"],
                 "items": {
                     "type": "nested",
-                    "properties": {
-                        **NESTED_MAPPINGS["properties"]
-                    }
-                }
-            }
+                    "properties": {**NESTED_MAPPINGS["properties"]},
+                },
+            },
         },
         "parents": {
             "type": "nested",
-            "properties": {
-                **NESTED_MAPPINGS["properties"]
-            }
-        }
+            "properties": {**NESTED_MAPPINGS["properties"]},
+        },
     }
 }
-AVEFI_PIPELINE = 'avefi-pipeline'
+AVEFI_PIPELINE = "avefi-pipeline"
 INGEST_PROCESSORS = [
     {
         "script": {
@@ -197,7 +182,7 @@ INGEST_PROCESSORS = [
               if (!event_in_year.empty) {
                 ctx.production_in_year = event_in_year;
               }
-            """
+            """,
         }
     },
     {
@@ -211,7 +196,7 @@ INGEST_PROCESSORS = [
                 subjects.add(subject.has_name)
               }
               ctx.subjects = subjects;
-            """
+            """,
         }
     },
     {
@@ -227,28 +212,27 @@ INGEST_PROCESSORS = [
                 result = Integer.parseInt(durationComponent.group(2)) + result;
                 ctx.duration_in_minutes = result;
               }
-            """ # noqa
+            """,  # noqa: E501
         }
-    }
+    },
 ]
 
 
 def rebuild_nested_index():
     es_client.ingest.put_pipeline(
-        id=AVEFI_PIPELINE, processors=INGEST_PROCESSORS)
+        id=AVEFI_PIPELINE, processors=INGEST_PROCESSORS
+    )
     es_client.indices.delete(index=NESTED_INDEX, ignore_unavailable=True)
     es_client.indices.create(
-        index=NESTED_INDEX, mappings=NESTED_MAPPINGS, settings={
-            'index.default_pipeline': AVEFI_PIPELINE
-        })
+        index=NESTED_INDEX,
+        mappings=NESTED_MAPPINGS,
+        settings={"index.default_pipeline": AVEFI_PIPELINE},
+    )
     es_client.reindex(
-        dest={
-            "index": NESTED_INDEX
-        },
-        source={
-            "index": PRIMARY_INDEX
-        },
-        refresh=True)
+        dest={"index": NESTED_INDEX},
+        source={"index": PRIMARY_INDEX},
+        refresh=True,
+    )
 
 
 def denormalise_work(index, doc):
@@ -279,19 +263,21 @@ def denormalise_work(index, doc):
     """
     manifestations = []
     for manifestation in collect_children(
-            index, doc['handle'], 'is_manifestation_of'):
-        items = collect_children(index, manifestation['handle'], 'is_item_of')
+        index, doc["handle"], "is_manifestation_of"
+    ):
+        items = collect_children(index, manifestation["handle"], "is_item_of")
         if not items:
             continue
-        manifestation['items'] = items
+        manifestation["items"] = items
         manifestations.append(manifestation)
     if not manifestations:
         return False
-    doc['manifestations'] = manifestations
+    doc["manifestations"] = manifestations
     parents = collect_parents(
-        index, doc, ['is_part_of', 'is_variant_of'], recursive=True)
+        index, doc, ["is_part_of", "is_variant_of"], recursive=True
+    )
     if parents:
-        doc['parents'] = parents
+        doc["parents"] = parents
     return True
 
 
@@ -319,26 +305,25 @@ def full_reindex(source_idx, target_idx):
     """
     query = {
         "query": {
-            "bool": {
-                "filter": [filter_by_category('avefi:WorkVariant')]
-            }
+            "bool": {"filter": [filter_by_category("avefi:WorkVariant")]}
         }
     }
     request_stack = []
     # Increase scroll value for full index
-    for doc in es_iter(index=source_idx, query=query, scroll='10m'):
+    for doc in es_iter(index=source_idx, query=query, scroll="10m"):
         doc_source = doc["_source"]
         if denormalise_work(source_idx, doc_source):
             request = {
-                '_op_type': 'index',
-                '_index': target_idx,
-                '_id': doc['_id'],
-                '_source': doc_source,
+                "_op_type": "index",
+                "_index": target_idx,
+                "_id": doc["_id"],
+                "_source": doc_source,
             }
             request_stack.append(request)
             if len(request_stack) > BULK_SIZE:
                 res = helpers.bulk(
-                    es_client, request_stack, raise_on_error=False)
+                    es_client, request_stack, raise_on_error=False
+                )
                 if res[1]:
                     raise RuntimeError(f"Bulk indexing failed: {res}")
                 del request_stack[:]
@@ -350,10 +335,10 @@ def full_reindex(source_idx, target_idx):
 
 
 def rebuild_denormalised_index():
-    es_client.indices.delete(
-        index=DENORMALISED_INDEX, ignore_unavailable=True)
+    es_client.indices.delete(index=DENORMALISED_INDEX, ignore_unavailable=True)
     es_client.indices.create(
-        index=DENORMALISED_INDEX, mappings=DENORMALISED_MAPPINGS)
+        index=DENORMALISED_INDEX, mappings=DENORMALISED_MAPPINGS
+    )
     full_reindex(NESTED_INDEX, DENORMALISED_INDEX)
 
 

@@ -23,28 +23,16 @@ class SearchAdapter:
     """
 
     search_attributes = [
+        {"field": "has_record.has_primary_title.has_name", "weight": 2},
+        {"field": "has_record.has_alternative_title.has_name", "weight": 1},
         {
-            "field": "has_record.has_primary_title.has_name",
-            "weight": 2
-        },{
-            "field": "has_record.has_alternative_title.has_name",
-            "weight": 1
-        },{
             "field": "parents.has_record.has_primary_title.has_name",
-            "weight": 1.5
-        },{
-            "field": "directors_or_editors",
-            "weight": 2.5
-        },{
-            "field": "subjects",
-            "weight": 1
-        },{
-            "field": "years",
-            "weight": 1
-        },{
-            "field": "production",
-            "weight": 1
-        }
+            "weight": 1.5,
+        },
+        {"field": "directors_or_editors", "weight": 2.5},
+        {"field": "subjects", "weight": 1},
+        {"field": "years", "weight": 1},
+        {"field": "production", "weight": 1},
     ]
 
     result_attributes = [
@@ -75,143 +63,141 @@ class SearchAdapter:
         "manifestations.has_record.is_manifestation_of",
         "manifestations.items",
         "production_in_year.lte",
-        "production_in_year.gte"
+        "production_in_year.gte",
     ]
 
     facet_attributes = [
         {
             "attribute": "production_in_year",
             "field": "production_in_year",
-            "type": "numeric-refinement"
-        },{
+            "type": "numeric-refinement",
+        },
+        {
             "attribute": "has_genre_has_name",
             "field": "has_record.has_genre.has_name.keyword",
-            "type": "string"
-        },{
+            "type": "string",
+        },
+        {
             "attribute": "subjects",
             "field": "subjects.keyword",
-            "type": "string"
-        },{
+            "type": "string",
+        },
+        {
             "attribute": "directors_or_editors",
             "field": "directors_or_editors.keyword",
-            "type": "string"
-        },{
+            "type": "string",
+        },
+        {
             "attribute": "castmembers",
             "field": "castmembers.keyword",
-            "type": "string"
-        },{
+            "type": "string",
+        },
+        {
             "attribute": "production",
             "field": "production.keyword",
-            "type": "string"
-        },{
+            "type": "string",
+        },
+        {
             "attribute": "located_in_has_name",
             "field": "located_in.has_name.keyword",
             "type": "string",
-            "nested_paths": ["has_record.has_event"]
-        },{
+            "nested_paths": ["has_record.has_event"],
+        },
+        {
             "attribute": "has_form",
             "field": "has_record.has_form.keyword",
-            "type": "string"
-        },{
+            "type": "string",
+        },
+        {
             "attribute": "manifestation_event_type",
             "field": "type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "has_record.has_event"]
-        },{
+            "nested_paths": ["manifestations", "has_record.has_event"],
+        },
+        {
             "attribute": "has_issuer_name",
             "field": "has_record.described_by.has_issuer_name.keyword",
             "type": "string",
-            "nested_paths": ["manifestations"]
-        },{
+            "nested_paths": ["manifestations"],
+        },
+        {
             "attribute": "has_format_type",
             "field": "has_record.has_format.type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
+            "nested_paths": ["manifestations", "items"],
+        },
+        {
             "attribute": "has_colour_type",
             "field": "has_record.has_colour_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
+            "nested_paths": ["manifestations", "items"],
+        },
+        {
             "attribute": "has_sound_type",
             "field": "has_record.has_sound_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
+            "nested_paths": ["manifestations", "items"],
+        },
+        {
             "attribute": "in_language_code",
             "field": "has_record.in_language.code.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
+            "nested_paths": ["manifestations", "items"],
+        },
+        {
             "attribute": "has_duration_has_value",
             "field": "has_record.has_duration.has_value.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"]
-        },{
+            "nested_paths": ["manifestations", "items"],
+        },
+        {
             "attribute": "has_extent_has_value",
             "field": "has_record.has_extent.has_value.keyword",
             "type": "string",
             "nested_paths": ["manifestations", "items"],
-        },{
+        },
+        {
             "attribute": "item_duration_in_minutes",
             "field": "duration_in_minutes",
             "type": "numeric-refinement",
             "nested_paths": ["manifestations", "items"],
-        },{
+        },
+        {
             "attribute": "item_element_type",
             "field": "has_record.element_type.keyword",
             "type": "string",
             "nested_paths": ["manifestations", "items"],
-        },{
+        },
+        {
             "attribute": "has_access_status",
             "field": "has_record.has_access_status.keyword",
             "type": "string",
             "nested_paths": ["manifestations", "items"],
-        }
+        },
     ]
 
     sorting = {
         "default": [
+            {"field": "_score", "order": "desc"},
             {
-                "field": "_score",
-                "order": "desc"
-            },{
                 "field": "has_record.has_primary_title.has_name.keyword",
-                "order": "asc"
-            }
+                "order": "asc",
+            },
         ],
         "_title_asc": {
             "field": "has_record.has_primary_title.has_name",
-            "order": "asc"
+            "order": "asc",
         },
         "_title_desc": {
             "field": "has_record.has_primary_title.has_name",
-            "order": "desc"
+            "order": "desc",
         },
-        "_year_asc": {
-            "field": "year",
-            "order": "asc"
-        },
-        "_year_desc": {
-            "field": "year",
-            "order": "desc"
-        },
-        "_directors_asc": {
-            "field": "directors_or_editors",
-            "order": "asc"
-        },
-        "_directors_desc": {
-            "field": "directors_or_editors",
-            "order": "desc"
-        },
-        "_production_asc": {
-            "field": "production",
-            "order": "asc"
-        },
-        "_production_desc": {
-            "field": "production",
-            "order": "desc"
-        }
+        "_year_asc": {"field": "year", "order": "asc"},
+        "_year_desc": {"field": "year", "order": "desc"},
+        "_directors_asc": {"field": "directors_or_editors", "order": "asc"},
+        "_directors_desc": {"field": "directors_or_editors", "order": "desc"},
+        "_production_asc": {"field": "production", "order": "asc"},
+        "_production_desc": {"field": "production", "order": "desc"},
     }
 
     # Refer to: https://www.algolia.com/doc/guides/building-search-ui/ui-and-ux-patterns/facet-display/js/
@@ -233,7 +219,7 @@ class SearchAdapter:
                     "manifestation_event_type",
                     "has_colour_type",
                     "item_element_type",
-                    "has_form"
+                    "has_form",
                 ]
             },
             "values": {
@@ -251,8 +237,8 @@ class SearchAdapter:
                 "manifestation_event_type": {"sortRemainingBy": "count"},
                 "has_colour_type": {"sortRemainingBy": "count"},
                 "item_element_type": {"sortRemainingBy": "count"},
-                "has_form": {"sortRemainingBy": "count"}
-            }
+                "has_form": {"sortRemainingBy": "count"},
+            },
         }
     }
 
@@ -263,10 +249,10 @@ class SearchAdapter:
         self.facet_by_name = {}
         self.facet_by_path = {}
         for attr in self.facet_attributes:
-            self.facet_by_name[attr['attribute']] = attr
-            path_segments = attr.get('nested_paths', []).copy()
-            path_segments.append(attr['field'])
-            field_path = '.'.join(path_segments)
+            self.facet_by_name[attr["attribute"]] = attr
+            path_segments = attr.get("nested_paths", []).copy()
+            path_segments.append(attr["field"])
+            field_path = ".".join(path_segments)
             self.facet_by_path[field_path] = attr
 
     def __call__(self, request: sfs.SearchRequest):
@@ -274,22 +260,20 @@ class SearchAdapter:
         try:
             response = es_client.search(index=settings.ES_INDEX, body=es_query)
         except Exception:
-            logger.error(
-                f"Elasticsearch query failed: {json.dumps(es_query)}")
+            logger.error(f"Elasticsearch query failed: {json.dumps(es_query)}")
             raise
         try:
             return self.transform_es_response(response, request)
         except Exception:
             logger.error(
-                f"Error while parsing Elasticsearch response: {response}")
+                f"Error while parsing Elasticsearch response: {response}"
+            )
             raise
 
     def build_es_query(self, request: sfs.SearchRequest) -> dict:
         params = request.params
         query = {
-            "query": {
-                "bool": self.get_main_query_clause(params.query)
-            },
+            "query": {"bool": self.get_main_query_clause(params.query)},
             "size": params.hitsPerPage,
             "from": params.page * params.hitsPerPage,
             "highlight": {
@@ -299,13 +283,13 @@ class SearchAdapter:
                         "post_tags": [params.highlightPostTag],
                     }
                 }
-            }
+            },
         }
         filter_clause = self.get_filter_clause(params)
         if filter_clause:
-            query['query']['bool']['filter'] = filter_clause
+            query["query"]["bool"]["filter"] = filter_clause
         if params.facets:
-            query['aggs'] = self.get_aggs_clause(params, filter_clause)
+            query["aggs"] = self.get_aggs_clause(params, filter_clause)
         return query
 
     def get_filter_clause(self, params: sfs.SearchParams) -> list[dict]:
@@ -323,7 +307,7 @@ class SearchAdapter:
                 subfilter_dict = defaultdict(list)
                 for subfilter in filter_group:
                     try:
-                        key, term = subfilter.split(':', maxsplit=1)
+                        key, term = subfilter.split(":", maxsplit=1)
                     except ValueError as e:
                         raise HTTPException(
                             status_code=422,
@@ -333,17 +317,20 @@ class SearchAdapter:
                 subfilter_list = []
                 for key, val in subfilter_dict.items():
                     subfilter_list.append(
-                        self._es_filter_from_facet(key, val, params))
+                        self._es_filter_from_facet(key, val, params)
+                    )
                 if len(subfilter_list) == 1:
                     entry = subfilter_list[0]
                 elif len(subfilter_list) > 1:
-                    entry = {"bool": {
-                        "should": subfilter_list,
-                        "minimum_should_match": 1,
-                    }}
+                    entry = {
+                        "bool": {
+                            "should": subfilter_list,
+                            "minimum_should_match": 1,
+                        }
+                    }
             else:
                 try:
-                    key, term = filter_group.split(':', maxsplit=1)
+                    key, term = filter_group.split(":", maxsplit=1)
                 except ValueError as e:
                     raise HTTPException(
                         status_code=422,
@@ -355,10 +342,10 @@ class SearchAdapter:
             for key, refinement in params.numericRefinements.items():
                 range_dict = {
                     {
-                        '<': 'lt',
-                        '<=': 'lte',
-                        '>=': 'gte',
-                        '>': 'gt',
+                        "<": "lt",
+                        "<=": "lte",
+                        ">=": "gte",
+                        ">": "gt",
                     }[k]: v
                     for k, v in refinement.items()
                 }
@@ -367,26 +354,28 @@ class SearchAdapter:
         return filter_list
 
     def _es_filter_from_facet(
-            self, facet_name: str, value, params: sfs.SearchParams):
+        self, facet_name: str, value, params: sfs.SearchParams
+    ):
         try:
             facet_attr = self.facet_by_name[facet_name]
         except KeyError as e:
             raise HTTPException(
-                status_code=422,
-                detail=f"Unknown facet filter: {facet_name}") from e
+                status_code=422, detail=f"Unknown facet filter: {facet_name}"
+            ) from e
         path_segments = facet_attr.get("nested_paths", []).copy()
         path_segments.append(facet_attr["field"])
-        if facet_attr['type'] == 'string':
-            entry = {"terms": {'.'.join(path_segments): value}}
-        elif facet_attr['type'] == 'numeric-refinement':
-            entry = {"range": {'.'.join(path_segments): value}}
+        if facet_attr["type"] == "string":
+            entry = {"terms": {".".join(path_segments): value}}
+        elif facet_attr["type"] == "numeric-refinement":
+            entry = {"range": {".".join(path_segments): value}}
         else:
             raise ValueError(
-                f"Cannot handle facet attribute type: {facet_attr['type']}")
+                f"Cannot handle facet attribute type: {facet_attr['type']}"
+            )
         if len(path_segments) > 1:
             entry = {
                 "nested": {
-                    "path": '.'.join(path_segments[:-1]),
+                    "path": ".".join(path_segments[:-1]),
                     "query": entry,
                     "inner_hits": {
                         "name": facet_name,
@@ -398,8 +387,8 @@ class SearchAdapter:
                                     "post_tags": [params.highlightPostTag],
                                 }
                             }
-                        }
-                    }
+                        },
+                    },
                 }
             }
         return entry
@@ -443,12 +432,13 @@ class SearchAdapter:
                         "fuzziness": "AUTO",
                         "tie_breaker": 0.667,
                     }
-                }
-            ]
+                },
+            ],
         }
 
     def get_aggs_clause(
-            self, params: sfs.SearchParams, filter_clause: list[dict]) -> dict:
+        self, params: sfs.SearchParams, filter_clause: list[dict]
+    ) -> dict:
         """Build complete aggregations section of the ES query.
 
         Build aggregations according to requested facets.
@@ -468,32 +458,32 @@ class SearchAdapter:
             facets = []
         aggs_dict = defaultdict(dict)
         aggs_dict = {
-            'manifestations': {
-                'nested': {'path': 'manifestations'},
-                'aggs': {
-                    'handle': {
-                        'terms': {
-                            'field': 'manifestations.handle.keyword',
-                            'min_doc_count': 1,
-                            'size': AGGREGATION_LIMIT,
+            "manifestations": {
+                "nested": {"path": "manifestations"},
+                "aggs": {
+                    "handle": {
+                        "terms": {
+                            "field": "manifestations.handle.keyword",
+                            "min_doc_count": 1,
+                            "size": AGGREGATION_LIMIT,
                         }
                     },
-                    'items': {
-                        'nested': {'path': 'manifestations.items'},
-                        'aggs': {
-                            'handle': {
-                                'terms': {
-                                    'field':
-                                    'manifestations.items.handle.keyword',
-                                    'min_doc_count': 1,
-                                    'size': AGGREGATION_LIMIT,
+                    "items": {
+                        "nested": {"path": "manifestations.items"},
+                        "aggs": {
+                            "handle": {
+                                "terms": {
+                                    "field":
+                                    "manifestations.items.handle.keyword",
+                                    "min_doc_count": 1,
+                                    "size": AGGREGATION_LIMIT,
                                 }
                             }
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             }
-        }
+        }  # fmt: skip
         for facet_attr in self.facet_attributes:
             try:
                 facets.remove(facet_attr["attribute"])
@@ -504,14 +494,15 @@ class SearchAdapter:
         if facets:
             raise HTTPException(
                 status_code=422,
-                detail=f"Request for undefined facet(s): {facets}")
+                detail=f"Request for undefined facet(s): {facets}",
+            )
 
         nested_filters = defaultdict(list)
         for entry in filter_clause:
-            nested = entry.get('nested')
+            nested = entry.get("nested")
             if not nested:
                 continue
-            nested_filters[nested['path']].append(nested['query'])
+            nested_filters[nested["path"]].append(nested["query"])
         self.add_filter_aggs(aggs_dict, nested_filters)
         return aggs_dict
 
@@ -523,33 +514,36 @@ class SearchAdapter:
             key = path_segments[level]
             if key not in aggs:
                 aggs[key] = {
-                    'nested': {'path': '.'.join(path_segments[:level+1])},
-                    'aggs': defaultdict(dict),
+                    "nested": {"path": ".".join(path_segments[: level + 1])},
+                    "aggs": defaultdict(dict),
                 }
-            elif 'aggs' not in aggs[key]:
+            elif "aggs" not in aggs[key]:
                 raise HTTPException(
                     status_code=422,
                     detail=f"Collision between nested aggregation at"
                     f" {'.'.join(path_segments)} and another at"
-                    f" {'.'.join(path_segments[:level+1])}: {aggs[key]}")
-            aggs = aggs[key]['aggs']
+                    f" {'.'.join(path_segments[: level + 1])}: {aggs[key]}",
+                )
+            aggs = aggs[key]["aggs"]
             level += 1
 
-        agg_spec = {'field': '.'.join(path_segments)}
-        if facet_attr['type'] == 'numeric-refinement':
-            agg_type = 'histogram'
-            agg_spec.update({
-                "interval": 1,
-                "min_doc_count": 1,
-                "order": {"_key": "desc"},
-            })
+        agg_spec = {"field": ".".join(path_segments)}
+        if facet_attr["type"] == "numeric-refinement":
+            agg_type = "histogram"
+            agg_spec.update(
+                {
+                    "interval": 1,
+                    "min_doc_count": 1,
+                    "order": {"_key": "desc"},
+                }
+            )
         else:
             agg_type = "terms"
         aggs[path_segments[-1]] = {agg_type: agg_spec}
 
-    def add_filter_aggs(self, aggs: dict, nested_filters: dict, root_path=''):
+    def add_filter_aggs(self, aggs: dict, nested_filters: dict, root_path=""):
         for agg_key, agg in aggs.items():
-            nested = agg.get('nested')
+            nested = agg.get("nested")
             if not nested:
                 continue
             filter_list = []
@@ -558,14 +552,16 @@ class SearchAdapter:
                 if filter_path == check_path:
                     filter_list.extend(queries)
                 elif filter_path.startswith(f"{check_path}."):
-                    filter_list.append({
-                        "nested": {
-                            "path": filter_path,
-                            "query": {"bool": {"filter": queries}},
+                    filter_list.append(
+                        {
+                            "nested": {
+                                "path": filter_path,
+                                "query": {"bool": {"filter": queries}},
+                            }
                         }
-                    })
-            subaggs = agg['aggs']
-            agg['aggs'] = {
+                    )
+            subaggs = agg["aggs"]
+            agg["aggs"] = {
                 f"filtered_{agg_key}": {
                     "filter": {"bool": {"filter": filter_list}},
                     "aggs": subaggs,
@@ -574,7 +570,7 @@ class SearchAdapter:
             self.add_filter_aggs(subaggs, nested_filters, f"{check_path}.")
 
     def transform_es_response(
-            self, response: dict, request: sfs.SearchRequest
+        self, response: dict, request: sfs.SearchRequest
     ) -> sfs.SearchResult:
         """Return Algolia like response.
 
@@ -602,9 +598,9 @@ class SearchAdapter:
 
         """
         params = request.params
-        hits = self.transform_hits(response['hits']['hits'], params)
-        total_hits = response['hits']['total']['value']
-        facets = self.transform_facets(response.get('aggregations', {}))
+        hits = self.transform_hits(response["hits"]["hits"], params)
+        total_hits = response["hits"]["total"]["value"]
+        facets = self.transform_facets(response.get("aggregations", {}))
 
         # Handle case where hitsPerPage is 0
         hits_per_page = max(1, params.hitsPerPage)
@@ -622,36 +618,39 @@ class SearchAdapter:
             # "exhaustiveFacetsCount": True,
             # "exhaustiveTypo": True,
             exhaustive=sfs.Exhaustive(
-                facetsCount=True,
-                nbHits=True,
-                typo=True
+                facetsCount=True, nbHits=True, typo=True
             ),
             hitsPerPage=params.hitsPerPage,
-            processingTimeMS=response['took'],
+            processingTimeMS=response["took"],
             query=params.query,
             params=parse.urlencode(params.model_dump(exclude=None)),
             renderingContent=self.renderingContent,
         )
-        manifestations = response.get('aggregations', {}).get(
-            'manifestations', {}).get('filtered_manifestations')
+        manifestations = (
+            response.get("aggregations", {})
+            .get("manifestations", {})
+            .get("filtered_manifestations")
+        )
         if manifestations:
-            result.nbManifestations = len(
-                manifestations['handle']['buckets'])
+            result.nbManifestations = len(manifestations["handle"]["buckets"])
             if result.nbManifestations >= AGGREGATION_LIMIT:
                 logger.error(
                     f"nbManifestations exceeds {AGGREGATION_LIMIT}"
-                    f" (result={result})")
-            items = manifestations.get('items', {}).get('filtered_items')
+                    f" (result={result})"
+                )
+            items = manifestations.get("items", {}).get("filtered_items")
             if items:
-                result.nbItems = len(items['handle']['buckets'])
+                result.nbItems = len(items["handle"]["buckets"])
                 if result.nbItems >= AGGREGATION_LIMIT:
                     logger.error(
                         f"nbItems exceeds {AGGREGATION_LIMIT}"
-                        f" (result={result})")
+                        f" (result={result})"
+                    )
         return result
 
     def transform_hits(
-            self, hits: list[dict], params: sfs.SearchParams) -> list[dict]:
+        self, hits: list[dict], params: sfs.SearchParams
+    ) -> list[dict]:
         """Make hits interpretable for instantsearch.
 
         See the following reference for API specifications with regard
@@ -666,42 +665,48 @@ class SearchAdapter:
         for hit in hits:
             self.process_inner_hits(hit)
             t_hit = {
-                'objectID': hit['_id'],
-                '_index': hit['_index'],
-                '_score': hit['_score'],
+                "objectID": hit["_id"],
+                "_index": hit["_index"],
+                "_score": hit["_score"],
             }
-            t_hit.update(hit['_source'])
-            if hit.get('highlight'):
-                for field, values in hit['highlight'].items():
-                    subdict = t_hit.setdefault('_highlightResult', {})
-                    path = field.split('.')
-                    if path[-1] == 'keyword':
+            t_hit.update(hit["_source"])
+            if hit.get("highlight"):
+                for field, values in hit["highlight"].items():
+                    subdict = t_hit.setdefault("_highlightResult", {})
+                    path = field.split(".")
+                    if path[-1] == "keyword":
                         del path[-1]
                     for name in path[:-1]:
                         subdict = subdict.setdefault(name, {})
                     value_list = subdict.setdefault(path[-1], [])
-                    value_keys = [v['value'] for v in value_list]
+                    value_keys = [v["value"] for v in value_list]
                     for value in values:
                         if value in value_keys:
                             continue
                         matched_words = re.findall(
-                            f"{pre_pattern}(.*?){post_pattern}", value)
+                            f"{pre_pattern}(.*?){post_pattern}", value
+                        )
                         if len(matched_words) == nb_query_words:
-                            match_level = 'full'
+                            match_level = "full"
                         elif not matched_words:
-                            match_level = 'none'
+                            match_level = "none"
                         else:
-                            match_level = 'partial'
-                        fully_highlighted = all([
-                            w.startswith(params.highlightPreTag)
-                            and w.endswith(params.highlightPostTag)
-                            for w in value.split()])
-                        value_list.append({
-                            'value': value,
-                            'matchedWords': matched_words,
-                            'matchLevel': match_level,
-                            'fullyHighlighted': fully_highlighted,
-                        })
+                            match_level = "partial"
+                        fully_highlighted = all(
+                            [
+                                w.startswith(params.highlightPreTag)
+                                and w.endswith(params.highlightPostTag)
+                                for w in value.split()
+                            ]
+                        )
+                        value_list.append(
+                            {
+                                "value": value,
+                                "matchedWords": matched_words,
+                                "matchLevel": match_level,
+                                "fullyHighlighted": fully_highlighted,
+                            }
+                        )
             result.append(t_hit)
         return result
 
@@ -715,31 +720,31 @@ class SearchAdapter:
 
         """
         try:
-            inner_hits = hit.pop('inner_hits')
+            inner_hits = hit.pop("inner_hits")
         except KeyError:
             return
         nested = {}
         for val in inner_hits.values():
-            for ihit in val['hits']['hits']:
-                if ihit['_nested']['field'] != 'manifestations':
+            for ihit in val["hits"]["hits"]:
+                if ihit["_nested"]["field"] != "manifestations":
                     continue
-                m_offset = ihit['_nested']['offset']
+                m_offset = ihit["_nested"]["offset"]
                 nested.setdefault(m_offset, set())
-                subnested = ihit['_nested'].get('_nested')
-                if subnested and subnested['field'] == 'items':
-                    nested[m_offset].add(subnested['offset'])
+                subnested = ihit["_nested"].get("_nested")
+                if subnested and subnested["field"] == "items":
+                    nested[m_offset].add(subnested["offset"])
         if nested:
             manifestations = []
             for m_offset in sorted(nested.keys()):
-                manifestation = hit['_source']['manifestations'][m_offset]
+                manifestation = hit["_source"]["manifestations"][m_offset]
                 item_offsets = sorted(nested[m_offset])
                 if item_offsets:
                     items = []
                     for i_offset in item_offsets:
-                        items.append(manifestation['items'][i_offset])
-                    manifestation['items'] = items
+                        items.append(manifestation["items"][i_offset])
+                    manifestation["items"] = items
                 manifestations.append(manifestation)
-            hit['_source']['manifestations'] = manifestations
+            hit["_source"]["manifestations"] = manifestations
 
     def transform_facets(self, es_aggregations: dict) -> dict:
         facets = {}
@@ -750,28 +755,29 @@ class SearchAdapter:
         for name, agg in es_aggregations.items():
             if not isinstance(agg, dict):
                 continue
-            if name.startswith('filtered_'):
+            if name.startswith("filtered_"):
                 field = nested_path
             elif nested_path:
                 field = f"{nested_path}.{name}"
             else:
                 field = name
             try:
-                buckets = agg['buckets']
+                buckets = agg["buckets"]
             except KeyError:
-                self._transform_facets(
-                    agg, facets, field)
+                self._transform_facets(agg, facets, field)
             else:
                 attr = self.facet_by_path.get(field)
                 if not attr:
                     continue
-                attr_name = attr['attribute']
-                if attr['type'] == 'numeric-refinement':
+                attr_name = attr["attribute"]
+                if attr["type"] == "numeric-refinement":
                     facets[attr_name] = {
-                        int(b['key']): b['doc_count'] for b in buckets}
+                        int(b["key"]): b["doc_count"] for b in buckets
+                    }
                 else:
                     facets[attr_name] = {
-                        b['key']: b['doc_count'] for b in buckets}
+                        b["key"]: b["doc_count"] for b in buckets
+                    }
         return facets
 
 

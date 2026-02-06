@@ -15,7 +15,7 @@ class SearchParams(BaseModel):
         " Inner lists are OR'ed, outer lists are AND'ed",
         examples=[
             ["production:Hermann Schlenker Filmproduktion"],
-            ["years:1977"]
+            ["years:1977"],
         ],
     )
     facets: list[str] | str | None = Field(
@@ -40,16 +40,11 @@ class SearchParams(BaseModel):
             "subjects",
         ],
     )
-    numericRefinements: dict[str, dict[str,int]] | None = Field(
+    numericRefinements: dict[str, dict[str, int]] | None = Field(
         default=None,
-        alias='numeric-refinements',
+        alias="numeric-refinements",
         description="Custom workaround for a range facet",
-        examples=[{
-            "production_in_year": {
-                ">=": 1956,
-                "<=": 1965
-            }
-        }],
+        examples=[{"production_in_year": {">=": 1956, "<=": 1965}}],
     )
     highlightPreTag: str | None = Field(
         default="__ais-highlight__",
@@ -82,12 +77,10 @@ class SearchParams(BaseModel):
         examples=[0],
     )
     analytics: bool | None = Field(
-        default=True,
-        description="Whether to enable analytics"
+        default=True, description="Whether to enable analytics"
     )
     clickAnalytics: bool | None = Field(
-        default=True,
-        description="Whether to enable click analytics"
+        default=True, description="Whether to enable click analytics"
     )
 
 
@@ -102,7 +95,7 @@ class SearchRequest(BaseModel):
 class Exhaustive(BaseModel):
     facetsCount: bool
     nbHits: bool
-    typo:  bool
+    typo: bool
 
 
 class FacetOrder(BaseModel):

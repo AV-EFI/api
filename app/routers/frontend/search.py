@@ -8,14 +8,16 @@ from ...schemas.frontend_search import SearchRequest, SearchResponse
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
 @router.options(
     "/search",
     summary="Search content options",
     tags=["Frontend"],
-    include_in_schema=False  # Hide from API docs since it's just for CORS
+    include_in_schema=False,  # Hide from API docs since it's just for CORS
 )
 async def search_options():
     return {"message": "OK"}
+
 
 @router.post(
     "/search",

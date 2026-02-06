@@ -19,65 +19,73 @@ EFI_PATH = f"{EFI_ROOT}/v1"
 
 tags_metadata = [
     {
-        'name': 'Search',
-        'description': 'Search the database.',
+        "name": "Search",
+        "description": "Search the database.",
     },
     {
-        'name': 'Frontend',
-        'description': 'Internal endpoints for AVefi frontend.',
+        "name": "Frontend",
+        "description": "Internal endpoints for AVefi frontend.",
     },
 ]
 
-loglevel = os.environ.get(
-    f"{__package__.upper()}_LOGLEVEL", 'WARNING').upper()
+loglevel = os.environ.get(f"{__package__.upper()}_LOGLEVEL", "WARNING").upper()
 num_level = getattr(logging, loglevel, None)
 if not isinstance(num_level, int):
     raise ValueError(f"Invalid log level: {loglevel}")
 logging.basicConfig(
-    level=num_level, format='%(levelname)s:%(name)s: %(message)s')
+    level=num_level, format="%(levelname)s:%(name)s: %(message)s"
+)
 
 # Read version from the VERSION file
 path_to_app = Path(__file__).parent
-path_to_version = Path(path_to_app, 'VERSION').resolve()
+path_to_version = Path(path_to_app, "VERSION").resolve()
 with open(path_to_version) as f:
     version = f.read()
 
 app = FastAPI(
-    title='AV-EFI API',
-    description='This is the backend for the AV-EFI project.',
+    title="AV-EFI API",
+    description="This is the backend for the AV-EFI project.",
     version=version,
     docs_url=f"{EFI_ROOT}/docs",
     redoc_url=f"{EFI_ROOT}/redoc",
     openapi_url=f"{EFI_ROOT}/openapi.json",
     tags_metadata=[
         {
-            'name': 'Auth',
-            'description': 'Authenticate with OpenID Connect.',
+            "name": "Auth",
+            "description": "Authenticate with OpenID Connect.",
         },
     ],
 )
 app.add_middleware(
-    SessionMiddleware, secret_key=settings.SESSION_SECRET,
-    same_site='lax', https_only=True, max_age=16 * 60 * 60)
+    SessionMiddleware,
+    secret_key=settings.SESSION_SECRET,
+    same_site="lax",
+    https_only=True,
+    max_age=16 * 60 * 60,
+)
 
 api = FastAPI(
-    title='AV-EFI API',
-    description='This is the backend for the AV-EFI project.',
+    title="AV-EFI API",
+    description="This is the backend for the AV-EFI project.",
     version=version,
     openapi_tags=tags_metadata,
 )
 
+
 @api.exception_handler(elasticsearch.NotFoundError)
 async def elastic_404_handler(
-        request: Request, exc: elasticsearch.NotFoundError) -> JSONResponse:
+    request: Request, exc: elasticsearch.NotFoundError
+) -> JSONResponse:
     return JSONResponse(status_code=404, content="Not Found")
+
 
 api.include_router(health.router, tags=["Health"])
 # api.include_router(create.router, prefix="/pid", tags=["PID"])
 # api.include_router(update.router, prefix="/pid", tags=["PID"])
 # api.include_router(pid.router, prefix="", tags=["PID"])
 api.include_router(
-    search.router, prefix="/frontend", tags=["Frontend", "Search"])
+    search.router, prefix="/frontend", tags=["Frontend", "Search"]
+)
 api.include_router(view.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 # api.include_router(transform.router, prefix="", tags=["Transform"])
@@ -85,5 +93,5 @@ api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 app.mount(EFI_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
-if __name__ == '__main__':
-    uvicorn.run("app.main:app", host='0.0.0.0', port=8000)
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000)

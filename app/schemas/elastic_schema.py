@@ -2,11 +2,11 @@ from pydantic import BaseModel, Field
 
 
 class TotalHits(BaseModel):
-    value: int = Field(
-        description="Number of total hits.")
+    value: int = Field(description="Number of total hits.")
     relation: str = Field(
         description="Indicator whether `value` is an exact number or a lower"
-        " bound.")
+        " bound."
+    )
 
 
 class SearchResponse(BaseModel):

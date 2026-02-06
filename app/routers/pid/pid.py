@@ -37,7 +37,7 @@ async def get_pid_handle(
     if not url:
         raise HTTPException(
             status_code=500,
-            detail="PID service URL not configured in environment variables"
+            detail="PID service URL not configured in environment variables",
         )
 
     full_url = f"{url}/handles/{pid}/{suffix}"
@@ -47,8 +47,10 @@ async def get_pid_handle(
         response = await client.get(full_url, headers=headers)
         return response.json()
 
+
 @router.put(
-    "/handles/{pid}/{suffix}", summary="Update PID Handle", tags=["PID"])
+    "/handles/{pid}/{suffix}", summary="Update PID Handle", tags=["PID"]
+)
 async def update_pid_handle(
     pid: str,
     suffix: str,
@@ -83,29 +85,27 @@ async def update_pid_handle(
     if not url:
         raise HTTPException(
             status_code=500,
-            detail="PID service URL not configured in environment variables"
+            detail="PID service URL not configured in environment variables",
         )
 
     # Validate headers
     if if_match is not None and if_match != "*":
         raise HTTPException(
-            status_code=400,
-            detail="If-Match header must be '*'"
+            status_code=400, detail="If-Match header must be '*'"
         )
 
     if if_none_match is not None and if_none_match != "*":
         raise HTTPException(
-            status_code=400,
-            detail="If-None-Match header must be '*'"
+            status_code=400, detail="If-None-Match header must be '*'"
         )
 
     full_url = f"{url}/handles/{pid}/{suffix}"
 
     headers = await get_auth_headers()
     if if_match:
-        headers['If-Match'] = if_match
+        headers["If-Match"] = if_match
     if if_none_match:
-        headers['If-None-Match'] = if_none_match
+        headers["If-None-Match"] = if_none_match
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
@@ -113,17 +113,17 @@ async def update_pid_handle(
             return response.json()
     except httpx.TimeoutException as e:
         raise HTTPException(
-            status_code=504,
-            detail="Request to PID service timed out"
+            status_code=504, detail="Request to PID service timed out"
         ) from e
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail="Error communicating with PID service"
+            status_code=500, detail="Error communicating with PID service"
         ) from e
 
+
 @router.delete(
-    "/handles/{pid}/{suffix}", summary="Delete PID Handle", tags=["PID"])
+    "/handles/{pid}/{suffix}", summary="Delete PID Handle", tags=["PID"]
+)
 async def delete_pid_handle(
     pid: str,
     suffix: str,
@@ -149,7 +149,7 @@ async def delete_pid_handle(
     if not url:
         raise HTTPException(
             status_code=500,
-            detail="PID service URL not configured in environment variables"
+            detail="PID service URL not configured in environment variables",
         )
 
     full_url = f"{url}/handles/{pid}/{suffix}"
@@ -165,6 +165,5 @@ async def delete_pid_handle(
                 return response.json()
             except Exception as e:
                 raise HTTPException(
-                    status_code=response.status_code,
-                    detail=response.text
+                    status_code=response.status_code, detail=response.text
                 ) from e

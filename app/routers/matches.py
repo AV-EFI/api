@@ -6,6 +6,7 @@ from ..schemas.elastic_schema import SearchResponse
 
 router = APIRouter()
 
+
 @router.post("/matches", response_model=SearchResponse)
 async def find_matching_works(request: efi.WorkVariant):
     """

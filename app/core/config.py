@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     PID_PASSWORD: str = ""
 
     model_config = ConfigDict(
-        env_file = ".api_config.env",
+        env_file=".api_config.env",
     )
 
 

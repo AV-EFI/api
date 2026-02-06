@@ -6,11 +6,13 @@ from .config import settings
 def get_elasticsearch_client() -> Elasticsearch:
     """Create and return Elasticsearch client instance."""
     return Elasticsearch(
-        [{
-            'host': settings.ES_HOST,
-            'port': settings.ES_PORT,
-            'scheme': settings.ES_SCHEME
-        }],
+        [
+            {
+                "host": settings.ES_HOST,
+                "port": settings.ES_PORT,
+                "scheme": settings.ES_SCHEME,
+            }
+        ],
         request_timeout=30,
         max_retries=4,
         retry_on_timeout=True,
@@ -21,30 +23,27 @@ def get_elasticsearch_client() -> Elasticsearch:
 es_client = get_elasticsearch_client()
 
 
-def es_iter(index=None, query=None, scroll='2m'):
+def es_iter(index=None, query=None, scroll="2m"):
     return helpers.scan(
-        client=es_client, index=index, scroll=scroll, query=query)
+        client=es_client, index=index, scroll=scroll, query=query
+    )
 
 
 def filter_by_pids(pids: list[str]) -> dict:
-    return {
-        "terms": {
-            "handle.keyword": pids
-        }
-    }
+    return {"terms": {"handle.keyword": pids}}
 
 
 def filter_by_category(category: str) -> dict:
-    return {
-        "term": {
-            "has_record.category.keyword": category
-        }
-    }
+    return {"term": {"has_record.category.keyword": category}}
 
 
 def collect_parents(
-        index: str, doc: dict, reference_keys: list[str], recursive=False,
-        parents: dict | None = None):
+    index: str,
+    doc: dict,
+    reference_keys: list[str],
+    recursive=False,
+    parents: dict | None = None,
+):
     """Get list of WorkVariants evaluating is_part_of, is_variant_of.
 
     Resolve the handles in has_record.is_part_of or
@@ -67,7 +66,7 @@ def collect_parents(
     """
     if parents is None:
         parents = []
-    record = doc.get('has_record', {})
+    record = doc.get("has_record", {})
     references = []
     for ref_key in reference_keys:
         refs = record.get(ref_key, [])
@@ -80,22 +79,16 @@ def collect_parents(
     if not references:
         return parents
     parent_ids = [
-        parent.get('id') for parent in references if parent.get('id')]
-    query = {
-        "query": {
-            "bool": {
-                "filter": [
-                    filter_by_pids(parent_ids)
-                ]
-            }
-        }
-    }
+        parent.get("id") for parent in references if parent.get("id")
+    ]
+    query = {"query": {"bool": {"filter": [filter_by_pids(parent_ids)]}}}
     for parent in es_iter(index, query):
-        parent_doc = parent['_source']
+        parent_doc = parent["_source"]
         parents.append(parent_doc)
         if recursive:
             collect_parents(
-                index, parent_doc, reference_keys, recursive, parents)
+                index, parent_doc, reference_keys, recursive, parents
+            )
     return parents
 
 
@@ -136,5 +129,5 @@ def collect_children(index: str, parent_ref: str, reference_key: str):
                 ],
             }
         }
-    }
-    return [child['_source'] for child in es_iter(index, query)]
+    }  # fmt: skip
+    return [child["_source"] for child in es_iter(index, query)]

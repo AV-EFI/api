@@ -12,14 +12,14 @@ client = TestClient(main_app)
 
 @pytest.fixture
 def mock_es_client():
-    with patch('app.helpers.frontend_search.es_client') as mock:
+    with patch("app.helpers.frontend_search.es_client") as mock:
         yield mock
 
 
 @pytest.fixture
 def example_request(runtime_path_of):
     with runtime_path_of(
-            'search_by_date_director_format_with_facets_request.json'
+        "search_by_date_director_format_with_facets_request.json"
     ).open() as f:
         return json.load(f)
 
@@ -27,7 +27,7 @@ def example_request(runtime_path_of):
 def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     # Setup mock ES response
     with runtime_path_of(
-            'search_by_date_director_format_with_facets_response.json'
+        "search_by_date_director_format_with_facets_response.json"
     ).open() as f:
         mock_es_client.search.return_value = json.load(f)
     response = client.post(f"{EFI_PATH}/frontend/search", json=example_request)
@@ -35,14 +35,14 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     mock_es_client.search.assert_called_once()
 
     # Transform results
-    result = response.json()['results'][0]
-    hits = result['hits']
+    result = response.json()["results"][0]
+    hits = result["hits"]
     facets = result["facets"]
 
     # Verify top-level numbers
-    assert result['nbHits'] == 2
-    assert result['nbManifestations'] == 2
-    assert result['nbItems'] == 2
+    assert result["nbHits"] == 2
+    assert result["nbManifestations"] == 2
+    assert result["nbItems"] == 2
 
     # Verify transformed hits
     assert len(hits) == 2
@@ -51,30 +51,25 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     assert hits[0]["production_in_year"][0]["gte"] == 1953
 
     # Verify transformed facets
-    assert facets.get('has_colour_type') == {'BlackAndWhite': 2}
-    assert facets["has_format_type"] == {'16mmFilm': 2}
+    assert facets.get("has_colour_type") == {"BlackAndWhite": 2}
+    assert facets["has_format_type"] == {"16mmFilm": 2}
     assert facets["in_language_code"]["ger"] == 2
-    assert facets["production_in_year"]['1953'] == 2
+    assert facets["production_in_year"]["1953"] == 2
 
 
 def test_empty_response_handling(mock_es_client):
     # Setup mock with empty response
     mock_es_client.search.return_value = {
         "took": 1,
-        "hits": {
-            "total": {"value": 0, "relation": "eq"},
-            "hits": []
-        },
-        "aggregations": {}
+        "hits": {"total": {"value": 0, "relation": "eq"}, "hits": []},
+        "aggregations": {},
     }
 
-    query = dict(
-        indexName="test_index",
-        params=dict(query="nonexistent"))
+    query = dict(indexName="test_index", params=dict(query="nonexistent"))
     response = client.post(f"{EFI_PATH}/frontend/search", json=[query])
     assert response.status_code == 200, response.json()
     mock_es_client.search.assert_called_once()
-    result = response.json()['results'][0]
+    result = response.json()["results"][0]
     hits = result["hits"]
     facets = result["facets"]
 

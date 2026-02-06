@@ -70,10 +70,16 @@ select = [
     # white space
     "W",
 ]
-ignore = ["D100", "D101", "D102", "D103", "D104"]
+ignore = [
+    "D100", "D101", "D102", "D103", "D104",
+    "D206", "D300", "W191",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
 [tool.ruff.lint.isort]
 force-sort-within-sections = true
+
+[tool.ruff.format]
+docstring-code-format = true

@@ -32,33 +32,47 @@ def find_matches(index: str, max_matches: int = DEFAULT_SIZE) -> dict:
     """
     matches = {}
     errors = []
-    work_variant_query = {"query": {"bool": {"filter": [{
-        "term": {"has_record.category.keyword": {"value": "avefi:WorkVariant"}}
-    }]}}}
-    for doc in es_iter(index=index, query=work_variant_query, scroll='10m'):
-        _make_described_by_list(doc['_source'])
+    work_variant_query = {
+        "query": {
+            "bool": {
+                "filter": [
+                    {
+                        "term": {
+                            "has_record.category.keyword": {
+                                "value": "avefi:WorkVariant"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    for doc in es_iter(index=index, query=work_variant_query, scroll="10m"):
+        _make_described_by_list(doc["_source"])
         try:
-            work = efi.WorkVariant.model_validate(doc['_source']['has_record'])
+            work = efi.WorkVariant.model_validate(doc["_source"]["has_record"])
         except Exception as e:
-            errors.append({'error': e, '_source': doc['_source']})
+            errors.append({"error": e, "_source": doc["_source"]})
             continue
         hits = get_works_matching(work, max_matches=max_matches)
-        if hits['total']['value'] > 1:
-            for hit in hits['hits']:
-                _make_described_by_list(hit['_source'])
-            matches[doc['_source']['handle']] = hits['hits']
-    return {'matches': matches, 'errors': errors}
+        if hits["total"]["value"] > 1:
+            for hit in hits["hits"]:
+                _make_described_by_list(hit["_source"])
+            matches[doc["_source"]["handle"]] = hits["hits"]
+    return {"matches": matches, "errors": errors}
 
 
 def _make_described_by_list(doc_source: dict):
     """Fix old style described_by in WorkVariants."""
-    if isinstance(doc_source.get('has_record', {}).get('described_by'), dict):
-        doc_source['has_record']['described_by'] = [
-            doc_source['has_record']['described_by']]
+    if isinstance(doc_source.get("has_record", {}).get("described_by"), dict):
+        doc_source["has_record"]["described_by"] = [
+            doc_source["has_record"]["described_by"]
+        ]
 
 
 def get_works_matching(
-        work: efi.WorkVariant, max_matches: int = DEFAULT_SIZE) -> dict:
+    work: efi.WorkVariant, max_matches: int = DEFAULT_SIZE
+) -> dict:
     """Return Elasticsearch hits matching `work` by AVefi criteria.
 
     See doc-string of `build_match_query()` for details about matching
@@ -82,24 +96,27 @@ def get_works_matching(
     """
     query = build_match_query(work)
     if query:
-        query['size'] = max_matches or DEFAULT_SIZE
+        query["size"] = max_matches or DEFAULT_SIZE
         response = es_client.search(index=settings.ES_LOOKUP_INDEX, body=query)
-        total_hits = response['hits']['total']['value']
+        total_hits = response["hits"]["total"]["value"]
         if max_matches and total_hits > max_matches:
             logger.warning(
                 f"Too many match results: {total_hits} instead of"
                 f" {max_matches}; ignoring them all for work:"
-                f" '{work.has_primary_title.has_name}'")
+                f" '{work.has_primary_title.has_name}'"
+            )
         else:
             if total_hits > DEFAULT_SIZE and max_matches == 0:
                 logger.warning(
                     f"{total_hits} match results for one work, may be worth"
-                    f" investigating: '{work.has_primary_title.has_name}'")
-                query['size'] = total_hits
+                    f" investigating: '{work.has_primary_title.has_name}'"
+                )
+                query["size"] = total_hits
                 response = es_client.search(
-                    index=settings.ES_LOOKUP_INDEX, body=query)
-            return response['hits']
-    return {'hits': [], 'total': {'value': 0, 'relation': 'eq'}}
+                    index=settings.ES_LOOKUP_INDEX, body=query
+                )
+            return response["hits"]
+    return {"hits": [], "total": {"value": 0, "relation": "eq"}}
 
 
 def build_match_query(work: efi.WorkVariant) -> dict | None:
@@ -122,42 +139,59 @@ def build_match_query(work: efi.WorkVariant) -> dict | None:
         date_string = event.has_date
         if date_string:
             date_range = year_range_from_dtf(date_string)
-            if date_range['lte'] - date_range['gte'] < 2:
-                date_range['gte'] -= 1
-                date_range['lte'] += 1
+            if date_range["lte"] - date_range["gte"] < 2:
+                date_range["gte"] -= 1
+                date_range["lte"] += 1
             date_ranges.append({"range": {"production_in_year": date_range}})
 
         # Country of production (or possibly city in case of amateur movies)
         for loc in event.located_in or []:
             location_clauses.extend(
-                names_clause(loc, "has_record.has_event.located_in"))
+                names_clause(loc, "has_record.has_event.located_in")
+            )
             location_clauses.extend(
-                same_as_clause(loc, "has_record.has_event.located_in"))
+                same_as_clause(loc, "has_record.has_event.located_in")
+            )
 
         # Director or editor
         for activity in event.has_activity or []:
-            if activity.type not in ('Director', 'Editor'):
+            if activity.type not in ("Director", "Editor"):
                 continue
             agent_clauses = []
             for agent in activity.has_agent or []:
-                agent_clauses.extend(names_clause(
-                    agent, "has_record.has_event.has_activity.has_agent"))
-                agent_clauses.extend(same_as_clause(
-                    agent, "has_record.has_event.has_activity.has_agent"))
+                agent_clauses.extend(
+                    names_clause(
+                        agent, "has_record.has_event.has_activity.has_agent"
+                    )
+                )
+                agent_clauses.extend(
+                    same_as_clause(
+                        agent, "has_record.has_event.has_activity.has_agent"
+                    )
+                )
             if agent_clauses:
-                activity_clauses.append({
-                    "nested": {
-                        "path": "has_record.has_event.has_activity",
-                        "query": {"bool": {
-                            "filter": [{"term": {
-                                "has_record.has_event"
-                                ".has_activity.type.keyword": activity.type,
-                            }}],
-                            "should": agent_clauses,
-                            "minimum_should_match": 1,
-                        }},
-                    },
-                })
+                activity_clauses.append(
+                    {
+                        "nested": {
+                            "path": "has_record.has_event.has_activity",
+                            "query": {
+                                "bool": {
+                                    "filter": [
+                                        {
+                                            "term": {
+                                                "has_record.has_event"
+                                                ".has_activity.type.keyword":
+                                                activity.type,
+                                            }
+                                        }
+                                    ],
+                                    "should": agent_clauses,
+                                    "minimum_should_match": 1,
+                                }
+                            },
+                        },
+                    }
+                )  # fmt: skip
 
     if all([date_ranges, location_clauses, activity_clauses]):
         title_clauses = []
@@ -165,35 +199,52 @@ def build_match_query(work: efi.WorkVariant) -> dict | None:
         # title_strings.extend(
         #     title.has_name for title in work.has_alternative_title or [])
         for title_str in title_strings:
-            title_clauses.extend([
-                {"match_phrase": {
-                    "has_record.has_primary_title.has_name": title_str,
-                }},
-                {"match_phrase": {
-                    "has_record.has_alternative_title.has_name": title_str,
-                }},
-            ])
+            title_clauses.extend(
+                [
+                    {
+                        "match_phrase": {
+                            "has_record.has_primary_title.has_name": title_str,
+                        }
+                    },
+                    {
+                        "match_phrase": {
+                            "has_record.has_alternative_title.has_name":
+                            title_str,
+                        }
+                    },
+                ]
+            )  # fmt: skip
         top_filters = date_ranges.copy()
         top_filters.append(
             {"term": {"has_record.category.keyword": work.category}}
         )
-        query = {"query": {"bool": {
-            "filter": top_filters,
-            "must": [
-                {"bool": {
-                    "should": title_clauses,
-                    "minimum_should_match": 1,
-                }},
-                _in_production_event({
-                    "should": activity_clauses,
-                    "minimum_should_match": 1,
-                }),
-                _in_production_event({
-                    "should": location_clauses,
-                    "minimum_should_match": 1,
-                }),
-            ],
-        }}}
+        query = {
+            "query": {
+                "bool": {
+                    "filter": top_filters,
+                    "must": [
+                        {
+                            "bool": {
+                                "should": title_clauses,
+                                "minimum_should_match": 1,
+                            }
+                        },
+                        _in_production_event(
+                            {
+                                "should": activity_clauses,
+                                "minimum_should_match": 1,
+                            }
+                        ),
+                        _in_production_event(
+                            {
+                                "should": location_clauses,
+                                "minimum_should_match": 1,
+                            }
+                        ),
+                    ],
+                }
+            }
+        }
         logger.debug(f"Match query: {query}")
         return query
     else:
@@ -203,19 +254,24 @@ def build_match_query(work: efi.WorkVariant) -> dict | None:
 def _in_production_event(clause: dict) -> dict:
     nested_clause = clause.copy()
     nested_clause.setdefault("filter", []).append(
-        {"term": {
-            "has_record.has_event.category.keyword": "avefi:ProductionEvent",
-        }}
-    )
-    return {"nested": {
-        "path": "has_record.has_event",
-        "query": {"bool": nested_clause},
-    }}
+        {
+            "term": {
+                "has_record.has_event.category.keyword":
+                "avefi:ProductionEvent",
+            }
+        }
+    )  # fmt: skip
+    return {
+        "nested": {
+            "path": "has_record.has_event",
+            "query": {"bool": nested_clause},
+        }
+    }
 
 
 def year_range_from_dtf(date_string: str) -> dict:
     """Convert ISO 8601 / DTF compliant string into a year range query."""
-    components = date_string.split('/')
+    components = date_string.split("/")
     start, start_margin = year_and_margin_from_dtf(components[0])
     len_components = len(components)
     if len_components == 1:
@@ -226,25 +282,26 @@ def year_range_from_dtf(date_string: str) -> dict:
         raise ValueError(f"Cannot parse date or period: {date_string}")
     if start > end:
         raise ValueError(
-            f"Period seems to start after it has ended: {date_string}")
+            f"Period seems to start after it has ended: {date_string}"
+        )
     return {
-        'gte': start - start_margin,
-        'lte': end + end_margin,
+        "gte": start - start_margin,
+        "lte": end + end_margin,
     }
 
 
 def year_and_margin_from_dtf(date_string: str) -> tuple:
     """Convert ISO 8601 / DTF compliant string into a (year, margin) tuple."""
-    match = re.match(r'^(-?\d+)([?~]?)', date_string)
+    match = re.match(r"^(-?\d+)([?~]?)", date_string)
     if not match:
         raise ValueError(f"Cannot parse date: {date_string}")
     year_str, uncertainty = match.groups()
     year = int(year_str)
     if not uncertainty:
         margin = 0
-    elif uncertainty == '~':
+    elif uncertainty == "~":
         margin = 1
-    elif uncertainty == '?':
+    elif uncertainty == "?":
         margin = 5
     return (year, margin)
 
@@ -254,18 +311,31 @@ def names_clause(elem: BaseModel, path: str) -> list[dict]:
     names.extend(elem.has_alternate_name or [])
     query = []
     for name in names:
-        query.extend([
-            {"match_phrase": {f"{path}.has_name": name}},
-            {"match_phrase": {f"{path}.has_alternate_name": name}},
-        ])
+        query.extend(
+            [
+                {"match_phrase": {f"{path}.has_name": name}},
+                {"match_phrase": {f"{path}.has_alternate_name": name}},
+            ]
+        )
     return query
 
 
 def same_as_clause(elem: BaseModel, path: str) -> list[dict]:
     query = []
     for ref in elem.same_as or []:
-        query.append({"bool": {"filter": [
-            {"term": {f"{path}.same_as.id.keyword": ref.id}},
-            {"term": {f"{path}.same_as.category.keyword": ref.category}},
-        ]}})
+        query.append(
+            {
+                "bool": {
+                    "filter": [
+                        {"term": {f"{path}.same_as.id.keyword": ref.id}},
+                        {
+                            "term": {
+                                f"{path}.same_as.category.keyword":
+                                ref.category
+                            }
+                        },
+                    ]
+                }
+            }
+        )  # fmt: skip
     return query

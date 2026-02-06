@@ -11,10 +11,14 @@ from ...helpers.pid_create_tranfrom import wrap_pid_data
 router = APIRouter()
 url = settings.PID_SERVICE_URL
 
+
 @router.post("/create", summary="Create PID", tags=["PID"])
 async def create_pid(
-        data: dict, prefix: str, suffix: str,
-        current_user: Annotated[dict, Depends(verify_token)]):
+    data: dict,
+    prefix: str,
+    suffix: str,
+    current_user: Annotated[dict, Depends(verify_token)],
+):
     """Create a new PID with authentication required.
 
     Parameters
@@ -40,25 +44,26 @@ async def create_pid(
     if not url:
         raise HTTPException(
             status_code=500,
-            detail="PID service URL not configured in environment variables"
+            detail="PID service URL not configured in environment variables",
         )
 
     wrapped_data = wrap_pid_data(data)
-
 
     # Construct URL with query parameters
     full_url = f"{url}?prefix={prefix}&suffix={suffix}"
 
     # Create base64 encoded auth header
     import base64
+
     auth_string = f"{settings.PID_USERNAME}:{settings.PID_PASSWORD}"
-    auth_bytes = auth_string.encode('ascii')
-    base64_auth = base64.b64encode(auth_bytes).decode('ascii')
-    headers = {'Authorization': f'Basic {base64_auth}'}
+    auth_bytes = auth_string.encode("ascii")
+    base64_auth = base64.b64encode(auth_bytes).decode("ascii")
+    headers = {"Authorization": f"Basic {base64_auth}"}
 
     print(base64_auth)
     # Make POST request to PID service with auth headers
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            full_url, json=wrapped_data, headers=headers)
+            full_url, json=wrapped_data, headers=headers
+        )
         return response.json()
