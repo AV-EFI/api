@@ -452,7 +452,9 @@ class SearchAdapter:
 
         Build aggregations according to requested facets.
         Additionally, aggregate on manifestation and item handles in
-        order to count duplicate documents due to denormalisation. See 
+        order to determine correct number of distinct manifestations /
+        items since a bunch of them have been duplicated due to
+        denormalisation.
 
         """
         # Copy facets and remove them one by one
