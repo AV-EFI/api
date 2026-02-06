@@ -1,11 +1,11 @@
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
 from .efi_schema import efi
 
 InputData = Annotated[
-        Union[efi.WorkVariant, efi.Manifestation, efi.Item],
+        efi.WorkVariant | efi.Manifestation | efi.Item,
         Field(discriminator='category')]
 
 # Output models

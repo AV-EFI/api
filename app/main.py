@@ -3,14 +3,15 @@ import os
 from pathlib import Path
 
 import elasticsearch
-import uvicorn
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
+import uvicorn
 
 from .core.config import settings
 from .routers import auth, health, matches
 from .routers.frontend import search, view
+
 # from .routers.pid import create,update, pid
 
 EFI_ROOT = "/rest"
@@ -38,7 +39,7 @@ logging.basicConfig(
 # Read version from the VERSION file
 path_to_app = Path(__file__).parent
 path_to_version = Path(path_to_app, 'VERSION').resolve()
-with open(path_to_version, 'r') as f:
+with open(path_to_version) as f:
     version = f.read()
 
 app = FastAPI(

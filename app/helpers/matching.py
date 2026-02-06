@@ -7,7 +7,6 @@ from ..core.config import settings
 from ..core.elasticsearch import es_client, es_iter
 from ..schemas.efi_schema import efi
 
-
 logger = logging.getLogger(__name__)
 DEFAULT_SIZE = 10
 
@@ -257,8 +256,8 @@ def year_and_margin_from_dtf(date_string: str) -> tuple:
 
 
 def names_clause(elem: BaseModel, path: str) -> list[dict]:
-    names = [getattr(elem, 'has_name')]
-    names.extend(getattr(elem, 'has_alternate_name') or [])
+    names = [elem.has_name]
+    names.extend(elem.has_alternate_name or [])
     query = []
     for name in names:
         query.extend([

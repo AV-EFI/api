@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
+
 from ..schemas.efi_schema import efi
-from ..schemas.transform import TransformedRecord,InputData
-from typing import List
+from ..schemas.transform import InputData, TransformedRecord
 
 router = APIRouter()
 

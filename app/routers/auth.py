@@ -2,16 +2,15 @@ from datetime import datetime
 import logging
 from urllib import parse
 
-from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from authlib.integrations.starlette_client import OAuth
+from fastapi import APIRouter, Depends
 from fastapi_csrf_protect import CsrfProtect
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
 
 from ..core.config import settings
 from ..helpers.auth import SESSION_TIMEOUT, valid_access_token
-from ..schemas.auth import CsrfToken, Token, User
-
+from ..schemas.auth import CsrfToken
 
 log = logging.getLogger(__name__)
 router = APIRouter()

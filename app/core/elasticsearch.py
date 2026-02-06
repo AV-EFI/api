@@ -1,5 +1,3 @@
-from typing import Optional
-
 from elasticsearch import Elasticsearch, helpers
 
 from .config import settings
@@ -48,7 +46,7 @@ def filter_by_category(category: str) -> dict:
 
 def collect_parents(
         index: str, doc: dict, reference_keys: list[str], recursive=False,
-        parents: Optional[dict | None] = None):
+        parents: dict | None = None):
     """Get list of WorkVariants evaluating is_part_of, is_variant_of.
 
     Resolve the handles in has_record.is_part_of or

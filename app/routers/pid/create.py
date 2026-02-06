@@ -1,29 +1,35 @@
 from http.client import HTTPException
-import os
-from fastapi import APIRouter, Depends
-import httpx 
 
+from fastapi import APIRouter, Depends
+import httpx
+
+from ...core.config import settings
 from ...helpers.auth import verify_token
 from ...helpers.pid_create_tranfrom import wrap_pid_data
-from ...core.config import settings
-
 
 router = APIRouter()
 url = settings.PID_SERVICE_URL
 
 @router.post("/create", summary="Create PID", tags=["PID"])
 async def create_pid(data: dict, prefix: str, suffix: str, current_user: dict = Depends(verify_token)):
-    """
-    Create a new PID with authentication required
+    """Create a new PID with authentication required.
     
-    Args:
-        data: Input object to be wrapped in the required format
-        prefix: Prefix for the PID URL
-        suffix: Suffix for the PID URL
-        current_user: Authenticated user information
+    Parameters
+    ----------
+    data : dict
+        Input object to be wrapped in the required format.
+    prefix : str
+        Prefix for the PID URL.
+    suffix : str
+        Suffix for the PID URL.
+    current_user : dict
+        Authenticated user information.
     
-    Returns:
-        dict: Response from PID creation request
+    Returns
+    -------
+    dict
+        Response from PID creation request.
+
     """
     # Get base URL from environment variables
     # pid_service_url = os.getenv("PID_SERVICE_URL")
@@ -39,7 +45,7 @@ async def create_pid(data: dict, prefix: str, suffix: str, current_user: dict = 
 
     # Construct URL with query parameters
     full_url = f"{url}?prefix={prefix}&suffix={suffix}"
-    
+
     # Create base64 encoded auth header
     import base64
     auth_string = f"{settings.PID_USERNAME}:{settings.PID_PASSWORD}"

@@ -1,15 +1,16 @@
 from http.client import HTTPException
-import os
-from fastapi import APIRouter, Depends, Body
-import httpx 
+
+from fastapi import APIRouter, Body, Depends
+import httpx
+
+from app.core.config import settings
 from app.helpers.auth import verify_token
 from app.helpers.pid_create_tranfrom import wrap_pid_data
-from app.core.config import settings
 
 router = APIRouter()
 url = settings.PID_SERVICE_URL
-    
-@router.put("/update/{handle_suffix}", summary="Update PID", tags=["PID"]) 
+
+@router.put("/update/{handle_suffix}", summary="Update PID", tags=["PID"])
 async def update_pid(
     handle_suffix: str,
     data: dict = Body(
@@ -22,16 +23,22 @@ async def update_pid(
     ),
     current_user: dict = Depends(verify_token)
 ):
-    """
-    Update an existing PID with authentication required
+    """Update an existing PID with authentication required.
     
-    Args:
-        handle_suffix: The suffix of the handle to update
-        data: Input object to be wrapped in the required format
-        current_user: Authenticated user information
-    
-    Returns:
-        dict: Response from PID update request
+    Parameters
+    ----------
+    handle_suffix : str
+        The suffix of the handle to update.
+    data : dict
+        Input object to be wrapped in the required format.
+    current_user : dict
+        Authenticated user information.
+
+    Returns
+    -------
+    dict
+        Response from PID update request.
+
     """
     if not url:
         raise HTTPException(
@@ -44,7 +51,7 @@ async def update_pid(
 
     # Construct full URL with handle suffix
     full_url = f"{url}/{handle_suffix}"
-    
+
     # Create base64 encoded auth header
     import base64
     auth_string = f"{settings.PID_USERNAME}:{settings.PID_PASSWORD}"

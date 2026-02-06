@@ -1,18 +1,23 @@
 from fastapi import APIRouter, HTTPException
+
 from ..core.elasticsearch import es_client
 
 router = APIRouter()
 
 @router.get("/health", summary="Health Check", tags=["Health"])
 async def health_check():
-    """
-    Health check endpoint to verify Elasticsearch connection
+    """Health check endpoint to verify Elasticsearch connection.
     
-    Returns:
-        dict: Status of the application and Elasticsearch connection
-    
-    Raises:
-        HTTPException: If Elasticsearch connection fails
+    Returns
+    -------
+    dict
+        Status of the application and Elasticsearch connection.
+
+    Raises
+    ------
+    HTTPException
+        If Elasticsearch connection fails.
+
     """
     try:
         if es_client.ping():

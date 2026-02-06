@@ -1,11 +1,9 @@
 import logging
 
 from fastapi import APIRouter
-from http.client import HTTPException
 
-from ...core.config import settings
-from ...schemas.frontend_search import SearchRequest, SearchResponse
 from ...helpers.frontend_search import process_search_request
+from ...schemas.frontend_search import SearchRequest, SearchResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
     include_in_schema=False  # Hide from API docs since it's just for CORS
 )
 async def search_options():
-    return {"message": "OK"} 
+    return {"message": "OK"}
 
 @router.post(
     "/search",

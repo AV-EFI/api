@@ -4,8 +4,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 import pytest
 
-from app.main import app as main_app, EFI_PATH
-
+from app.main import EFI_PATH
+from app.main import app as main_app
 
 client = TestClient(main_app)
 

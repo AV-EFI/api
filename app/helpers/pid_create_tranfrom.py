@@ -1,12 +1,16 @@
 def wrap_pid_data(data: dict) -> list:
-    """
-    Common function to wrap PID data in required format
-    
-    Args:
-        data: Input object to be wrapped
-        
-    Returns:
-        list: Wrapped data in required format
+    """Common function to wrap PID data in required format.
+
+    Parameters
+    ----------
+    data : dict
+        Input object to be wrapped.
+
+    Returns
+    -------
+    list
+        Wrapped data in required format.
+
     """
     return [
         {
@@ -15,7 +19,7 @@ def wrap_pid_data(data: dict) -> list:
             "idx": 1
         },
         {
-            "type": "has_record", 
+            "type": "has_record",
             "parsed_data": data,
             "idx": 2
         }

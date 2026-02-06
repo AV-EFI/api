@@ -1,8 +1,7 @@
-import pytest
-
 from app.core.config import settings
 from app.helpers.frontend_search import process_search_request
 from app.schemas.frontend_search import SearchParams, SearchRequest
+
 
 def test_build_es_query_basic_search():
     request = SearchRequest(
@@ -48,9 +47,9 @@ def test_build_es_query_with_facet_filters():
                 ]
             ]
         ))
-    
+
     query = process_search_request.build_es_query(request)
-    
+
     assert len(query["query"]["bool"]["should"]) == 2
     assert list(query["query"]["bool"]["should"][0].keys()) == [
         "multi_match"]
@@ -94,7 +93,7 @@ def test_transform_hits():
     )
 
     transformed = process_search_request.transform_hits(mock_hits, params)
-    
+
     assert transformed[0]["objectID"] == "123"
     assert transformed[0]["handle"] == "test-handle"
     assert transformed[0]["_highlightResult"]["has_record"][

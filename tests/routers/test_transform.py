@@ -2,7 +2,8 @@ import json
 
 from fastapi.testclient import TestClient
 import pytest
-from app.main import app, EFI_PATH
+
+from app.main import EFI_PATH, app
 from app.schemas.efi_schema import efi
 
 pytest.skip(allow_module_level=True)
@@ -141,21 +142,21 @@ def test_output_structure(valid_input_data):
     """Test the structure of the output"""
     response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     data = response.json()
-    
+
     # Check if output is a list with exactly 2 items
     assert isinstance(data, list)
     assert len(data) == 2
-    
+
     # Check first item (KIP record)
     assert data[0]["type"] == "KIP"
     assert isinstance(data[0]["parsed_data"], str)
     assert data[0]["idx"] == 1
-    
+
     # Check second item (has_record)
     assert data[1]["type"] == "has_record"
     assert isinstance(data[1]["parsed_data"], str)
     assert data[1]["idx"] == 2
-    
+
     # Check if described_by was added
     assert "described_by" in data[1]["parsed_data"]
 

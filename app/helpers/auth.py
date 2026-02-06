@@ -2,13 +2,12 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
-from starlette.requests import Request
-from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from starlette.requests import Request
 
 from ..core.config import settings
 from ..schemas.auth import Token
-
 
 SESSION_TIMEOUT = 20 * 60       # Seconds of inactivity before forced logout
 

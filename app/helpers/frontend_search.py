@@ -2,7 +2,6 @@ from collections import defaultdict
 import json
 import logging
 import re
-from typing import List, Dict
 from urllib import parse
 
 from fastapi import HTTPException
@@ -10,7 +9,6 @@ from fastapi import HTTPException
 from ..core.config import settings
 from ..core.elasticsearch import es_client
 from ..schemas import frontend_search as sfs
-
 
 logger = logging.getLogger(__name__)
 AGGREGATION_LIMIT = 1000
@@ -23,6 +21,7 @@ class SearchAdapter:
     https://www.algolia.com/doc/rest-api/search/#tag/Search/operation/search
 
     """
+
     search_attributes = [
         {
             "field": "has_record.has_primary_title.has_name",
@@ -519,12 +518,12 @@ class SearchAdapter:
         level = 0
         while level < len(path_segments) - 1:
             key = path_segments[level]
-            if not key in aggs:
+            if key not in aggs:
                 aggs[key] = {
                     'nested': {'path': '.'.join(path_segments[:level+1])},
                     'aggs': defaultdict(dict),
                 }
-            elif not 'aggs' in aggs[key]:
+            elif 'aggs' not in aggs[key]:
                 raise HTTPException(
                     status_code=422,
                     detail=f"Collision between nested aggregation at"

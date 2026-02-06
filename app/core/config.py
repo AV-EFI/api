@@ -2,6 +2,7 @@ from fastapi_csrf_protect import CsrfProtect
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     APP_NAME: str = "EFI API"
     SESSION_SECRET: str = "secret_for_session_cookies" # To be changed in local env

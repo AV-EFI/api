@@ -1,11 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, Path
 
 from ...core.config import settings
 from ...core.elasticsearch import collect_children, collect_parents, es_client
 from ...schemas.view import DetailView
-
 
 router = APIRouter()
 

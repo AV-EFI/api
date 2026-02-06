@@ -1,7 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from ..core.config import settings
-from ..core.elasticsearch import es_client
 from ..helpers import matching
 from ..schemas.efi_schema import efi
 from ..schemas.elastic_schema import SearchResponse

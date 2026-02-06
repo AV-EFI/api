@@ -1,8 +1,13 @@
 from elasticsearch import helpers
 
 from ..core.config import settings
-from ..core.elasticsearch import collect_children, collect_parents, \
-    es_client, es_iter, filter_by_category
+from ..core.elasticsearch import (
+    collect_children,
+    collect_parents,
+    es_client,
+    es_iter,
+    filter_by_category,
+)
 
 PRIMARY_INDEX = settings.ES_PRIMARY_INDEX
 NESTED_INDEX = settings.ES_LOOKUP_INDEX
@@ -262,8 +267,10 @@ def denormalise_work(index, doc):
     Args:
         doc: dict representing document with category=avefi:WorkVariant.
 
-    Returns:
-        bool: True if associated manifestations have been found,
+    Returns
+    -------
+    bool
+        True if associated manifestations have been found,
         meaning that the passed dict has been modified in place, False
         otherwise.
 
