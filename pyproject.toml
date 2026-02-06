@@ -29,6 +29,7 @@ rebuild_search_index = "app.helpers.indexing:rebuild_search_index"
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
+    "ruff>=0.15.0",
 ]
 
 [build-system]
@@ -43,3 +44,36 @@ module-name = "app"
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
+
+[tool.ruff]
+# Set the maximum line length to 79.
+line-length = 79
+
+[tool.ruff.lint]
+select = [
+    # flake8-bugbear
+    "B",
+    # pydocstyle
+    "D",
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # FastAPI
+    "FAST",
+    # isort
+    "I",
+    # flake8-simplify
+    "SIM",
+    # pyupgrade
+    "UP",
+    # white space
+    "W",
+]
+ignore = ["D100", "D101", "D102", "D103", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
