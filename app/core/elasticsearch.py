@@ -4,9 +4,7 @@ from .config import settings
 
 
 def get_elasticsearch_client() -> Elasticsearch:
-    """
-    Create and return Elasticsearch client instance
-    """
+    """Create and return Elasticsearch client instance."""
     return Elasticsearch(
         [{
             'host': settings.ES_HOST,
@@ -53,11 +51,18 @@ def collect_parents(
     has_record.is_variant_of, recursively, and return one list in
     ascending order.
 
-    - `index`: Index to be queried.
-    - `doc`: '_source' part of an ES document.
-    - `reference_keys`: List of keys und `has_record` to be used for parent lookup.
-    - `recursive`: Recursively lookup parents if true.
-    - `parents`: For internal use during rescursiosn.
+    Parameters
+    ----------
+    index : str
+        Index to be queried.
+    doc : dict
+        '_source' part of an ES document.
+    reference_keys : list[str]
+        List of keys under `has_record` to be used for parent lookup.
+    recursive : bool
+        Recursively lookup parents if true.
+    parents : dict
+        For internal use during rescursion.
 
     """
     if parents is None:
@@ -101,9 +106,14 @@ def collect_children(index: str, parent_ref: str, reference_key: str):
     linked to a manifestation. Disregard all items whose attribute
     `has_access_status` is set to `Removed`.
 
-    - `index`: Index to be used for lookup.
-    - `parent_ref`: Handle identifying the parent doc.
-    - `reference_key`: Key und `has_record` in the child docs referencing the parent.
+    Parameters
+    ----------
+    index : str
+        Index to be used for lookup.
+    parent_ref : str
+        Handle identifying the parent doc.
+    reference_key : str
+        Key under `has_record` in child docs referencing the parent.
 
     """
     query = {
@@ -112,7 +122,8 @@ def collect_children(index: str, parent_ref: str, reference_key: str):
                 "filter": [
                     {
                         "term": {
-                            f"has_record.{reference_key}.id.keyword": parent_ref
+                            f"has_record.{reference_key}.id.keyword":
+                            parent_ref
                         }
                     }
                 ],

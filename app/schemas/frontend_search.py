@@ -11,7 +11,8 @@ class SearchParams(BaseModel):
     )
     facetFilters: list[list[str] | str] | None = Field(
         default=None,
-        description="Nested list of facet filters in format ['field:value']. Inner lists are OR'ed, outer lists are AND'ed",
+        description="Nested list of facet filters in format ['field:value']."
+        " Inner lists are OR'ed, outer lists are AND'ed",
         examples=[
             ["production:Hermann Schlenker Filmproduktion"],
             ["years:1977"]
@@ -19,7 +20,8 @@ class SearchParams(BaseModel):
     )
     facets: list[str] | str | None = Field(
         default=None,
-        description="List of facet fields to aggregate results by, or single facet field",
+        description="List of facet fields to aggregate results by,"
+        " or single facet field",
         examples=[
             "castmembers",
             "directors_or_editors",
@@ -145,5 +147,6 @@ class SearchResult(BaseModel):
 
 class SearchResponse(BaseModel):
     results: list[SearchResult] = Field(
-        description="List of search results containing hits, facets, pagination and other metadata"
+        description="List of search results containing hits, facets,"
+        " pagination and other metadata"
     )

@@ -1,4 +1,5 @@
 from http.client import HTTPException
+from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
 import httpx
@@ -13,18 +14,18 @@ url = settings.PID_SERVICE_URL
 @router.put("/update/{handle_suffix}", summary="Update PID", tags=["PID"])
 async def update_pid(
     handle_suffix: str,
-    data: dict = Body(
+    data: Annotated[dict, Body(
         ...,
         examples={
             "category": "SOME CATEGORY",
             "type": "SOME TYPE"
         },
         description="Minimum required data format"
-    ),
-    current_user: dict = Depends(verify_token)
+    )],
+    current_user: Annotated[dict, Depends(verify_token)],
 ):
     """Update an existing PID with authentication required.
-    
+
     Parameters
     ----------
     handle_suffix : str
@@ -61,5 +62,6 @@ async def update_pid(
 
     # Make PUT request to PID service with auth headers
     async with httpx.AsyncClient() as client:
-        response = await client.put(full_url, json=wrapped_data, headers=headers)
+        response = await client.put(
+            full_url, json=wrapped_data, headers=headers)
         return response.json()

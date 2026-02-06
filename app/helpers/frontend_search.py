@@ -324,10 +324,11 @@ class SearchAdapter:
                 for subfilter in filter_group:
                     try:
                         key, term = subfilter.split(':', maxsplit=1)
-                    except ValueError:
+                    except ValueError as e:
                         raise HTTPException(
                             status_code=422,
-                            detail=f"Cannot handle facet filter: {subfilter}")
+                            detail=f"Cannot handle facet filter: {subfilter}",
+                        ) from e
                     subfilter_dict[key].append(term)
                 subfilter_list = []
                 for key, val in subfilter_dict.items():
@@ -343,10 +344,11 @@ class SearchAdapter:
             else:
                 try:
                     key, term = filter_group.split(':', maxsplit=1)
-                except ValueError:
+                except ValueError as e:
                     raise HTTPException(
                         status_code=422,
-                        detail=f"Cannot handle facet filter: {filter_group}")
+                        detail=f"Cannot handle facet filter: {filter_group}",
+                    ) from e
                 entry = self._es_filter_from_facet(key, term, params)
             filter_list.append(entry)
         if params.numericRefinements:
@@ -368,10 +370,10 @@ class SearchAdapter:
             self, facet_name: str, value, params: sfs.SearchParams):
         try:
             facet_attr = self.facet_by_name[facet_name]
-        except KeyError:
+        except KeyError as e:
             raise HTTPException(
                 status_code=422,
-                detail=f"Unknown facet filter: {facet_name}")
+                detail=f"Unknown facet filter: {facet_name}") from e
         path_segments = facet_attr.get("nested_paths", []).copy()
         path_segments.append(facet_attr["field"])
         if facet_attr['type'] == 'string':
@@ -446,8 +448,7 @@ class SearchAdapter:
         }
 
     def get_aggs_clause(
-            self, params: sfs.SearchParams, filter_clause: list[dict]=[]
-    ) -> dict:
+            self, params: sfs.SearchParams, filter_clause: list[dict]) -> dict:
         """Build complete aggregations section of the ES query.
 
         Build aggregations according to requested facets.
@@ -766,11 +767,11 @@ class SearchAdapter:
                     continue
                 attr_name = attr['attribute']
                 if attr['type'] == 'numeric-refinement':
-                    get_key = lambda x: int(x['key'])
+                    facets[attr_name] = {
+                        int(b['key']): b['doc_count'] for b in buckets}
                 else:
-                    get_key = lambda x: x['key']
-                facets[attr_name] = {
-                    get_key(b): b['doc_count'] for b in buckets}
+                    facets[attr_name] = {
+                        b['key']: b['doc_count'] for b in buckets}
         return facets
 
 

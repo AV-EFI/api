@@ -51,9 +51,7 @@ def find_matches(index: str, max_matches: int = DEFAULT_SIZE) -> dict:
 
 
 def _make_described_by_list(doc_source: dict):
-    """Helper function fixing old style described_by in WorkVariants.
-
-    """
+    """Fix old style described_by in WorkVariants."""
     if isinstance(doc_source.get('has_record', {}).get('described_by'), dict):
         doc_source['has_record']['described_by'] = [
             doc_source['has_record']['described_by']]
@@ -216,9 +214,7 @@ def _in_production_event(clause: dict) -> dict:
 
 
 def year_range_from_dtf(date_string: str) -> dict:
-    """
-    Convert ISO 8601 / DTF compliant string into a year range query.
-    """
+    """Convert ISO 8601 / DTF compliant string into a year range query."""
     components = date_string.split('/')
     start, start_margin = year_and_margin_from_dtf(components[0])
     len_components = len(components)
@@ -238,9 +234,7 @@ def year_range_from_dtf(date_string: str) -> dict:
 
 
 def year_and_margin_from_dtf(date_string: str) -> tuple:
-    """
-    Convert ISO 8601 / DTF compliant string into a (year, margin) tuple.
-    """
+    """Convert ISO 8601 / DTF compliant string into a (year, margin) tuple."""
     match = re.match(r'^(-?\d+)([?~]?)', date_string)
     if not match:
         raise ValueError(f"Cannot parse date: {date_string}")

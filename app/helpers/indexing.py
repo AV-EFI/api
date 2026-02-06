@@ -150,7 +150,8 @@ INGEST_PROCESSORS = [
                 if (event?.has_activity != null) {
                   for (activity in event.has_activity) {
                     if (!activity?.has_agent.empty) {
-                      if (activity?.type == 'Director' || activity?.type == 'Editor') {
+                      if (activity?.type == 'Director'
+                          || activity?.type == 'Editor') {
                         for (agent in activity.has_agent) {
                           directors_or_editors.add(agent.has_name)
                         }
@@ -160,7 +161,8 @@ INGEST_PROCESSORS = [
                           castmembers.add(agent.has_name)
                         }
                       }
-                      if (activity?.type == 'Producer' || activity?.type == 'ProductionCompany') {
+                      if (activity?.type == 'Producer'
+                          || activity?.type == 'ProductionCompany') {
                         for (agent in activity.has_agent) {
                           production.add(agent.has_name)
                         }
@@ -225,7 +227,7 @@ INGEST_PROCESSORS = [
                 result = Integer.parseInt(durationComponent.group(2)) + result;
                 ctx.duration_in_minutes = result;
               }
-            """
+            """ # noqa
         }
     }
 ]
@@ -356,8 +358,6 @@ def rebuild_denormalised_index():
 
 
 def rebuild_search_index():
-    """Entry point for rebuilding search index from scratch.
-
-    """
+    """Entry point for rebuilding search index from scratch."""
     rebuild_nested_index()
     rebuild_denormalised_index()

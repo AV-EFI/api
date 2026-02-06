@@ -19,14 +19,16 @@ def mock_es_client():
 @pytest.fixture
 def example_request(runtime_path_of):
     with runtime_path_of(
-            'search_by_date_director_format_with_facets_request.json').open() as f:
+            'search_by_date_director_format_with_facets_request.json'
+    ).open() as f:
         return json.load(f)
 
 
 def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     # Setup mock ES response
     with runtime_path_of(
-            'search_by_date_director_format_with_facets_response.json').open() as f:
+            'search_by_date_director_format_with_facets_response.json'
+    ).open() as f:
         mock_es_client.search.return_value = json.load(f)
     response = client.post(f"{EFI_PATH}/frontend/search", json=example_request)
     assert response.status_code == 200, response.json()

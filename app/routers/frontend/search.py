@@ -26,7 +26,7 @@ async def search_options():
     - Faceted filtering and aggregations
     - Result highlighting
     - Pagination
-    
+
     Multiple search requests can be submitted at once.
     """,
     tags=["Frontend"],

@@ -1,4 +1,5 @@
 from http.client import HTTPException
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 import httpx
@@ -11,9 +12,11 @@ router = APIRouter()
 url = settings.PID_SERVICE_URL
 
 @router.post("/create", summary="Create PID", tags=["PID"])
-async def create_pid(data: dict, prefix: str, suffix: str, current_user: dict = Depends(verify_token)):
+async def create_pid(
+        data: dict, prefix: str, suffix: str,
+        current_user: Annotated[dict, Depends(verify_token)]):
     """Create a new PID with authentication required.
-    
+
     Parameters
     ----------
     data : dict
@@ -24,7 +27,7 @@ async def create_pid(data: dict, prefix: str, suffix: str, current_user: dict = 
         Suffix for the PID URL.
     current_user : dict
         Authenticated user information.
-    
+
     Returns
     -------
     dict
@@ -56,5 +59,6 @@ async def create_pid(data: dict, prefix: str, suffix: str, current_user: dict = 
     print(base64_auth)
     # Make POST request to PID service with auth headers
     async with httpx.AsyncClient() as client:
-        response = await client.post(full_url, json=wrapped_data, headers=headers)
+        response = await client.post(
+            full_url, json=wrapped_data, headers=headers)
         return response.json()

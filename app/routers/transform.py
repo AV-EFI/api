@@ -38,4 +38,4 @@ async def transform_data(input_data: InputData) -> list[TransformedRecord]:
         return [kip_record, has_record]
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Invalid Request") from e

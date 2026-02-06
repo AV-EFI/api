@@ -7,7 +7,7 @@ router = APIRouter()
 @router.get("/health", summary="Health Check", tags=["Health"])
 async def health_check():
     """Health check endpoint to verify Elasticsearch connection.
-    
+
     Returns
     -------
     dict
@@ -32,5 +32,5 @@ async def health_check():
     except Exception as e:
         raise HTTPException(
             status_code=503,
-            detail=f"Service Unavailable: {str(e)}"
-        )
+            detail="Service Unavailable",
+        ) from e

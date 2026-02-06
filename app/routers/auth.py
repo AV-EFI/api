@@ -1,9 +1,10 @@
 from datetime import datetime
 import logging
+from typing import Annotated
 from urllib import parse
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi_csrf_protect import CsrfProtect
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse
@@ -36,7 +37,7 @@ FRONTEND_CALLBACK = '/'
 async def session(request: Request):
     try:
         return valid_access_token(request)
-    except:
+    except HTTPException:
         return {}
 
 
@@ -54,7 +55,8 @@ async def signout(request: Request):
 
 @router.get("/csrf")
 async def csrf_token(
-        request: Request, csrf_protect: CsrfProtect = Depends()) -> CsrfToken:
+        request: Request, csrf_protect: Annotated[CsrfProtect, Depends()],
+) -> CsrfToken:
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     response = JSONResponse(status_code=200, content={"csrfToken": csrf_token})
     csrf_protect.set_csrf_cookie(signed_token, response)
@@ -84,7 +86,7 @@ oauth.register(
 )
 async def signin_ac(
         request: Request,
-        csrf_protect: CsrfProtect = Depends()):
+        csrf_protect: Annotated[CsrfProtect, Depends()]):
     await csrf_protect.validate_csrf(request)
     return await redirect_to_ac(request)
 
@@ -97,7 +99,7 @@ async def signin_ac(
     response_description="""Redirect to external identity provider and
       hand back control to the frontend eventually.""",
 )
-async def signin_ac(request: Request):
+async def signin_ac_get(request: Request):
     return await redirect_to_ac(request)
 
 

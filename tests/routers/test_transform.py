@@ -67,7 +67,8 @@ def expected_output():
                 "described_by": [
                     {
                         "has_issuer_id": "https://w3id.org/isil/DE-MUS-432511",
-                        "has_issuer_name": "Filmmuseum der Landeshauptstadt Düsseldorf"
+                        "has_issuer_name":
+                        "Filmmuseum der Landeshauptstadt Düsseldorf"
                     }
                 ],
                 "has_event": [
@@ -102,13 +103,13 @@ def expected_output():
     ]
 
 def test_successful_transformation(valid_input_data, expected_output):
-    """Test successful transformation of valid input data"""
+    """Test successful transformation of valid input data."""
     response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     assert response.status_code == 200, response.json()
     assert response.json() == expected_output
 
 def test_missing_required_field():
-    """Test handling of missing required fields"""
+    """Test handling of missing required fields."""
     invalid_data = {
         "category": "avefi:WorkVariant",
         # missing has_primary_title
@@ -119,7 +120,7 @@ def test_missing_required_field():
     assert response.status_code == 422  # Validation error
 
 def test_invalid_data_type():
-    """Test handling of invalid data types"""
+    """Test handling of invalid data types."""
     invalid_data = {
         "category": "avefi:WorkVariant",
         "has_primary_title": {
@@ -134,12 +135,12 @@ def test_invalid_data_type():
     assert response.status_code == 422
 
 def test_empty_input():
-    """Test handling of empty input"""
+    """Test handling of empty input."""
     response = client.post(f"{EFI_PATH}/transform", json={})
     assert response.status_code == 422
 
 def test_output_structure(valid_input_data):
-    """Test the structure of the output"""
+    """Test the structure of the output."""
     response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     data = response.json()
 
@@ -161,15 +162,16 @@ def test_output_structure(valid_input_data):
     assert "described_by" in data[1]["parsed_data"]
 
 def test_described_by_content(valid_input_data):
-    """Test if described_by field is correctly added"""
+    """Test if described_by field is correctly added."""
     response = client.post(f"{EFI_PATH}/transform", json=valid_input_data)
     payload = json.loads(response.json()[1]["parsed_data"])
     described_by = payload["described_by"]
 
     assert described_by[0]["has_issuer_id"] == "https://w3id.org/isil/DE-MUS-432511"
-    assert described_by[0]["has_issuer_name"] == "Filmmuseum der Landeshauptstadt Düsseldorf"
+    assert described_by[0][
+        "has_issuer_name"] == "Filmmuseum der Landeshauptstadt Düsseldorf"
 
 def test_invalid_json():
-    """Test handling of invalid JSON"""
+    """Test handling of invalid JSON."""
     response = client.post(f"{EFI_PATH}/transform", content="invalid json")
     assert response.status_code == 422

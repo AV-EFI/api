@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "EFI API"
-    SESSION_SECRET: str = "secret_for_session_cookies" # To be changed in local env
+    # To be changed in local env
+    SESSION_SECRET: str = "secret_for_session_cookies"
 
     # Elasticsearch settings
     ES_HOST: str = "pid.av-efi.net"
@@ -25,8 +26,8 @@ class Settings(BaseSettings):
 
     PID_SERVICE_URL: str = "http://pid.av-efi.net:8081/handles/21.T11998"
     PID_SERVICE_ADDRESS: str = "http://pid.av-efi.net:8081"
-    PID_USERNAME: str = "" #TODO: UPDATE USERNAME TO AUTHENTICATE AGAINST PID SYSTEM; CAN BE DONE IN .ENV FILE
-    PID_PASSWORD: str = "" #TODO: UPDATE PASSWORD TO AUTHENTICATE AGAINST PID SYSTEM; CAN BE DONE IN .ENV FILE
+    PID_USERNAME: str = ""
+    PID_PASSWORD: str = ""
 
     model_config = ConfigDict(
         env_file = ".api_config.env",

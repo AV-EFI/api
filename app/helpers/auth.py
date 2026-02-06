@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime
 from typing import Annotated
 
@@ -44,17 +45,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="av-efi/auth")
 
 async def verify_token(token: str = Depends(oauth2_scheme)):
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=401,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 async def get_auth_headers():
-    """Helper function to generate authentication headers"""
+    """Generate authentication headers."""
     auth_string = f"{settings.PID_USERNAME}:{settings.PID_PASSWORD}"
     auth_bytes = auth_string.encode('ascii')
     base64_auth = base64.b64encode(auth_bytes).decode('ascii')

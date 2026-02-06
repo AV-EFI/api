@@ -13,9 +13,7 @@ router = APIRouter()
 async def get_detail(
         prefix: Annotated[str, Path(pattern="^21\\.\\d+$")],
         id_: Annotated[str, Path(pattern="^[!-~]+$")]) -> dict:
-    """
-    Get record by EFI.
-    """
+    """Get record by EFI."""
     handle = f"{prefix}/{id_}"
     query = {"query": {"bool": {"filter": [{"bool": {"should": [
         {"term": {"handle.keyword": handle}},

@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 import httpx
 
@@ -13,10 +15,10 @@ TIMEOUT_SECONDS = 30.0
 async def get_pid_handle(
     pid: str,
     suffix: str,
-    current_user: dict = Depends(verify_token)
+    current_user: Annotated[dict, Depends(verify_token)],
 ):
     """Get a PID handle with authentication required.
-    
+
     Parameters
     ----------
     pid : str
@@ -45,14 +47,15 @@ async def get_pid_handle(
         response = await client.get(full_url, headers=headers)
         return response.json()
 
-@router.put("/handles/{pid}/{suffix}", summary="Update PID Handle", tags=["PID"])
+@router.put(
+    "/handles/{pid}/{suffix}", summary="Update PID Handle", tags=["PID"])
 async def update_pid_handle(
     pid: str,
     suffix: str,
     data: list[dict],
-    if_match: str | None = Header(None),
-    if_none_match: str | None = Header(None),
-    current_user: dict = Depends(verify_token)
+    if_match: Annotated[str | None, Header(None)],
+    if_none_match: Annotated[str | None, Header(None)],
+    current_user: Annotated[dict, Depends(verify_token)],
 ):
     """Update a PID handle with authentication required.
 
@@ -108,34 +111,40 @@ async def update_pid_handle(
         async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
             response = await client.put(full_url, json=data, headers=headers)
             return response.json()
-    except httpx.TimeoutException:
+    except httpx.TimeoutException as e:
         raise HTTPException(
             status_code=504,
             detail="Request to PID service timed out"
-        )
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Error communicating with PID service: {str(e)}"
-        )
+            detail="Error communicating with PID service"
+        ) from e
 
-@router.delete("/handles/{pid}/{suffix}", summary="Delete PID Handle", tags=["PID"])
+@router.delete(
+    "/handles/{pid}/{suffix}", summary="Delete PID Handle", tags=["PID"])
 async def delete_pid_handle(
     pid: str,
     suffix: str,
-    current_user: dict = Depends(verify_token)
+    current_user: Annotated[dict, Depends(verify_token)],
 ):
-    """
-    Delete a PID handle with authentication required
-    
-    Args:
-        pid: PID identifier
-        suffix: Suffix for the PID URL
-        current_user: Authenticated user information
-    
+    """Delete a PID handle with authentication required.
+
+    Parameters
+    ----------
+    pid : str
+        PID identifier.
+    suffix : str
+        Suffix for the PID URL.
+    current_user : dict
+        Authenticated user information.
+
     Returns
     -------
-        dict: Empty dict on successful deletion, error response otherwise
+    dict
+        Empty dict on successful deletion, error response otherwise.
+
     """
     if not url:
         raise HTTPException(
@@ -154,8 +163,8 @@ async def delete_pid_handle(
         else:
             try:
                 return response.json()
-            except:
+            except Exception as e:
                 raise HTTPException(
                     status_code=response.status_code,
                     detail=response.text
-                )
+                ) from e

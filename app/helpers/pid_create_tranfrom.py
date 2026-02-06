@@ -1,5 +1,5 @@
 def wrap_pid_data(data: dict) -> list:
-    """Common function to wrap PID data in required format.
+    """Wrap PID data in required format.
 
     Parameters
     ----------
