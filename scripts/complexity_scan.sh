@@ -23,13 +23,13 @@ fi
 run_analysis() {
     local file=$1
     local title=$2
-    
+
     # Clear existing file if it exists
     > "${file}"
-    
+
     # Add header
     echo "=== ${title} ===" > "${file}"
-    
+
     # Run analysis
     echo "Generating ${title}..."
     if [[ -f "${file}" ]]; then
