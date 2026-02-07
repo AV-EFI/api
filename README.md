@@ -59,12 +59,33 @@ $ docker run --name efi-api --detach --publish 8000:8000 docker.gitlab.gwdg.de/a
 At the login step, provide your username and token for authentication. Then, make sure that you have enough right to
 pull images from the project. Otherwise, an `Access Denied` error will be thrown.
 
-## For developer
+## For developers
 
-- [Install uv][7]. Make sure that it is **not** installed in the same virtual environment of this project, since it might
-  cause some side effects.
+- [Install uv][7]. Make sure that it is **not** installed in the same
+  virtual environment of this project, since it might cause some side
+  effects.
 - Run `uv sync`.
+- In order to ensure coding style consistency, you are kindly asked to
+  activate pre-commits as follows:
+  ```console
+  $ pipx install pre-commit
+  $ pre-commit install
+  ```
 - The project is ready for development.
+
+Please note that the ruff code formatter fails to strictly comply with
+the max-line-length limit sometimes. Since this makes the checker fail
+on subsequent runs, ether reformatting or checking has to be prevented
+by means of appropriate pragma comments. Here are examples of the two
+options:
+
+```python
+def imagine_very_long_function_name(with_long_argument_names):  # noqa: E501 (disable length limit check on this line)
+    return {
+        "long_key_name_for_a_url":  # fmt: skip (prevent reformatting)
+        "https://www.example.invalid/just/some/longish/demo/url/"
+    }
+```
 
 ## Index maintenance
 
