@@ -464,7 +464,7 @@ class SearchAdapter:
                     "handle": {
                         "terms": {
                             "field": "manifestations.handle.keyword",
-                            "min_doc_count": 1,
+                            "min_doc_count": 2,
                             "size": AGGREGATION_LIMIT,
                         }
                     },
@@ -475,7 +475,7 @@ class SearchAdapter:
                                 "terms": {
                                     "field":
                                     "manifestations.items.handle.keyword",
-                                    "min_doc_count": 1,
+                                    "min_doc_count": 2,
                                     "size": AGGREGATION_LIMIT,
                                 }
                             }
@@ -632,18 +632,27 @@ class SearchAdapter:
             .get("filtered_manifestations")
         )
         if manifestations:
-            result.nbManifestations = len(manifestations["handle"]["buckets"])
-            if result.nbManifestations >= AGGREGATION_LIMIT:
-                logger.error(
-                    f"nbManifestations exceeds {AGGREGATION_LIMIT}"
-                    f" (result={result})"
-                )
+            handle_buckets = manifestations.get("handle", {}).get(
+                "buckets", []
+            )
+            nb_manifestations = (
+                manifestations.get("doc_count")
+                + len(handle_buckets)
+                - sum([b["doc_count"] for b in handle_buckets])
+            )
+            result.nbManifestations = nb_manifestations
             items = manifestations.get("items", {}).get("filtered_items")
             if items:
-                result.nbItems = len(items["handle"]["buckets"])
-                if result.nbItems >= AGGREGATION_LIMIT:
+                handle_buckets = items.get("handle", {}).get("buckets", [])
+                nb_items = (
+                    items.get("doc_count")
+                    + len(handle_buckets)
+                    - sum([b["doc_count"] for b in handle_buckets])
+                )
+                result.nbItems = nb_items
+                if len(handle_buckets) >= AGGREGATION_LIMIT:
                     logger.error(
-                        f"nbItems exceeds {AGGREGATION_LIMIT}"
+                        f"More than {AGGREGATION_LIMIT} compilation items"
                         f" (result={result})"
                     )
         return result
