@@ -1,4 +1,5 @@
 stages:
+  - test
   - build
   - prepare
   - release
@@ -12,6 +13,28 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   CONTAINER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
+
+.base_ruff:
+  stage: test
+  interruptible: true
+  image:
+    name: ghcr.io/astral-sh/ruff:0.15.0-alpine
+  before_script:
+    - cd $CI_PROJECT_DIR
+    - ruff --version
+
+ruff check:
+  extends: .base_ruff
+  script:
+    - ruff check --output-format=gitlab --output-file=code-quality-report.json
+  artifacts:
+    reports:
+      codequality: $CI_PROJECT_DIR/code-quality-report.json
+
+ruff format:
+  extends: .base_ruff
+  script:
+    - ruff format --diff
 
 .docker_common:
   image: docker.gitlab.gwdg.de/eoltman/docker-ext:${DOCKER_IMAGE_VERSION}
