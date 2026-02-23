@@ -1,6 +1,5 @@
 import logging
 import os
-from pathlib import Path
 
 import elasticsearch
 from fastapi import FastAPI, Request
@@ -8,6 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 
+from . import __version__
 from .core.config import settings
 from .routers import auth, health, matches
 from .routers.frontend import search, view
@@ -36,16 +36,10 @@ logging.basicConfig(
     level=num_level, format="%(levelname)s:%(name)s: %(message)s"
 )
 
-# Read version from the VERSION file
-path_to_app = Path(__file__).parent
-path_to_version = Path(path_to_app, "VERSION").resolve()
-with open(path_to_version) as f:
-    version = f.read()
-
 app = FastAPI(
     title="AV-EFI API",
     description="This is the backend for the AV-EFI project.",
-    version=version,
+    version=__version__,
     docs_url=f"{EFI_ROOT}/docs",
     redoc_url=f"{EFI_ROOT}/redoc",
     openapi_url=f"{EFI_ROOT}/openapi.json",
@@ -67,7 +61,7 @@ app.add_middleware(
 api = FastAPI(
     title="AV-EFI API",
     description="This is the backend for the AV-EFI project.",
-    version=version,
+    version=__version__,
     openapi_tags=tags_metadata,
 )
 
