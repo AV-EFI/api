@@ -12,7 +12,6 @@ variables:
   # container, thanks to volume mount from config.toml
   DOCKER_TLS_CERTDIR: "/certs"
   CONTAINER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
-  CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
 
 .base_ruff:
   stage: test
@@ -60,8 +59,7 @@ build_docker:
 prepare_job:
   stage: prepare
   rules:
-    - if: $CI_COMMIT_TAG
-      when: never
+    - if: '$CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - echo "TAG=$(uv version --short" >> variables.env
@@ -83,8 +81,7 @@ release_gitlab:
     tag_name: '$TAG'
     ref: '$CI_COMMIT_SHA'
   rules:
-    - if: $CI_COMMIT_TAG
-      when: never                                  # Do not run this job when a tag is created manually
+    - if: '$CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH  # Run this job when commits are pushed or merged to the default branch
   allow_failure: true
 
@@ -100,11 +97,10 @@ release_docker:
   script:
     - docker build --pull --tag $CI_REGISTRY_IMAGE:$TAG
       --tag $CI_REGISTRY_IMAGE:latest .
-    - docker push $CONTAINER_IMAGE:$TAG
-    - docker push $CONTAINER_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:$TAG
+    - docker push $CI_REGISTRY_IMAGE:latest
   rules:
-    - if: $CI_COMMIT_TAG
-      when: never
+    - if: '$CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   extends: .docker_common
 

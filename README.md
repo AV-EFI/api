@@ -18,16 +18,18 @@ for every commit:
 
 1. If the commit is done on the non-default branch (not the `main` branch), a Docker image is built and has the same
    name as the branch name.
-2. If the commit is done on the default branch (`main` branch), it means that a new version is available. Therefore, a
-   release process will be triggered. This includes:
-    1. Read the new version from the [`VERSION`](app/VERSION) file.
+2. For commits on the default branch (`main`), only tests are executed
+   but no Docker image is built except when a new version is released.
+   The latter should be done by executing the [`release.sh`
+   script](./release.sh). This will bump and commit the version
+   locally, add the corresponding tag and push it, hence triggering
+   the release pipeline which includes:
+    1. Read the new version by means of `uv version --showrt`.
     2. Build a new Docker container and tag it with the `latest` tag and the version tag.
     3. Release a new version on GitLab. GitLab releases can be found [here][3].
 
-:warning: :warning: :warning:
-
-If a commit is done to the default branch without bumping to a new version in the [`VERSION`](app/VERSION)
-file, the GitLab release step will throw an error due to the version conflict.
+Please note that executing the `release.sh` script requires a
+developer setup as described further down in this README.
 
 ### Changelog
 
@@ -64,8 +66,9 @@ pull images from the project. Otherwise, an `Access Denied` error will be thrown
 - [Install uv][7]. Make sure that it is **not** installed in the same
   virtual environment of this project, since it might cause some side
   effects.
-- Run `uv sync`.
-- In order to ensure coding style consistency, you are kindly asked to
+- Run `uv sync --no-python-downloads` initially, a simple `uv sync` is
+  sufficient for subsequent updates.
+- In order to ensure coding style consistency, please also
   activate pre-commits as follows:
   ```console
   $ pipx install pre-commit
