@@ -28,16 +28,17 @@ RUN pip install uv
 
 # copy project requirement files here to ensure they will be cached.
 WORKDIR $PYSETUP_PATH
-COPY uv.lock pyproject.toml README.md ./
+COPY uv.lock pyproject.toml ./
 
 # install runtime deps
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-python-downloads --no-install-project
 
 # Copy the source code
-COPY ./app ./app
+COPY README.md ./
+COPY app/ ./app/
 
 # install main app
-RUN uv sync --frozen --no-dev
+RUN uv sync --locked --no-dev
 
 
 # `production` image used for runtime
