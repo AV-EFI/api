@@ -59,10 +59,12 @@ build_docker:
 prepare_job:
   stage: prepare
   rules:
-    - if: '$CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/'
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: >-
+        $CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/
+        && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
-    - echo "TAG=$(uv version --short" >> variables.env
+    - grep "^version *=" pyproject.toml
+      | sed -e 's/^version/TAG/' >> variables.env
   artifacts:
     reports:
       dotenv: variables.env  # Use artifacts:reports:dotenv to expose the variables to other jobs
@@ -81,8 +83,9 @@ release_gitlab:
     tag_name: '$TAG'
     ref: '$CI_COMMIT_SHA'
   rules:
-    - if: '$CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/'
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH  # Run this job when commits are pushed or merged to the default branch
+    - if: >-
+        $CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/
+        && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   allow_failure: true
 
 # Build a docker image with tag as current version and latest when commits are pushed or merged to the default branch
@@ -100,8 +103,9 @@ release_docker:
     - docker push $CI_REGISTRY_IMAGE:$TAG
     - docker push $CI_REGISTRY_IMAGE:latest
   rules:
-    - if: '$CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/'
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: >-
+        $CI_COMMIT_TAG =~ /v[0-9]+\.[0-9]+\.[0-9]+$/
+        && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   extends: .docker_common
 
 .deploy:
