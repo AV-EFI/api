@@ -82,13 +82,6 @@ async def get_detail(
         result = response["_source"]
         category = result.get("has_record", {}).get("category")
     if category == "avefi:Manifestation":
-        items = collect_children(
-            settings.ES_LOOKUP_INDEX, f"{prefix}/{id_}", "is_item_of"
-        )
-        if removed_item:
-            items.append(removed_item)
-        if items:
-            result["items"] = items
         work_variants = collect_parents(
             settings.ES_LOOKUP_INDEX, result, ["is_manifestation_of"]
         )
@@ -98,17 +91,30 @@ async def get_detail(
                 work_variants[0]["handle"],
                 "is_manifestation_of",
             )
-            if removed_item:
-                for i, manifestation in enumerate(manifestations):
-                    if manifestation.get("handle") == result["handle"]:
-                        manifestations[i] = result
-                        break
-                else:
-                    manifestations.append(result)
+        else:
+            manifestations = [result]
+        man_with_items = []
+        for manifestation in manifestations:
+            items = collect_children(
+                settings.ES_LOOKUP_INDEX, manifestation["handle"], "is_item_of"
+            )
+            if (
+                removed_item
+                and manifestation.get("handle") == result["handle"]
+            ):
+                items.append(removed_item)
+                removed_item = None
+            if items:
+                manifestation["items"] = items
+                man_with_items.append(manifestation)
+        if removed_item:
+            result["items"] = [removed_item]
+            man_with_items.append(result)
+        if len(work_variants) == 1:
             result = work_variants[0]
             category = result.get("has_record", {}).get("category")
-            if manifestations:
-                result["manifestations"] = manifestations
+            if man_with_items:
+                result["manifestations"] = man_with_items
         else:
             result["work_variants"] = work_variants
     if category == "avefi:WorkVariant":
