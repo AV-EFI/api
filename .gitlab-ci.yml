@@ -13,6 +13,14 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   CONTAINER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
 
+gitleaks:
+  stage: test
+  image:
+    name: ghcr.io/gitleaks/gitleaks:latest
+    entrypoint: [""]
+  script:
+    - gitleaks git --platform gitlab --verbose --redact
+
 .base_ruff:
   stage: test
   interruptible: true
