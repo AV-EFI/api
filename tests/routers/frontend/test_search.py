@@ -41,6 +41,7 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
 
     # Verify top-level numbers
     assert result["nbHits"] == 2
+    assert result["nbWorks"] == 2
     assert result["nbManifestations"] == 2
     assert result["nbItems"] == 2
 

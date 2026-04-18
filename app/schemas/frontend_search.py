@@ -117,6 +117,11 @@ class SearchResult(BaseModel):
     hitsPerPage: int
     processingTimeMS: int
     nbHits: int
+    nbWorks: int | None = Field(
+        default=None,
+        description="Number of works matching the query",
+        examples=[1],
+    )
     nbManifestations: int | None = Field(
         default=None,
         description="Number of manifestations matching the query",

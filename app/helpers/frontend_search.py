@@ -458,6 +458,7 @@ class SearchAdapter:
             facets = []
         aggs_dict = defaultdict(dict)
         aggs_dict = {
+            "categories": {"terms": {"field": "has_record.category.keyword"}},
             "manifestations": {
                 "nested": {"path": "manifestations"},
                 "aggs": {
@@ -626,6 +627,14 @@ class SearchAdapter:
             params=parse.urlencode(params.model_dump(exclude=None)),
             renderingContent=self.renderingContent,
         )
+        categories = response.get("aggregations", {}).get("categories", {})
+        if categories:
+            nb_works = 0
+            for cat in categories["buckets"]:
+                if cat["key"] == "avefi:WorkVariant":
+                    nb_works = cat["doc_count"]
+                    break
+            result.nbWorks = nb_works
         manifestations = (
             response.get("aggregations", {})
             .get("manifestations", {})
