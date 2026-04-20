@@ -126,7 +126,7 @@ INGEST_PROCESSORS = [
               }
               List castmembers = new ArrayList();
               List countries = new ArrayList();
-              List directors_or_editors = new ArrayList();
+              List creators = new ArrayList();
               List production = new ArrayList();
               List years = new ArrayList();
               List event_in_year = new ArrayList();
@@ -136,9 +136,9 @@ INGEST_PROCESSORS = [
                   for (activity in event.has_activity) {
                     if (!activity?.has_agent.empty) {
                       if (activity?.type == 'Director'
-                          || activity?.type == 'Editor') {
+                          || activity?.type == 'Creator') {
                         for (agent in activity.has_agent) {
-                          directors_or_editors.add(agent.has_name)
+                          creators.add(agent.has_name)
                         }
                       }
                       if (activity?.type == 'CastMember') {
@@ -170,8 +170,9 @@ INGEST_PROCESSORS = [
               if (!countries.empty) {
                 ctx.countries = countries
               }
-              if (!directors_or_editors.empty) {
-                ctx.directors_or_editors = directors_or_editors
+              if (!creators.empty) {
+                ctx.creators = creators;
+                ctx.directors_or_editors = creators;
               }
               if (!production.empty) {
                 ctx.production = production
