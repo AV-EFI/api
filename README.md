@@ -42,9 +42,23 @@ The project is dockerized and its images are stored in the [project container re
 make sure that [Docker][6] is installed.
 
 In a local checkout of the repository, the easiest way to bring up the
-server is via docker-compose as follows:
+server is via docker-compose. First, log into the container registry
+and pull the latest image:
 
-```shell
+```console
+$ docker login docker.gitlab.gwdg.de
+$ docker-compose pull
+```
+
+Alternatively, you can build the image locally:
+
+```console
+$ docker-compose build
+```
+
+Then start the server:
+
+```console
 $ docker-compose up -d
 ```
 
@@ -58,8 +72,50 @@ $ docker login docker.gitlab.gwdg.de
 $ docker run --name efi-api --detach --publish 8000:8000 docker.gitlab.gwdg.de/av-efi/api:<tag or branch_name>
 ```
 
-At the login step, provide your username and token for authentication. Then, make sure that you have enough right to
-pull images from the project. Otherwise, an `Access Denied` error will be thrown.
+### Ingest AVefi compliant JSON records into PID system
+
+Again, the easiest way is to use docker-compose. In the root directory
+of a local checkout of this project, pull the image from the container
+registry:
+
+```console
+# Log in to GitLab
+$ docker login docker.gitlab.gwdg.de
+# Pull image
+$ docker-compose pull
+```
+
+
+
+```console
+$ efi-agent push --help
+Usage: efi-agent push [OPTIONS] INPUT_FILE
+
+  Push AVefi records to the handle system, updating or creating PIDs.
+
+Options:
+  -j, --journal FILE  Journal where actions on PIDs are to be recorded.
+  -p, --profile FILE  Profile for the described_by slot in the AVefi schema.
+  --prefix TEXT       Prefix to be used when generating handles.
+  --suffix TEXT       Suffix to be used when generating handles.
+  --help              Show this message and exit.
+```
+
+The profile parameter determines who will be recorded as data provider
+in the described_by slots of the generated PIDs. It should be a JSON
+file similar to this:
+
+```yaml
+{
+  "has_issuer_id": "https://w3id.org/isil/DE-89",
+  "has_issuer_name": "Technische Informationsbibliothek (TIB)",
+}
+```
+
+This is specified as part of the [AVefi schema][].
+
+[AVefi schema]: https://av-efi.github.io/av-efi-schema/
+
 
 ## For developers
 

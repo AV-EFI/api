@@ -1,0 +1,12 @@
+services:
+  efi-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker.gitlab.gwdg.de/av-efi/api:latest
+    command: ""
+    entrypoint: /code/.venv/bin/efi-agent
+    volumes:
+      - .:/data:Z
+      - ./config:/data/config:ro
+    working_dir: /data

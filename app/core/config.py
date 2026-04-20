@@ -1,6 +1,12 @@
+import json
+import pathlib
+
 from fastapi_csrf_protect import CsrfProtect
+from httpx import BasicAuth
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
+
+CONFIG_DIR = pathlib.Path("config")
 
 
 class Settings(BaseSettings):
@@ -24,13 +30,15 @@ class Settings(BaseSettings):
     AC_METADATA_URL: str = ""
     ALGORITHM: str = "HS256"
 
+    # PID settings
+    CONNECTION_TIMEOUT: int = 180
     PID_SERVICE_URL: str = "http://pid.av-efi.net:8081/handles/21.T11998"
     PID_SERVICE_ADDRESS: str = "http://pid.av-efi.net:8081"
     PID_USERNAME: str = ""
     PID_PASSWORD: str = ""
 
     model_config = ConfigDict(
-        env_file=".api_config.env",
+        env_file=CONFIG_DIR / "config.ini",
     )
 
 
@@ -48,3 +56,22 @@ class CsrfSettings(BaseSettings):
 @CsrfProtect.load_config
 def get_csrf_config():
     return CsrfSettings()
+
+
+def get_credentials(prefix: str) -> dict:
+    result = {}
+    credentials_path = CONFIG_DIR / "credentials.json"
+    with credentials_path.open() as f:
+        credentials = json.load(f)
+    for creds in credentials:
+        if creds["prefix"] == prefix:
+            break
+    else:
+        raise RuntimeError(f"Did not find credentials for prefix {prefix}")
+    base_url = creds["base_url"]
+    if base_url.endswith("/"):
+        result["base_url"] = base_url
+    else:
+        result["base_url"] = f"{base_url}/"
+    result["auth"] = BasicAuth(creds["username"], creds["password"])
+    return result

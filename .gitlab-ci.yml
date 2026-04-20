@@ -134,14 +134,15 @@ release_docker:
     - chmod 600 ~/.ssh/known_hosts
   script:
     - envsubst < docker-compose.tmpl > docker-compose.yml
-    - envsubst < .api_config.env.tmpl > .api_config.env
-    # Create the new deployment directory if it doesn't exist
-    - ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $DEPLOY_PATH"
+    - envsubst < config/config.ini.tmpl > config/config.ini
+    # Create the new deployment's config directory if it doesn't exist
+    - ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $DEPLOY_PATH/config"
     # Upload docker-compose.yml and config to server
-    - scp docker-compose.yml .api_config.env
+    - scp docker-compose.yml config/config.ini
       $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
     # Login to Docker registry and restart containers
     - ssh $DEPLOY_USER@$DEPLOY_SERVER "cd $DEPLOY_PATH &&
+      mv config.ini config/ &&
       echo 'Logging into registry $CI_REGISTRY' &&
       echo '$CI_JOB_TOKEN'
       | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY &&

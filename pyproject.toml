@@ -21,9 +21,11 @@ dependencies = [
     "itsdangerous (>=2.2.0,<3.0.0)",
     "avefi-schema @ git+https://github.com/AV-EFI/av-efi-schema.git",
     "fastapi-csrf-protect (>=1.0.3,<2.0.0)",
+    "click>=8.3.2",
 ]
 
 [project.scripts]
+efi-agent = "app.efi_agent.main:cli_main"
 rebuild_search_index = "app.helpers.indexing:rebuild_search_index"
 
 [dependency-groups]
