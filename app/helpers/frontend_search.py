@@ -288,8 +288,7 @@ class SearchAdapter:
         filter_clause = self.get_filter_clause(params)
         if filter_clause:
             query["query"]["bool"]["filter"] = filter_clause
-        if params.facets:
-            query["aggs"] = self.get_aggs_clause(params, filter_clause)
+        query["aggs"] = self.get_aggs_clause(params, filter_clause)
         return query
 
     def get_filter_clause(self, params: sfs.SearchParams) -> list[dict]:
