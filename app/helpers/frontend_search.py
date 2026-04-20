@@ -412,27 +412,43 @@ class SearchAdapter:
             Value part of a bool query.
 
         """
-        return {
-            "minimum_should_match": 1,
-            "should": [
+        base_options = {
+            "query": query,
+            "fields": self.query_fields,
+            "zero_terms_query": "all",
+        }
+        if not query or (
+            len(query) >= 2 and query[0] == '"' and query[-1] == '"'
+        ):
+            if query:
+                query = query[1:-1]
+            query_list = [
                 {
                     "multi_match": {
-                        "query": query,
-                        "fields": self.query_fields,
-                        "zero_terms_query": "all",
+                        **base_options,
+                        "type": "phrase",
+                    }
+                }
+            ]
+        else:
+            query_list = [
+                {
+                    "multi_match": {
+                        **base_options,
                         "boost": 2,
                     }
                 },
                 {
                     "multi_match": {
-                        "query": query,
-                        "fields": self.query_fields,
-                        "zero_terms_query": "all",
+                        **base_options,
                         "fuzziness": "AUTO",
                         "tie_breaker": 0.667,
                     }
                 },
-            ],
+            ]
+        return {
+            "minimum_should_match": 1,
+            "should": query_list,
         }
 
     def get_aggs_clause(
