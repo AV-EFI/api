@@ -52,7 +52,8 @@ ruff format:
   tags:
     - docker
   before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - echo "$CI_JOB_TOKEN"
+      | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
 
 # Build a docker image when a push is made to a non-default branch.
 build_docker:
@@ -104,7 +105,8 @@ release_docker:
       artifacts: true
   before_script:
     - echo "Building image with tag $TAG and latest"
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - echo "$CI_JOB_TOKEN"
+      | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
     - docker build --pull --tag $CI_REGISTRY_IMAGE:$TAG
       --tag $CI_REGISTRY_IMAGE:latest .
@@ -141,7 +143,8 @@ release_docker:
     # Login to Docker registry and restart containers
     - ssh $DEPLOY_USER@$DEPLOY_SERVER "cd $DEPLOY_PATH &&
       echo 'Logging into registry $CI_REGISTRY' &&
-      docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
+      echo '$CI_JOB_TOKEN'
+      | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY &&
       echo 'Pulling latest images' &&
       docker compose pull &&
       echo 'Starting containers' &&
