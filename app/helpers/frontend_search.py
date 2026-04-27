@@ -350,7 +350,100 @@ class SearchAdapter:
                 }
                 entry = self._es_filter_from_facet(key, range_dict, params)
                 filter_list.append(entry)
-        return filter_list
+        return self._group_nested_filters(filter_list)
+
+    def _group_nested_filters(self, filter_list: list[dict]) -> list[dict]:
+        """Group nested filters with common path prefixes.
+
+        This function processes a list of filter entries and groups
+        nested filters that share common path prefixes. It wraps them
+        in a common nested entry with a bool/filter layer according to
+        Elasticsearch syntax.
+
+        Parameters
+        ----------
+        filter_list : list[dict]
+            List of filter entries as returned by get_filter_clause
+
+        Returns
+        -------
+        list[dict]
+            Processed filter list with grouped nested structures
+
+        """
+        # Base case: if no nested filters, return as-is
+        if not self._has_nested_filters(filter_list):
+            return filter_list
+
+        # Separate nested and non-nested filters
+        nested_filters = []
+        non_nested_filters = []
+
+        for entry in filter_list:
+            if isinstance(entry, dict) and "nested" in entry:
+                nested_filters.append(entry)
+            else:
+                non_nested_filters.append(entry)
+
+        # Group nested filters by path components
+        path_groups = self._group_nested_filters_by_path_components(
+            nested_filters
+        )
+
+        # Sort filter groups by descending number of path components
+        path_groups = dict(
+            sorted(path_groups.items(), reverse=True, key=lambda x: len(x[0]))
+        )
+
+        # Process each group
+        grouped_nested_filters = []
+        for prefix_components, group in path_groups.items():
+            if len(group) == 1 and group[0].get("nested"):
+                wrapped_filter = group[0]
+            else:
+                # Create wrapping structure
+                wrapping_query = {"bool": {"filter": group}}
+                wrapped_filter = {
+                    "nested": {
+                        "path": ".".join(prefix_components),
+                        "query": wrapping_query,
+                    }
+                }
+            for i in range(1, len(prefix_components)):
+                if prefix_components[:-i] in path_groups:
+                    path_groups[prefix_components[:-i]].append(wrapped_filter)
+                    break
+            else:
+                grouped_nested_filters.append(wrapped_filter)
+
+        return non_nested_filters + grouped_nested_filters
+
+    def _has_nested_filters(self, filter_list: list[dict]) -> bool:
+        """Check if the filter list contains any nested filters."""
+        return any(
+            isinstance(entry, dict) and "nested" in entry
+            for entry in filter_list
+        )
+
+    def _group_nested_filters_by_path_components(
+        self, nested_filters: list[dict]
+    ) -> dict[str, list[dict]]:
+        """Group nested filters by their path components."""
+
+        def unwrap_as_applicable(entry):
+            if entry["nested"]["query"].get("nested"):
+                return unwrap_as_applicable(entry["nested"]["query"])
+            return entry
+
+        groups = defaultdict(list)
+
+        for filter_entry in nested_filters:
+            filter_entry = unwrap_as_applicable(filter_entry)
+            path = filter_entry["nested"]["path"]
+            path_components = tuple(c for c in path.split("."))
+            groups[path_components].append(filter_entry["nested"]["query"])
+
+        return groups
 
     def _es_filter_from_facet(
         self, facet_name: str, value, params: sfs.SearchParams
