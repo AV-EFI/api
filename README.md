@@ -24,7 +24,7 @@ for every commit:
    script](./release.sh). This will bump and commit the version
    locally, add the corresponding tag and push it, hence triggering
    the release pipeline which includes:
-    1. Read the new version by means of `uv version --showrt`.
+    1. Read the new version by means of `uv version --show`.
     2. Build a new Docker container and tag it with the `latest` tag and the version tag.
     3. Release a new version on GitLab. GitLab releases can be found [here][3].
 
