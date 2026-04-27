@@ -8,7 +8,7 @@ echo "Check uv version"
 uv --version
 
 echo "Starting installation and setup"
-uv sync
+uv sync --no-python-downloads
 
 echo "Starting FASTAPI"
 uv run uvicorn app.main:app --reload

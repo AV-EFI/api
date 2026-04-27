@@ -2,7 +2,7 @@
 set -e
 
 echo "*********************** Activating venv ***********************"
-uv sync
+uv sync --no-python-downloads
 
 echo "*********************** Starting FASTAPI ***********************"
 echo "Swagger Documentation: http://127.0.0.1:8000/rest/v1/docs"

@@ -2,7 +2,7 @@
 set -e
 
 echo "*********************** Activating venv ***********************"
-uv sync
+uv sync --no-python-downloads
 
 echo "*********************** Running ruff **************************"
 uv run ruff check
