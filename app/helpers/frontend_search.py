@@ -564,33 +564,19 @@ class SearchAdapter:
                 facets = [params.facets]
         else:
             facets = []
-        aggs_dict = defaultdict(dict)
         aggs_dict = {
             "categories": {"terms": {"field": "has_record.category.keyword"}},
             "manifestations": {
                 "nested": {"path": "manifestations"},
-                "aggs": {
-                    "handle": {
-                        "terms": {
-                            "field": "manifestations.handle.keyword",
-                            "min_doc_count": 2,
-                            "size": AGGREGATION_LIMIT,
-                        }
-                    },
-                    "items": {
+                "aggs": self.add_handle_count_subaggregation(
+                    ["manifestations"],
+                    {"items": {
                         "nested": {"path": "manifestations.items"},
-                        "aggs": {
-                            "handle": {
-                                "terms": {
-                                    "field":
-                                    "manifestations.items.handle.keyword",
-                                    "min_doc_count": 2,
-                                    "size": AGGREGATION_LIMIT,
-                                }
-                            }
-                        },
-                    },
-                },
+                        "aggs": self.add_handle_count_subaggregation(
+                            ("manifestations", "items"), {},
+                        ),
+                    }},
+                ),
             }
         }  # fmt: skip
         for facet_attr in self.facet_attributes:
@@ -648,7 +634,37 @@ class SearchAdapter:
             )
         else:
             agg_type = "terms"
-        aggs[path_segments[-1]] = {agg_type: agg_spec}
+        aggs[path_segments[-1]] = {
+            agg_type: agg_spec,
+            "aggs": self.add_handle_count_subaggregation(path_segments),
+        }
+
+    def add_handle_count_subaggregation(
+        self,
+        path_segments: list[str],
+        aggs_dict: dict | None = None,
+    ) -> dict:
+        """Add context related subaggregation counting distinct handles.
+
+        Add cardinality subaggregation returning the number of
+        distinct handles of items or manifestations as applicable.
+
+        """
+        if aggs_dict is None:
+            aggs_dict = dict()
+        try:
+            i = path_segments.index("items")
+        except ValueError:
+            try:
+                i = path_segments.index("manifestations")
+            except ValueError:
+                i = -1
+        if i >= 0:
+            handle_field = ".".join(path_segments[: i + 1]) + ".handle.keyword"
+            aggs_dict["handle_count"] = {
+                "cardinality": {"field": handle_field}
+            }
+        return aggs_dict
 
     def add_filter_aggs(self, aggs: dict, nested_filters: dict, root_path=""):
         for agg_key, agg in aggs.items():
@@ -749,29 +765,14 @@ class SearchAdapter:
             .get("filtered_manifestations")
         )
         if manifestations:
-            handle_buckets = manifestations.get("handle", {}).get(
-                "buckets", []
-            )
-            nb_manifestations = (
-                manifestations.get("doc_count")
-                + len(handle_buckets)
-                - sum([b["doc_count"] for b in handle_buckets])
+            nb_manifestations = manifestations.get("handle_count", {}).get(
+                "value"
             )
             result.nbManifestations = nb_manifestations
             items = manifestations.get("items", {}).get("filtered_items")
             if items:
-                handle_buckets = items.get("handle", {}).get("buckets", [])
-                nb_items = (
-                    items.get("doc_count")
-                    + len(handle_buckets)
-                    - sum([b["doc_count"] for b in handle_buckets])
-                )
+                nb_items = items.get("handle_count", {}).get("value")
                 result.nbItems = nb_items
-                if len(handle_buckets) >= AGGREGATION_LIMIT:
-                    logger.error(
-                        f"More than {AGGREGATION_LIMIT} compilation items"
-                        f" (result={result})"
-                    )
         return result
 
     def transform_hits(
@@ -902,7 +903,11 @@ class SearchAdapter:
                     }
                 else:
                     facets[attr_name] = {
-                        b["key"]: b["doc_count"] for b in buckets
+                        b["key"]: (
+                            b.get("handle_count", {}).get("value")
+                            or b["doc_count"]
+                        )
+                        for b in buckets
                     }
         return facets
 
