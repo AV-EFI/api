@@ -137,6 +137,12 @@ class TestNestedFilterGrouping:
     def setup_method(self):
         """Set up test fixtures."""
         self.adapter = SearchAdapter()
+        self.params = SearchParams(
+            query="test query",
+            hitsPerPage=20,
+            page=0,
+            maxValuesPerFacet=10,
+        )
 
     def test_basic_grouping_and_wrapping(self):
         """Test basic grouping of filters with common prefix."""
@@ -168,7 +174,7 @@ class TestNestedFilterGrouping:
             },
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
 
         # Verify structure
         assert len(result) == 2
@@ -208,7 +214,7 @@ class TestNestedFilterGrouping:
             },
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
         assert len(result) == 2
         assert result[0]["nested"]["path"] == "field1.sub"
         assert result[1]["nested"]["path"] == "field2.sub"
@@ -224,7 +230,7 @@ class TestNestedFilterGrouping:
             }
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
         assert len(result) == 1
         assert result[0]["nested"]["path"] == "single.field"
 
@@ -235,7 +241,7 @@ class TestNestedFilterGrouping:
             {"range": {"field2": {"gte": 10}}},
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
         assert len(result) == 2
         assert result[0] == {"terms": {"field1": ["value1"]}}
         assert result[1] == {"range": {"field2": {"gte": 10}}}
@@ -248,12 +254,12 @@ class TestNestedFilterGrouping:
             {"nested": {"path": "a", "query": {"terms": {"f3": ["v3"]}}}},
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
         assert len(result) == 1
         assert result[0]["nested"]["path"] == "a"
 
         # Verify structure can be safely processed without infinite recursion
-        result_2 = self.adapter._group_nested_filters(result)
+        result_2 = self.adapter._group_nested_filters(result, self.params)
         assert len(result_2) == 1  # Should not create additional wrapping
 
     def test_grouping_logic(self):
@@ -307,7 +313,7 @@ class TestNestedFilterGrouping:
 
     def test_empty_filter_list(self):
         """Test handling of empty filter list."""
-        result = self.adapter._group_nested_filters([])
+        result = self.adapter._group_nested_filters([], self.params)
         assert result == []
 
     def test_mixed_nested_and_non_nested(self):
@@ -329,7 +335,7 @@ class TestNestedFilterGrouping:
             {"range": {"field2": {"gte": 10}}},
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
         # Should have 3 entries: 2 non-nested, 1 wrapped nested
         assert len(result) == 4
         assert result[0] == {"terms": {"field1": ["value1"]}}
@@ -361,10 +367,10 @@ class TestNestedFilterGrouping:
             {"nested": {"path": "level1", "query": {"terms": {"f4": ["v4"]}}}},
         ]
 
-        result = self.adapter._group_nested_filters(input_filters)
+        result = self.adapter._group_nested_filters(input_filters, self.params)
         assert len(result) == 1
         assert result[0]["nested"]["path"] == "level1"
 
         # The result should be safe to process again
-        result_2 = self.adapter._group_nested_filters(result)
+        result_2 = self.adapter._group_nested_filters(result, self.params)
         assert len(result_2) == 1

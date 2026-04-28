@@ -350,9 +350,11 @@ class SearchAdapter:
                 }
                 entry = self._es_filter_from_facet(key, range_dict, params)
                 filter_list.append(entry)
-        return self._group_nested_filters(filter_list)
+        return self._group_nested_filters(filter_list, params)
 
-    def _group_nested_filters(self, filter_list: list[dict]) -> list[dict]:
+    def _group_nested_filters(
+        self, filter_list: list[dict], params: sfs.SearchParams
+    ) -> list[dict]:
         """Group nested filters with common path prefixes.
 
         This function processes a list of filter entries and groups
@@ -364,6 +366,8 @@ class SearchAdapter:
         ----------
         filter_list : list[dict]
             List of filter entries as returned by get_filter_clause
+        params : sfs.SearchParams
+            Parameters submitted as part of original search request.
 
         Returns
         -------
@@ -403,10 +407,23 @@ class SearchAdapter:
             else:
                 # Create wrapping structure
                 wrapping_query = {"bool": {"filter": group}}
+                nested_path = ".".join(prefix_components)
                 wrapped_filter = {
                     "nested": {
-                        "path": ".".join(prefix_components),
+                        "path": nested_path,
                         "query": wrapping_query,
+                        "inner_hits": {
+                            "name": nested_path,
+                            "size": params.hitsPerPage,
+                            "highlight": {
+                                "fields": {
+                                    "*": {
+                                        "pre_tags": [params.highlightPreTag],
+                                        "post_tags": [params.highlightPostTag],
+                                    }
+                                }
+                            },
+                        },
                     }
                 }
             for i in range(1, len(prefix_components)):
@@ -431,7 +448,9 @@ class SearchAdapter:
         """Group nested filters by their path components."""
 
         def unwrap_as_applicable(entry):
-            if entry["nested"]["query"].get("nested"):
+            if entry["nested"]["query"].get("nested") and entry.keys() == set(
+                ["nested"]
+            ):
                 return unwrap_as_applicable(entry["nested"]["query"])
             return entry
 
@@ -469,18 +488,6 @@ class SearchAdapter:
                 "nested": {
                     "path": ".".join(path_segments[:-1]),
                     "query": entry,
-                    "inner_hits": {
-                        "name": facet_name,
-                        "size": params.hitsPerPage,
-                        "highlight": {
-                            "fields": {
-                                "*": {
-                                    "pre_tags": [params.highlightPreTag],
-                                    "post_tags": [params.highlightPostTag],
-                                }
-                            }
-                        },
-                    },
                 }
             }
         return entry
@@ -592,12 +599,9 @@ class SearchAdapter:
                 detail=f"Request for undefined facet(s): {facets}",
             )
 
-        nested_filters = defaultdict(list)
-        for entry in filter_clause:
-            nested = entry.get("nested")
-            if not nested:
-                continue
-            nested_filters[nested["path"]].append(nested["query"])
+        nested_filters = self._extract_nested_filters_from_grouped_clause(
+            filter_clause
+        )
         self.add_filter_aggs(aggs_dict, nested_filters)
         return aggs_dict
 
@@ -665,6 +669,62 @@ class SearchAdapter:
                 "cardinality": {"field": handle_field}
             }
         return aggs_dict
+
+    def _extract_nested_filters_from_grouped_clause(
+        self, filter_clause: list[dict]
+    ) -> dict:
+        """Extract nested filters from grouped filter clause for aggregation.
+
+        Process grouped filter clause structure and extract nested filters
+        in format compatible with add_filter_aggs.
+
+        Parameters
+        ----------
+        filter_clause : list[dict]
+            Grouped filter clause from get_filter_clause
+
+        Returns
+        -------
+        dict
+            Dictionary mapping nested paths to their filter queries
+        """
+        nested_filters = defaultdict(list)
+
+        def extract_nested_recursive(entry, path_so_far=""):
+            """Recursively extract nested filters from nested structures."""
+            if isinstance(entry, dict):
+                if "nested" in entry:
+                    nested_path = entry["nested"]["path"]
+                    full_path = (
+                        f"{path_so_far}.{nested_path}"
+                        if path_so_far
+                        else nested_path
+                    )
+                    query = entry["nested"]["query"]
+                    nested_filters[full_path].append(query)
+                    # Recursively process query for more nested structures
+                    extract_nested_recursive(query, full_path)
+                elif "bool" in entry:
+                    # Handle bool queries containing nested filters
+                    bool_query = entry["bool"]
+                    if "filter" in bool_query:
+                        for sub_entry in bool_query["filter"]:
+                            extract_nested_recursive(sub_entry, path_so_far)
+                    if "should" in bool_query:
+                        for sub_entry in bool_query["should"]:
+                            extract_nested_recursive(sub_entry, path_so_far)
+                # Check for other potential nested structures
+                for _key, value in entry.items():
+                    if isinstance(value, dict):
+                        extract_nested_recursive(value, path_so_far)
+                    elif isinstance(value, list):
+                        for item in value:
+                            extract_nested_recursive(item, path_so_far)
+
+        for entry in filter_clause:
+            extract_nested_recursive(entry)
+
+        return nested_filters
 
     def add_filter_aggs(self, aggs: dict, nested_filters: dict, root_path=""):
         for agg_key, agg in aggs.items():
