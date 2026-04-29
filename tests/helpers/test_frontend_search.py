@@ -63,11 +63,13 @@ def test_build_es_query_with_facet_filters():
         "terms": {"directors_or_editors.keyword": ["Director 1"]},
     }
     assert len(query["query"]["bool"]["filter"]) == 2
-    assert query["query"]["bool"]["filter"][1]["nested"]["query"]["bool"][
-        "filter"
-    ][0]["terms"][
+
+    # Special checks related to filtering nested documents
+    nested_filter_clause = query["query"]["bool"]["filter"][1]["nested"]
+    assert nested_filter_clause["query"]["bool"]["filter"][0]["terms"][
         "manifestations.items.has_record.has_format.type.keyword"
     ] == ["16mmFilm", "35mmFilm"]
+    assert "*" in nested_filter_clause["inner_hits"]["highlight"]["fields"]
 
 
 def test_transform_hits():
