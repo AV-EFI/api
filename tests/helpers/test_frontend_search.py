@@ -45,7 +45,7 @@ def test_build_es_query_with_facet_filters():
         params=SearchParams(
             query="test",
             facetFilters=[
-                ["directors_or_editors:Director 1"],
+                ["creators:Director 1"],
                 [
                     "has_format_type:16mmFilm",
                     "has_format_type:35mmFilm",
@@ -60,7 +60,7 @@ def test_build_es_query_with_facet_filters():
     assert list(query["query"]["bool"]["should"][0].keys()) == ["multi_match"]
     assert len(query["query"]["bool"]["filter"]) == 2
     assert query["query"]["bool"]["filter"][0] == {
-        "terms": {"directors_or_editors.keyword": ["Director 1"]},
+        "terms": {"creators.keyword": ["Director 1"]},
     }
     assert len(query["query"]["bool"]["filter"]) == 2
 
@@ -87,7 +87,7 @@ def test_transform_hits():
                     }
                 },
                 "castmembers": ["Actor 1"],
-                "directors_or_editors": ["Director 1"],
+                "creators": ["Director 1"],
                 "subjects": ["Subject 1"],
                 "production": ["Country 1"],
                 "years": ["2023"],

@@ -48,7 +48,7 @@ def test_full_search_flow(mock_es_client, example_request, runtime_path_of):
     # Verify transformed hits
     assert len(hits) == 2
     assert hits[0]["objectID"] == "6BF2032D-3640-4BF8-A5DF-0590526F875F"
-    assert hits[0]["directors_or_editors"] == ["Hinke, Gisbert"]
+    assert hits[0]["creators"] == ["Hinke, Gisbert"]
     assert hits[0]["production_in_year"][0]["gte"] == 1953
 
     # Verify transformed facets

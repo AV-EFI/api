@@ -172,7 +172,6 @@ INGEST_PROCESSORS = [
               }
               if (!creators.empty) {
                 ctx.creators = creators;
-                ctx.directors_or_editors = creators;
               }
               if (!production.empty) {
                 ctx.production = production

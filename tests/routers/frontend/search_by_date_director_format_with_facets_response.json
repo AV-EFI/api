@@ -19,7 +19,7 @@
         "_id": "6BF2032D-3640-4BF8-A5DF-0590526F875F",
         "_score": 164.40921,
         "_source": {
-          "directors_or_editors": [
+          "creators": [
             "Hinke, Gisbert"
           ],
           "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
@@ -228,7 +228,7 @@
           ]
         },
         "highlight": {
-          "directors_or_editors.keyword": [
+          "creators.keyword": [
             "__ais-highlight__Hinke, Gisbert__/ais-highlight__"
           ],
           "manifestations.items.has_record.has_format.type.keyword": [
@@ -244,7 +244,7 @@
         "_id": "6060F4B3-FEF1-45AA-B2F7-FAE0DBB0BAEF",
         "_score": 2.9122665,
         "_source": {
-          "directors_or_editors": [
+          "creators": [
             "Hinke, Gisbert"
           ],
           "kip": "http://typeapi.lab.pidconsortium.net/v1/types/schema/21.T11969/873d5c9f6ebbffecf1df",
@@ -456,7 +456,7 @@
           ]
         },
         "highlight": {
-          "directors_or_editors.keyword": [
+          "creators.keyword": [
             "__ais-highlight__Hinke, Gisbert__/ais-highlight__"
           ],
           "manifestations.items.has_record.has_format.type.keyword": [

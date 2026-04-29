@@ -4,7 +4,7 @@
     "params": {
       "query": "Die Heimat des Don Quijote",
       "facetFilters": [
-        ["directors_or_editors:Hinke, Gisbert"],
+        ["creators:Hinke, Gisbert"],
         ["has_format_type:16mmFilm"]
       ],
       "facets": [

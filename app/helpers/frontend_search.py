@@ -88,11 +88,6 @@ class SearchAdapter:
             "type": "string",
         },
         {
-            "attribute": "directors_or_editors",
-            "field": "directors_or_editors.keyword",
-            "type": "string",
-        },
-        {
             "attribute": "castmembers",
             "field": "castmembers.keyword",
             "type": "string",
