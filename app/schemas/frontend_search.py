@@ -7,15 +7,15 @@ class SearchParams(BaseModel):
     query: str = Field(
         default="",
         description="Search query string to match against titles and content",
-        examples=["test"],
+        examples=[""],
     )
     facetFilters: list[list[str] | str] | None = Field(
         default=None,
         description="Nested list of facet filters in format ['field:value']."
         " Inner lists are OR'ed, outer lists are AND'ed",
         examples=[
-            ["production:Hermann Schlenker Filmproduktion"],
-            ["years:1977"],
+            [["creators:Lang, Fritz"], ["has_access_status:Distribution"]],
+            [["production:Hermann Schlenker Filmproduktion"]],
         ],
     )
     facets: list[str] | str | None = Field(
@@ -23,21 +23,14 @@ class SearchParams(BaseModel):
         description="List of facet fields to aggregate results by,"
         " or single facet field",
         examples=[
-            "castmembers",
-            "directors_or_editors",
-            "has_colour_type",
-            "has_duration_has_value",
-            "has_form",
-            "has_format_type",
-            "has_genre_has_name",
-            "has_issuer_name",
-            "has_sound_type",
-            "in_language_code",
-            "item_element_type",
-            "located_in_has_name",
-            "manifestation_event_type",
-            "production",
-            "subjects",
+            ["castmembers", "creators", "has_form", "has_genre_has_name"],
+            [
+                "has_issuer_name",
+                "has_access_status",
+                "has_colour_type",
+                "has_format_type",
+                "item_element_type",
+            ],
         ],
     )
     numericRefinements: dict[str, dict[str, int]] | None = Field(
