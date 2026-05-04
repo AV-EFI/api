@@ -1,4 +1,5 @@
 import logging
+import logging.config
 import os
 
 import elasticsearch
@@ -32,10 +33,61 @@ loglevel = os.environ.get(f"{__package__.upper()}_LOGLEVEL", "WARNING").upper()
 num_level = getattr(logging, loglevel, None)
 if not isinstance(num_level, int):
     raise ValueError(f"Invalid log level: {loglevel}")
-logging.basicConfig(
-    level=num_level, format="%(levelname)s:%(name)s: %(message)s"
-)
-
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "uvicorn_default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": "%(levelprefix)s %(message)s",
+            "use_colors": None,  # Auto-detect terminal
+        },
+        "uvicorn_access": {
+            "()": "uvicorn.logging.AccessFormatter",
+            "fmt": (
+                '%(levelprefix)s %(client_addr)s - "%(request_line)s"'
+                " %(status_code)s"
+            ),
+        },
+    },
+    "handlers": {
+        "uvicorn_default": {
+            "formatter": "uvicorn_default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+            "level": loglevel,
+        },
+        "uvicorn_access": {
+            "formatter": "uvicorn_access",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+            "level": loglevel,
+        },
+    },
+    "loggers": {
+        "uvicorn": {
+            "handlers": ["uvicorn_default"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["uvicorn_default"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["uvicorn_access"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["uvicorn_default"],
+        "level": "DEBUG",
+    },
+}
+logging.config.dictConfig(LOGGING_CONFIG)
+log = logging.getLogger(__name__)
 app = FastAPI(
     title="AV-EFI API",
     description="This is the backend for the AV-EFI project.",
