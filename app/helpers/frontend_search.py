@@ -1,4 +1,5 @@
 from collections import defaultdict
+from copy import deepcopy
 import json
 import logging
 import re
@@ -101,7 +102,7 @@ class SearchAdapter:
             "attribute": "located_in_has_name",
             "field": "located_in.has_name.keyword",
             "type": "string",
-            "nested_paths": ["has_record.has_event"],
+            "nested_path_segments": ("has_record.has_event",),
         },
         {
             "attribute": "has_form",
@@ -112,67 +113,67 @@ class SearchAdapter:
             "attribute": "manifestation_event_type",
             "field": "type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "has_record.has_event"],
+            "nested_path_segments": ("manifestations", "has_record.has_event"),
         },
         {
             "attribute": "has_issuer_name",
             "field": "has_record.described_by.has_issuer_name.keyword",
             "type": "string",
-            "nested_paths": ["manifestations"],
+            "nested_path_segments": ("manifestations",),
         },
         {
             "attribute": "has_format_type",
             "field": "has_record.has_format.type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "has_colour_type",
             "field": "has_record.has_colour_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "has_sound_type",
             "field": "has_record.has_sound_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "in_language_code",
             "field": "has_record.in_language.code.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "has_duration_has_value",
             "field": "has_record.has_duration.has_value.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "has_extent_has_value",
             "field": "has_record.has_extent.has_value.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "item_duration_in_minutes",
             "field": "duration_in_minutes",
             "type": "numeric-refinement",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "item_element_type",
             "field": "has_record.element_type.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
         {
             "attribute": "has_access_status",
             "field": "has_record.has_access_status.keyword",
             "type": "string",
-            "nested_paths": ["manifestations", "items"],
+            "nested_path_segments": ("manifestations", "items"),
         },
     ]
 
@@ -250,8 +251,9 @@ class SearchAdapter:
         self.facet_by_path = {}
         for attr in self.facet_attributes:
             self.facet_by_name[attr["attribute"]] = attr
-            path_segments = attr.get("nested_paths", []).copy()
-            path_segments.append(attr["field"])
+            path_segments = tuple(
+                [*attr.get("nested_path_segments", ()), attr["field"]]
+            )
             field_path = ".".join(path_segments)
             self.facet_by_path[field_path] = attr
 
@@ -285,14 +287,19 @@ class SearchAdapter:
                 }
             },
         }
-        filter_clause = self.get_filter_clause(params)
-        if filter_clause:
-            query["query"]["bool"]["filter"] = filter_clause
-        query["aggs"] = self.get_aggs_clause(params, filter_clause)
+        nested_filters = self.get_nested_filters(params)
+        if nested_filters[()]:
+            query["query"]["bool"]["filter"] = nested_filters[()]
+        query["aggs"] = self.get_aggs_clause(params, nested_filters)
         return query
 
-    def get_filter_clause(self, params: sfs.SearchParams) -> list[dict]:
-        """Build filter clause.
+    def get_nested_filters(self, params: sfs.SearchParams) -> list[dict]:
+        """Build nested filter clause and return pointer dict to levels.
+
+        Return a dict keyed by nested paths (as tuples) and pointing
+        into the nested filter clause at the corresponding level. That
+        means that the top-level list of filters is associated with
+        the key `()`.
 
         API references:
         https://www.algolia.com/doc/api-reference/api-parameters/facetFilters/
@@ -300,7 +307,7 @@ class SearchAdapter:
         https://www.algolia.com/doc/api-reference/api-parameters/filters/
 
         """
-        filter_list = []
+        filter_dict = {(): []}
         for filter_group in params.facetFilters or []:
             if isinstance(filter_group, list):
                 subfilter_dict = defaultdict(list)
@@ -313,20 +320,17 @@ class SearchAdapter:
                             detail=f"Cannot handle facet filter: {subfilter}",
                         ) from e
                     subfilter_dict[key].append(term)
-                subfilter_list = []
-                for key, val in subfilter_dict.items():
-                    subfilter_list.append(
-                        self._es_filter_from_facet(key, val, params)
+                # OR composition of different facet filters is not
+                # implemented yet due to nested documents complexity
+                # and lack of relevance for the time being
+                if len(subfilter_dict) > 1:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"OR composition of different facet filters"
+                        f" is not supported (yet): {filter_group}",
                     )
-                if len(subfilter_list) == 1:
-                    entry = subfilter_list[0]
-                elif len(subfilter_list) > 1:
-                    entry = {
-                        "bool": {
-                            "should": subfilter_list,
-                            "minimum_should_match": 1,
-                        }
-                    }
+                for key, val in subfilter_dict.items():
+                    self._es_filter_from_facet(filter_dict, key, val, params)
             else:
                 try:
                     key, term = filter_group.split(":", maxsplit=1)
@@ -335,8 +339,7 @@ class SearchAdapter:
                         status_code=422,
                         detail=f"Cannot handle facet filter: {filter_group}",
                     ) from e
-                entry = self._es_filter_from_facet(key, term, params)
-            filter_list.append(entry)
+                self._es_filter_from_facet(filter_dict, key, term, params)
         if params.numericRefinements:
             for key, refinement in params.numericRefinements.items():
                 range_dict = {
@@ -348,124 +351,20 @@ class SearchAdapter:
                     }[k]: v
                     for k, v in refinement.items()
                 }
-                entry = self._es_filter_from_facet(key, range_dict, params)
-                filter_list.append(entry)
-        return self._group_nested_filters(filter_list, params)
-
-    def _group_nested_filters(
-        self, filter_list: list[dict], params: sfs.SearchParams
-    ) -> list[dict]:
-        """Group nested filters with common path prefixes.
-
-        This function processes a list of filter entries and groups
-        nested filters that share common path prefixes. It wraps them
-        in a common nested entry with a bool/filter layer according to
-        Elasticsearch syntax.
-
-        Parameters
-        ----------
-        filter_list : list[dict]
-            List of filter entries as returned by get_filter_clause
-        params : sfs.SearchParams
-            Parameters submitted as part of original search request.
-
-        Returns
-        -------
-        list[dict]
-            Processed filter list with grouped nested structures
-
-        """
-        # Base case: if no nested filters, return as-is
-        if not self._has_nested_filters(filter_list):
-            return filter_list
-
-        # Separate nested and non-nested filters
-        nested_filters = []
-        non_nested_filters = []
-
-        for entry in filter_list:
-            if isinstance(entry, dict) and "nested" in entry:
-                nested_filters.append(entry)
-            else:
-                non_nested_filters.append(entry)
-
-        # Group nested filters by path components
-        path_groups = self._group_nested_filters_by_path_components(
-            nested_filters
-        )
-
-        # Sort filter groups by descending number of path components
-        path_groups = dict(
-            sorted(path_groups.items(), reverse=True, key=lambda x: len(x[0]))
-        )
-
-        # Process each group
-        grouped_nested_filters = []
-        for prefix_components, group in path_groups.items():
-            if len(group) == 1 and group[0].get("nested"):
-                wrapped_filter = group[0]
-            else:
-                # Create wrapping structure
-                wrapping_query = {"bool": {"filter": group}}
-                nested_path = ".".join(prefix_components)
-                wrapped_filter = {
-                    "nested": {
-                        "path": nested_path,
-                        "query": wrapping_query,
-                        "inner_hits": {
-                            "name": nested_path,
-                            "size": params.hitsPerPage,
-                            "highlight": {
-                                "fields": {
-                                    "*": {
-                                        "pre_tags": [params.highlightPreTag],
-                                        "post_tags": [params.highlightPostTag],
-                                    }
-                                }
-                            },
-                        },
-                    }
-                }
-            for i in range(1, len(prefix_components)):
-                if prefix_components[:-i] in path_groups:
-                    path_groups[prefix_components[:-i]].append(wrapped_filter)
-                    break
-            else:
-                grouped_nested_filters.append(wrapped_filter)
-
-        return non_nested_filters + grouped_nested_filters
-
-    def _has_nested_filters(self, filter_list: list[dict]) -> bool:
-        """Check if the filter list contains any nested filters."""
-        return any(
-            isinstance(entry, dict) and "nested" in entry
-            for entry in filter_list
-        )
-
-    def _group_nested_filters_by_path_components(
-        self, nested_filters: list[dict]
-    ) -> dict[str, list[dict]]:
-        """Group nested filters by their path components."""
-
-        def unwrap_as_applicable(entry):
-            if entry["nested"]["query"].get("nested") and entry.keys() == set(
-                ["nested"]
-            ):
-                return unwrap_as_applicable(entry["nested"]["query"])
-            return entry
-
-        groups = defaultdict(list)
-
-        for filter_entry in nested_filters:
-            filter_entry = unwrap_as_applicable(filter_entry)
-            path = filter_entry["nested"]["path"]
-            path_components = tuple(c for c in path.split("."))
-            groups[path_components].append(filter_entry["nested"]["query"])
-
-        return groups
+                self._es_filter_from_facet(
+                    filter_dict,
+                    key,
+                    range_dict,
+                    params,
+                )
+        return filter_dict
 
     def _es_filter_from_facet(
-        self, facet_name: str, value, params: sfs.SearchParams
+        self,
+        filter_dict: dict,
+        facet_name: str,
+        value,
+        params: sfs.SearchParams,
     ):
         try:
             facet_attr = self.facet_by_name[facet_name]
@@ -473,23 +372,47 @@ class SearchAdapter:
             raise HTTPException(
                 status_code=422, detail=f"Unknown facet filter: {facet_name}"
             ) from e
-        path_segments = facet_attr.get("nested_paths", []).copy()
-        path_segments.append(facet_attr["field"])
+        nested_path_segments = facet_attr.get("nested_path_segments", ())
+        field_path = ".".join([*nested_path_segments, facet_attr["field"]])
         if facet_attr["type"] == "string":
-            entry = {"terms": {".".join(path_segments): value}}
+            entry = {"terms": {field_path: value}}
         elif facet_attr["type"] == "numeric-refinement":
-            entry = {"range": {".".join(path_segments): value}}
+            entry = {"range": {field_path: value}}
         else:
             raise ValueError(
                 f"Cannot handle facet attribute type: {facet_attr['type']}"
             )
-        if len(path_segments) > 1:
+        for i in range(len(nested_path_segments), 0, -1):
+            path_segments = nested_path_segments[:i]
+            if path_segments not in filter_dict:
+                filter_dict[path_segments] = [entry]
+            else:
+                filter_dict[path_segments].append(entry)
+                break
             entry = {
                 "nested": {
-                    "path": ".".join(path_segments[:-1]),
-                    "query": entry,
+                    "path": ".".join(path_segments),
+                    "query": {"bool": {"filter": filter_dict[path_segments]}},
+                    "inner_hits": {
+                        "name": path_segments[-1],
+                        "size": params.hitsPerPage,
+                        "highlight": {
+                            "fields": {
+                                "*": {
+                                    "pre_tags": [
+                                        params.highlightPreTag,
+                                    ],
+                                    "post_tags": [
+                                        params.highlightPostTag,
+                                    ],
+                                }
+                            }
+                        },
+                    },
                 }
             }
+        else:
+            filter_dict[()].append(entry)
         return entry
 
     def get_main_query_clause(self, query: str) -> dict:
@@ -552,7 +475,9 @@ class SearchAdapter:
         }
 
     def get_aggs_clause(
-        self, params: sfs.SearchParams, filter_clause: list[dict]
+        self,
+        params: sfs.SearchParams,
+        nested_filters: dict,
     ) -> dict:
         """Build complete aggregations section of the ES query.
 
@@ -599,15 +524,19 @@ class SearchAdapter:
                 detail=f"Request for undefined facet(s): {facets}",
             )
 
-        nested_filters = self._extract_nested_filters_from_grouped_clause(
-            filter_clause
-        )
+        # Remove "inner_hits" from filters for aggregations
+        nested_filters = deepcopy(nested_filters)
+        for filter_list in nested_filters.values():
+            for query in filter_list:
+                query.get("nested", {}).pop("inner_hits", None)
         self.add_filter_aggs(aggs_dict, nested_filters)
         return aggs_dict
 
     def add_aggregation(self, aggs: dict, facet_attr: dict):
-        path_segments = facet_attr.get("nested_paths", []).copy()
-        path_segments.append(facet_attr["field"])
+        path_segments = (
+            *facet_attr.get("nested_path_segments", ()),
+            facet_attr["field"],
+        )
         level = 0
         while level < len(path_segments) - 1:
             key = path_segments[level]
@@ -670,89 +599,24 @@ class SearchAdapter:
             }
         return aggs_dict
 
-    def _extract_nested_filters_from_grouped_clause(
-        self, filter_clause: list[dict]
-    ) -> dict:
-        """Extract nested filters from grouped filter clause for aggregation.
-
-        Process grouped filter clause structure and extract nested filters
-        in format compatible with add_filter_aggs.
-
-        Parameters
-        ----------
-        filter_clause : list[dict]
-            Grouped filter clause from get_filter_clause
-
-        Returns
-        -------
-        dict
-            Dictionary mapping nested paths to their filter queries
-        """
-        nested_filters = defaultdict(list)
-
-        def extract_nested_recursive(entry, path_so_far=""):
-            """Recursively extract nested filters from nested structures."""
-            if isinstance(entry, dict):
-                if "nested" in entry:
-                    nested_path = entry["nested"]["path"]
-                    full_path = (
-                        f"{path_so_far}.{nested_path}"
-                        if path_so_far
-                        else nested_path
-                    )
-                    query = entry["nested"]["query"]
-                    nested_filters[full_path].append(query)
-                    # Recursively process query for more nested structures
-                    extract_nested_recursive(query, full_path)
-                elif "bool" in entry:
-                    # Handle bool queries containing nested filters
-                    bool_query = entry["bool"]
-                    if "filter" in bool_query:
-                        for sub_entry in bool_query["filter"]:
-                            extract_nested_recursive(sub_entry, path_so_far)
-                    if "should" in bool_query:
-                        for sub_entry in bool_query["should"]:
-                            extract_nested_recursive(sub_entry, path_so_far)
-                # Check for other potential nested structures
-                for _key, value in entry.items():
-                    if isinstance(value, dict):
-                        extract_nested_recursive(value, path_so_far)
-                    elif isinstance(value, list):
-                        for item in value:
-                            extract_nested_recursive(item, path_so_far)
-
-        for entry in filter_clause:
-            extract_nested_recursive(entry)
-
-        return nested_filters
-
-    def add_filter_aggs(self, aggs: dict, nested_filters: dict, root_path=""):
+    def add_filter_aggs(
+        self, aggs: dict, nested_filters: dict, root_segments=()
+    ):
         for agg_key, agg in aggs.items():
             nested = agg.get("nested")
             if not nested:
                 continue
-            filter_list = []
-            check_path = root_path + agg_key
-            for filter_path, queries in nested_filters.items():
-                if filter_path == check_path:
-                    filter_list.extend(queries)
-                elif filter_path.startswith(f"{check_path}."):
-                    filter_list.append(
-                        {
-                            "nested": {
-                                "path": filter_path,
-                                "query": {"bool": {"filter": queries}},
-                            }
-                        }
-                    )
-            subaggs = agg["aggs"]
-            agg["aggs"] = {
-                f"filtered_{agg_key}": {
-                    "filter": {"bool": {"filter": filter_list}},
-                    "aggs": subaggs,
+            check_path = (*root_segments, agg_key)
+            if check_path in nested_filters:
+                agg_filter = {"bool": {"filter": nested_filters[check_path]}}
+                subaggs = agg["aggs"]
+                agg["aggs"] = {
+                    f"filtered_{agg_key}": {
+                        "filter": agg_filter,
+                        "aggs": subaggs,
+                    }
                 }
-            }
-            self.add_filter_aggs(subaggs, nested_filters, f"{check_path}.")
+                self.add_filter_aggs(subaggs, nested_filters, check_path)
 
     def transform_es_response(
         self, response: dict, request: sfs.SearchRequest
@@ -819,18 +683,20 @@ class SearchAdapter:
                     nb_works = cat["doc_count"]
                     break
             result.nbWorks = nb_works
-        manifestations = (
-            response.get("aggregations", {})
-            .get("manifestations", {})
-            .get("filtered_manifestations")
+        manifestations = response.get("aggregations", {}).get(
+            "manifestations", {}
         )
         if manifestations:
+            manifestations = manifestations.get(
+                "filtered_manifestations", manifestations
+            )
             nb_manifestations = manifestations.get("handle_count", {}).get(
                 "value"
             )
             result.nbManifestations = nb_manifestations
-            items = manifestations.get("items", {}).get("filtered_items")
+            items = manifestations.get("items", {})
             if items:
+                items = items.get("filtered_items", items)
                 nb_items = items.get("handle_count", {}).get("value")
                 result.nbItems = nb_items
         return result
@@ -911,15 +777,23 @@ class SearchAdapter:
         except KeyError:
             return
         nested = {}
-        for val in inner_hits.values():
-            for ihit in val["hits"]["hits"]:
-                if ihit["_nested"]["field"] != "manifestations":
-                    continue
-                m_offset = ihit["_nested"]["offset"]
+        for m_hit in (
+            inner_hits.get("manifestations", {}).get("hits", {}).get("hits")
+            or []
+        ):
+            m_offset = m_hit["_nested"]["offset"]
+            try:
+                inner_hits = m_hit.pop("inner_hits")
+            except KeyError:
+                pass
+            else:
                 nested.setdefault(m_offset, set())
-                subnested = ihit["_nested"].get("_nested")
-                if subnested and subnested["field"] == "items":
-                    nested[m_offset].add(subnested["offset"])
+                for i_hit in (
+                    inner_hits.get("items", {}).get("hits", {}).get("hits")
+                    or []
+                ):
+                    i_offset = i_hit["_nested"]["_nested"].get("offset")
+                    nested[m_offset].add(i_offset)
         if nested:
             manifestations = []
             for m_offset in sorted(nested.keys()):
