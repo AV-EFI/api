@@ -555,7 +555,10 @@ class SearchAdapter:
             aggs = aggs[key]["aggs"]
             level += 1
 
-        agg_spec = {"field": ".".join(path_segments)}
+        agg_spec = {
+            "field": ".".join(path_segments),
+            "size": AGGREGATION_LIMIT,
+        }
         if facet_attr["type"] == "numeric-refinement":
             agg_type = "histogram"
             agg_spec.update(
