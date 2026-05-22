@@ -62,6 +62,25 @@ Sample record for a manifestation from SDK, e.g.
 | 100   | HS_ADMIN   | {"adminId": "21.11155/USER1", "adminIdIndex": 300}                                  |                                                                         |
 | 101   | HS_ADMIN   | {"adminId": "21.11155/SDK", "adminIdIndex": 200}                                    | Manifestation records are meant to be modifiable by all data providers. |
 
+
+## User privileges in terms of the handle system
+
+| privilege             | data provider | work_variant_editors | admin |
+|-----------------------|---------------|----------------------|-------|
+| create handle         | yes           | yes                  | yes   |
+| delete handle         | no            | no                   | yes   |
+| add derived prefix    | no            | no                   | no    |
+| delete derived prefix | no            | no                   | no    |
+| add value             | yes           | yes                  | yes   |
+| modify value          | yes           | yes                  | yes   |
+| remove value          | yes           | yes                  | yes   |
+| add admin             | yes           | yes                  | yes   |
+| modify admin          | yes           | yes                  | yes   |
+| remove admin          | yes           | yes                  | yes   |
+| read value            | yes           | yes                  | yes   |
+| list handle           | no            | no                   | no    |
+
+
 ## Procedures
 
 ### Adding a new data provider
