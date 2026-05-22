@@ -72,6 +72,7 @@ need to be completed:
     described above.
 -   Add that PID to the VLIST in `200:21.11155/work_variant_editors`
     described above.
+-   Add the data provider PID to the VLIST in `200:21.11155/USERLIST`.
 -   Configure a user with the new PID and corresponding keys in the
     ePIC API.
 -   Communicate username and password to data provider as required.
