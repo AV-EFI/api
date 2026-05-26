@@ -456,15 +456,17 @@ class SearchAdapter:
         else:
             query_list = [
                 {
-                    "multi_match": {
+                    "combined_fields": {
                         **base_options,
                         "boost": 2,
+                        "operator": "and",
                     }
                 },
                 {
                     "multi_match": {
                         **base_options,
                         "fuzziness": "AUTO",
+                        "minimum_should_match": "90%",
                         "tie_breaker": 0.667,
                     }
                 },
