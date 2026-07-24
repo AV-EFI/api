@@ -10,3 +10,11 @@ services:
       - .:/data:Z
       - ./config:/data/config:ro
     working_dir: /data
+    networks:
+      - proxy-network
+
+networks:
+  proxy-network:
+    name: proxy-network
+    external: true
+    # Create once: docker network create --opt mtu=1450 proxy-network
