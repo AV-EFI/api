@@ -1,63 +1,99 @@
-import base64
-from datetime import datetime
-from typing import Annotated
+from datetime import UTC, datetime
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from starlette.requests import Request
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.config import settings
-from ..schemas.auth import Token
-
-SESSION_TIMEOUT = 20 * 60  # Seconds of inactivity before forced logout
+from app.models.session import OidcSession
+from app.schemas.auth import SessionInfo, User
 
 
-def is_expired(token: Annotated[dict, Token]) -> bool:
-    current_time = int(datetime.utcnow().timestamp())
-    if current_time - token.get("timestamp", 0) > SESSION_TIMEOUT:
-        return True
-    token["timestamp"] = current_time
-    return False
+def derive_expiries(
+    token: dict,
+) -> tuple[datetime, datetime | None]:
+    """Extract access and refresh expiry datetimes from token response.
 
+    Args:
+        token: Token dict from authlib with 'expires_at' and optionally 'refresh_expires_in'
 
-def valid_access_token(request: Request):
-    token = request.session.get("token")
-    if not token or is_expired(token):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in"
+    Returns
+    -------
+        (access_expires_at, refresh_expires_at) where refresh_expires_at
+        is None if unavailable
+    """
+    access_expires_at = datetime.fromtimestamp(token["expires_at"], tz=UTC)
+
+    refresh_expires_at: datetime | None = None
+    if "refresh_expires_in" in token:
+        refresh_expires_at = datetime.fromtimestamp(
+            token["expires_at"] + token["refresh_expires_in"],
+            tz=UTC,
         )
-    return token
+
+    return access_expires_at, refresh_expires_at
 
 
-def has_role(role_name: str):
-    async def check_role(token: Annotated[dict, Depends(valid_access_token)]):
-        if role_name not in token.get("scopes", []):
-            raise HTTPException(status_code=403, detail="Unauthorized access")
+def classify(session: dict) -> str:
+    """Classify session state based on expiry timestamps.
 
-    return check_role
+    Returns one of: "active", "refreshable", "expired"
+    """
+    now = int(datetime.now(UTC).timestamp())
+    access_expires_at = session.get("access_expires_at", 0)
+    refresh_expires_at = session.get("refresh_expires_at")
+
+    if now < access_expires_at:
+        return "active"
+    if refresh_expires_at is None or now < refresh_expires_at:
+        return "refreshable"
+    return "expired"
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="av-efi/auth")
+def build_session_info(session: dict) -> SessionInfo:
+    """Build SessionInfo for frontend, excluding raw tokens."""
+    now = int(datetime.now(UTC).timestamp())
 
-
-async def verify_token(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+    user = None
+    if session.get("user"):
+        user = User(
+            name=session["user"]["name"],
+            email=session["user"]["email"],
+            uid=session["user"]["uid"],
+            orgid=session["user"].get("orgid"),
         )
-        return payload
-    except JWTError as e:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from e
+
+    expires_at: int | None = None
+    if "refresh_expires_at" in session and session["refresh_expires_at"]:
+        expires_at = int(session["refresh_expires_at"])
+    elif "access_expires_at" in session:
+        expires_at = int(session["access_expires_at"])
+
+    return SessionInfo(
+        authenticated=True,
+        user=user,
+        scopes=session.get("scopes", []),
+        audience=session.get("audience"),
+        server_time=now,
+        expires_at=expires_at,
+    )
 
 
-async def get_auth_headers():
-    """Generate authentication headers."""
-    auth_string = f"{settings.PID_USERNAME}:{settings.PID_PASSWORD}"
-    auth_bytes = auth_string.encode("ascii")
-    base64_auth = base64.b64encode(auth_bytes).decode("ascii")
-    return {"Authorization": f"Basic {base64_auth}"}
+async def delete_expired_sessions(db: AsyncSession) -> int:
+    """Delete sessions whose tokens have expired.
+
+    Returns
+    -------
+        Number of rows deleted.
+    """
+    now = datetime.now(UTC)
+
+    stmt = delete(OidcSession).where(
+        (OidcSession.refresh_expires_at < now)
+        | (
+            OidcSession.refresh_expires_at.is_(None),
+            OidcSession.access_expires_at < now,
+        )
+    )
+
+    result = await db.execute(stmt)
+    await db.commit()
+    return result.rowcount
