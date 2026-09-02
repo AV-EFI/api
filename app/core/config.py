@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     AC_METADATA_URL: str = ""
     ALGORITHM: str = "HS256"
 
+    # Database settings
+    DATABASE_URL: str = ""
+
+    # Session settings
+    SESSION_COOKIE_MAX_AGE: int = 16 * 60 * 60  # 16 hours
+    SESSION_CLEANUP_ENABLED: bool = True
+    SESSION_CLEANUP_INTERVAL: int = 3600  # 1 hour
+
     # PID settings
     CONNECTION_TIMEOUT: int = 180
     PID_SERVICE_URL: str = "http://pid.av-efi.net:8081/handles/21.T11998"
