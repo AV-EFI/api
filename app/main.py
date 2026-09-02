@@ -1,5 +1,6 @@
+import asyncio
+from contextlib import suppress
 import logging
-import logging.config
 import os
 
 import elasticsearch
@@ -10,6 +11,8 @@ import uvicorn
 
 from . import __version__
 from .core.config import settings
+from .core.db import engine
+from .helpers.auth import delete_expired_sessions
 from .routers import auth, health, matches
 from .routers.frontend import search, view
 
@@ -107,7 +110,7 @@ app.add_middleware(
     secret_key=settings.SESSION_SECRET,
     same_site="lax",
     https_only=True,
-    max_age=16 * 60 * 60,
+    max_age=settings.SESSION_COOKIE_MAX_AGE,
 )
 
 api = FastAPI(
@@ -138,6 +141,52 @@ api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 
 app.mount(EFI_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+
+
+async def cleanup_sessions_loop():
+    """Background task to periodically delete expired sessions."""
+    if not settings.SESSION_CLEANUP_ENABLED:
+        return
+
+    log.info(
+        f"Starting session cleanup loop"
+        f" (interval: {settings.SESSION_CLEANUP_INTERVAL}s)"
+    )
+    from .core.db import async_session_maker
+
+    while True:
+        try:
+            await asyncio.sleep(settings.SESSION_CLEANUP_INTERVAL)
+            async with async_session_maker() as db:
+                deleted = await delete_expired_sessions(db)
+                if deleted > 0:
+                    log.info(f"Deleted {deleted} expired sessions")
+        except asyncio.CancelledError:
+            log.info("Session cleanup loop cancelled")
+            break
+        except Exception as e:
+            log.error(f"Session cleanup error: {e}")
+
+
+cleanup_task: asyncio.Task | None = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    global cleanup_task
+    if settings.SESSION_CLEANUP_ENABLED:
+        cleanup_task = asyncio.create_task(cleanup_sessions_loop())
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global cleanup_task
+    if cleanup_task:
+        cleanup_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await cleanup_task
+    await engine.dispose()
+
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000)
