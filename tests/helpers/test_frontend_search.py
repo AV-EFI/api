@@ -18,11 +18,12 @@ def test_build_es_query_basic_search():
 
     assert query["query"]["bool"]["should"] == [
         {
-            "multi_match": {
+            "combined_fields": {
                 "query": "test query",
                 "fields": process_search_request.query_fields,
                 "zero_terms_query": "all",
                 "boost": 2,
+                "operator": "and",
             }
         },
         {
@@ -31,6 +32,7 @@ def test_build_es_query_basic_search():
                 "fields": process_search_request.query_fields,
                 "zero_terms_query": "all",
                 "fuzziness": "AUTO",
+                "minimum_should_match": "90%",
                 "tie_breaker": 0.667,
             }
         },
@@ -57,7 +59,9 @@ def test_build_es_query_with_facet_filters():
     query = process_search_request.build_es_query(request)
 
     assert len(query["query"]["bool"]["should"]) == 2
-    assert list(query["query"]["bool"]["should"][0].keys()) == ["multi_match"]
+    assert list(query["query"]["bool"]["should"][0].keys()) == [
+        "combined_fields",
+    ]
     assert len(query["query"]["bool"]["filter"]) == 2
     assert query["query"]["bool"]["filter"][0] == {
         "terms": {"creators.keyword": ["Director 1"]},
