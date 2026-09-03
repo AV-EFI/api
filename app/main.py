@@ -1,5 +1,5 @@
 import asyncio
-from contextlib import suppress
+from contextlib import asynccontextmanager, suppress
 import logging
 import os
 
@@ -91,27 +91,6 @@ LOGGING_CONFIG = {
 }
 logging.config.dictConfig(LOGGING_CONFIG)
 log = logging.getLogger(__name__)
-app = FastAPI(
-    title="AV-EFI API",
-    description="This is the backend for the AV-EFI project.",
-    version=__version__,
-    docs_url=f"{EFI_ROOT}/docs",
-    redoc_url=f"{EFI_ROOT}/redoc",
-    openapi_url=f"{EFI_ROOT}/openapi.json",
-    tags_metadata=[
-        {
-            "name": "Auth",
-            "description": "Authenticate with OpenID Connect.",
-        },
-    ],
-)
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=settings.SESSION_SECRET,
-    same_site="lax",
-    https_only=True,
-    max_age=settings.SESSION_COOKIE_MAX_AGE,
-)
 
 api = FastAPI(
     title="AV-EFI API",
@@ -139,9 +118,6 @@ api.include_router(view.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
 # api.include_router(transform.router, prefix="", tags=["Transform"])
 
-app.mount(EFI_PATH, api)
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-
 
 async def cleanup_sessions_loop():
     """Background task to periodically delete expired sessions."""
@@ -152,12 +128,12 @@ async def cleanup_sessions_loop():
         f"Starting session cleanup loop"
         f" (interval: {settings.SESSION_CLEANUP_INTERVAL}s)"
     )
-    from .core.db import async_session_maker
+    from .core.db import get_async_session_maker
 
     while True:
         try:
             await asyncio.sleep(settings.SESSION_CLEANUP_INTERVAL)
-            async with async_session_maker() as db:
+            async with get_async_session_maker() as db:
                 deleted = await delete_expired_sessions(db)
                 if deleted > 0:
                     log.info(f"Deleted {deleted} expired sessions")
@@ -171,21 +147,48 @@ async def cleanup_sessions_loop():
 cleanup_task: asyncio.Task | None = None
 
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for startup and shutdown."""
     global cleanup_task
     if settings.SESSION_CLEANUP_ENABLED:
         cleanup_task = asyncio.create_task(cleanup_sessions_loop())
+    try:
+        yield
+    finally:
+        if cleanup_task:
+            cleanup_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await cleanup_task
+        await engine.dispose()
 
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    global cleanup_task
-    if cleanup_task:
-        cleanup_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await cleanup_task
-    await engine.dispose()
+app = FastAPI(
+    title="AV-EFI API",
+    description="This is the backend for the AV-EFI project.",
+    version=__version__,
+    docs_url=f"{EFI_ROOT}/docs",
+    redoc_url=f"{EFI_ROOT}/redoc",
+    openapi_url=f"{EFI_ROOT}/openapi.json",
+    tags_metadata=[
+        {
+            "name": "Auth",
+            "description": "Authenticate with OpenID Connect.",
+        },
+    ],
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SESSION_SECRET,
+    same_site="lax",
+    https_only=True,
+    max_age=settings.SESSION_COOKIE_MAX_AGE,
+)
+
+app.mount(EFI_PATH, api)
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 
 if __name__ == "__main__":
