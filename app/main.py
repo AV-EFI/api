@@ -6,6 +6,7 @@ import os
 import elasticsearch
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi_csrf_protect.exceptions import CsrfProtectError
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 
@@ -189,6 +190,16 @@ app.add_middleware(
 
 app.mount(EFI_PATH, api)
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+
+
+@app.exception_handler(CsrfProtectError)
+async def csrf_error_handler(
+    request: Request, exc: CsrfProtectError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={"detail": getattr(exc, "message", "Invalid CSRF token")},
+    )
 
 
 if __name__ == "__main__":

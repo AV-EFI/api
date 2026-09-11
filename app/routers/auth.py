@@ -33,6 +33,14 @@ oauth.register(
 )
 
 
+async def verify_csrf(
+    request: Request,
+    csrf_protect: Annotated[CsrfProtect, Depends()],
+) -> None:
+    """Verify CSRF token for state-changing requests."""
+    await csrf_protect.validate_csrf(request)
+
+
 async def get_session_for_refresh(
     request: Request, db=Depends(get_db)
 ) -> tuple[dict | None, SessionStore]:
@@ -118,8 +126,10 @@ async def session(request: Request, db=Depends(get_db)):
     Refresh the session token when the user is active. This endpoint
     will use the refresh token to obtain a new access token if the
     current one has expired. Returns the updated session information.
+    Requires valid CSRF token.
     """,
     response_model=SessionInfo,
+    dependencies=[Depends(verify_csrf)],
 )
 async def refresh(
     request: Request, response: Response, db=Depends(get_db)
@@ -168,12 +178,13 @@ async def refresh(
     )
 
 
-@router.get(
+@router.post(
     "/signout",
     summary="Log user out",
     description="""Invalidate session, hence requiring reauthentication
-      for privileged access.""",
-    response_description="""Redirect to root of the frontend app.""",
+      for privileged access. Requires valid CSRF token.""",
+    response_description="""Returns 204 No Content on success.""",
+    dependencies=[Depends(verify_csrf)],
 )
 async def signout(request: Request, db=Depends(get_db)):
     sid = request.session.get("sid")
@@ -184,7 +195,7 @@ async def signout(request: Request, db=Depends(get_db)):
             await store.delete(session)
 
     request.session.pop("sid", None)
-    return RedirectResponse(url=FRONTEND_CALLBACK)
+    return Response(status_code=204)
 
 
 @router.get("/csrf")
@@ -198,22 +209,13 @@ async def csrf_token(
     return response
 
 
-@router.post("/signin/keycloak", deprecated=True)
-@router.post(
+@router.get(
     "/signin/academiccloud",
-    summary="Authenticate user via Academiccloud.",
-    description="""Authenticate user via external identity provider.""",
-    response_description="""Redirect to external identity provider and
-      hand back control to the frontend eventually.""",
+    summary="Initiate authentication via Academiccloud.",
+    description="""Initiate authentication via external identity provider
+      via redirect. Protected by OAuth state parameter (not CSRF).""",
+    response_description="""Redirect to external identity provider.""",
 )
-async def signin_ac(
-    request: Request, csrf_protect: Annotated[CsrfProtect, Depends()]
-):
-    await csrf_protect.validate_csrf(request)
-    return await redirect_to_ac(request)
-
-
-@router.get("/signin/keycloak", deprecated=True)
 @router.get(
     "/signin/academiccloud",
     summary="Authenticate user via Academiccloud.",

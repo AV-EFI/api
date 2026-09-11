@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "EFI API"
     # To be changed in local env
     SESSION_SECRET: str = "secret_for_session_cookies"
+    # CSRF protection secret (defaults to SESSION_SECRET)
+    CSRF_SECRET: str = ""
 
     # Elasticsearch settings
     ES_HOST: str = "pid.av-efi.net"
@@ -54,11 +56,12 @@ settings = Settings()
 
 
 class CsrfSettings(BaseSettings):
-    secret_key: str = settings.SESSION_SECRET
-    cookie_samesite: str = "none"
+    secret_key: str = settings.CSRF_SECRET or settings.SESSION_SECRET
+    cookie_samesite: str = "lax"
     cookie_secure: bool = True
-    token_location: str = "body"
-    token_key: str = "csrf-token"
+    token_location: str = "header"
+    token_key: str = "X-CSRF-Token"
+    max_age: int = 3600
 
 
 @CsrfProtect.load_config
