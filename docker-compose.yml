@@ -12,9 +12,29 @@ services:
       proxy-network:
         aliases:
           - av-efi-backend
+      db-network:
+
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-avefi}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-avefi}
+      - POSTGRES_DB=${POSTGRES_DB:-avefi}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - db-network
+
+volumes:
+  postgres-data:
 
 networks:
   proxy-network:
     name: proxy-network
     external: true
     # Create once: docker network create --opt mtu=1450 proxy-network
+  db-network:
+    name: db-network
+    external: true
+    # Create once: docker network create --opt mtu=1450 --internal db-network
