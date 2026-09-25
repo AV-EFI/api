@@ -118,52 +118,33 @@ release_docker:
         && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   extends: .docker_common
 
-.deploy:
+# Deployments are performed by the separate `av-efi/api-deploy` repository.
+# Pushing to the `testbed` or `production` branch builds/pushes the image (see
+# `build_docker`) and triggers the matching downstream deployment pipeline.
+.deploy_trigger_base:
   stage: deploy
+  trigger:
+    project: av-efi/api-deploy
+    branch: main
+    strategy: depend
+  needs:
+    - job: build_docker
   variables:
-    ## To be set as CI/CD variables:
-    #DEPLOY_USER
-    #DEPLOY_PATH
-  before_script:
-    # Setup SSH
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - eval $(ssh-agent -s)
-    - base64 -d "$SSH_PRIVATE_KEY" | ssh-add -
-    - cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
-    - chmod 600 ~/.ssh/known_hosts
-  script:
-    - envsubst < docker-compose.tmpl > docker-compose.yml
-    - envsubst < config/config.ini.tmpl > config/config.ini
-    # Create the new deployment's config directory if it doesn't exist
-    - ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $DEPLOY_PATH/config"
-    # Upload docker-compose.yml and config to server
-    - scp docker-compose.yml config/config.ini
-      $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
-    # Login to Docker registry and restart containers
-    - ssh $DEPLOY_USER@$DEPLOY_SERVER "cd $DEPLOY_PATH &&
-      mv config.ini config/ &&
-      echo 'Logging into registry $CI_REGISTRY' &&
-      echo '$CI_JOB_TOKEN'
-      | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY &&
-      echo 'Pulling latest images' &&
-      docker compose pull &&
-      echo 'Starting containers' &&
-      docker compose up -d"
-  extends: .docker_common
+    IMAGE_NAME: "$CI_REGISTRY_IMAGE"
+    TRIGGER: "api"
 
-deploy-staging:
-  environment:
-    name: staging
-    url: https://testbed.av-efi.net/rest/v1/docs
+deploy-trigger-testbed:
+  extends: .deploy_trigger_base
+  variables:
+    TARGET_ENV: "testbed"
+    IMAGE_TAG: "testbed"
   rules:
-    - if: $CI_COMMIT_BRANCH == "testbed"
-  extends: .deploy
+    - if: '$CI_COMMIT_BRANCH == "testbed"'
 
-deploy-production:
-  environment:
-    name: production
-    url: https://www.av-efi.net/rest/v1/docs
+deploy-trigger-production:
+  extends: .deploy_trigger_base
+  variables:
+    TARGET_ENV: "production"
+    IMAGE_TAG: "production"
   rules:
-    - if: $CI_COMMIT_BRANCH == "production"
-  extends: .deploy
+    - if: '$CI_COMMIT_BRANCH == "production"'
