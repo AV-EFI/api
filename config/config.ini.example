@@ -1,0 +1,7 @@
+ES_INDEX="21.11155-denormalised-work"
+ES_LOOKUP_INDEX="21.11155-nested"
+SESSION_SECRET="secret_for_session_cookies"
+DATABASE_URL="postgresql+asyncpg://avefi:avefi@postgres:5432/avefi"
+# AC_CLIENT_ID=""
+# AC_SECRET_KEY=""
+# AC_METADATA_URL=""
