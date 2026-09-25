@@ -11,12 +11,29 @@ services:
     volumes:
       - './config:/code/config:ro'
     depends_on:
-      - postgres
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     networks:
       proxy-network:
         aliases:
           - av-efi-backend
       db-network:
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/code/.venv/bin/alembic", "upgrade", "head"]
+    restart: "no"
+    volumes:
+      - './config:/code/config:ro'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - db-network
 
   postgres:
     image: postgres:18
@@ -27,6 +44,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-avefi}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-avefi} -d ${POSTGRES_DB:-avefi}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - db-network
 

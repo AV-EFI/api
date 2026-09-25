@@ -36,6 +36,8 @@ RUN uv sync --locked --no-dev --no-python-downloads --no-install-project
 # Copy the source code
 COPY README.md ./
 COPY app/ ./app/
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
 
 # install main app
 RUN uv sync --locked --no-dev
