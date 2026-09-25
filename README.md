@@ -13,33 +13,20 @@ package size in production.
 
 ### GitLab CI
 
-This project is set up with GitLab CI. The configuration can be found at [`.gilab-ci.yml`](.gitlab-ci.yml). Currently,
-for every commit:
-
-1. If the commit is done on the non-default branch (not the `main` branch), a Docker image is built and has the same
-   name as the branch name.
-2. For commits on the default branch (`main`), only tests are executed
-   but no Docker image is built except when a new version is released.
-   The latter should be done by executing the [`release.sh`
-   script](./release.sh). This will bump and commit the version
-   locally, add the corresponding tag and push it, hence triggering
-   the release pipeline which includes:
-    1. Read the new version by means of `uv version --show`.
-    2. Build a new Docker container and tag it with the `latest` tag and the version tag.
-    3. Release a new version on GitLab. GitLab releases can be found [here][3].
-
-Please note that executing the `release.sh` script requires a
-developer setup as described further down in this README.
+This project's pipeline runs tests only. Building and deployment are handled
+by the separate
+[`av-efi/api-deploy`](https://gitlab.gwdg.de/av-efi/api-deploy) repository.
 
 ### Changelog
 
 The changelog of this project is stored in the [CHANGELOG.md](CHANGELOG.md) file. Please make sure to keep it up-to-date
-with the development progress. The content of this file is used as a release note for every GitLab release.
+with the development progress.
 
 ## Usage
 
-The project is dockerized and its images are stored in the [project container registry][5]. To run it on your machine,
-make sure that [Docker][6] is installed.
+The project is dockerized. To build and run it on your machine, make sure that
+[Docker][6] is installed. For deployment at GWDG, see the separate
+[`av-efi/api-deploy`](https://gitlab.gwdg.de/av-efi/api-deploy) repository.
 
 In a local checkout of the repository, the easiest way to bring up the
 server is via docker-compose using the developer file `docker-compose.dev.yml`.
@@ -60,16 +47,6 @@ And start the server:
 
 ```console
 $ docker compose -f docker-compose.dev.yml up -d
-```
-
-Alternatively, to start the server, execute the commands below:
-
-```shell
-# Log in to GitLab
-$ docker login docker.gitlab.gwdg.de
-
-# Download and run the server in the background
-$ docker run --name efi-api --detach --publish 8000:8000 docker.gitlab.gwdg.de/av-efi/api:<tag or branch_name>
 ```
 
 ### Ingest AVefi compliant JSON records into PID system
@@ -157,11 +134,7 @@ $ uv run rebuild_search_index
 
 [2]: https://docs.pytest.org/en/8.0.x/
 
-[3]: https://gitlab.gwdg.de/av-efi/api/-/releases
-
 [4]: https://docs.astral.sh/uv/
-
-[5]: https://gitlab.gwdg.de/av-efi/api/container_registry/3087
 
 [6]: https://www.docker.com/
 

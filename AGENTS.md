@@ -88,7 +88,8 @@ pre-commit run --all-files
 # Bump version
 uv version --bump
 
-# Build Docker image (done via CI)
+# Build Docker image locally (deployment images are built by the
+# av-efi/api-deploy CI via kaniko)
 docker build -t avefi-api .
 ```
 
@@ -132,9 +133,8 @@ docker build -t avefi-api .
 
 ### CI/CD Pipeline (GitLab)
 - **test:** Gitleaks, Ruff lint/check, Pytest
-- **build:** Docker image (non-main branches)
-- **release:** Automated version management
-- **deploy:** SSH deployment to staging/production
+- **trigger:** on `testbed`/`production` branch pushes, triggers the
+  `av-efi/api-deploy` pipeline which builds and deploys.
 
 ## Commit Message Guidelines
 
