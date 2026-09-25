@@ -42,24 +42,24 @@ The project is dockerized and its images are stored in the [project container re
 make sure that [Docker][6] is installed.
 
 In a local checkout of the repository, the easiest way to bring up the
-server is via docker-compose. First, log into the container registry
-and pull the latest image:
+server is via docker-compose using the developer file `docker-compose.dev.yml`.
+First, copy the example config (the config directory is mounted read-only into
+the container):
 
 ```console
-$ docker login docker.gitlab.gwdg.de
-$ docker-compose pull
+$ cp config/config.ini.example config/config.ini
 ```
 
-Alternatively, you can build the image locally:
+Then build the image from the current working directory:
 
 ```console
-$ docker-compose build
+$ docker compose -f docker-compose.dev.yml build
 ```
 
-Then start the server:
+And start the server:
 
 ```console
-$ docker-compose up -d
+$ docker compose -f docker-compose.dev.yml up -d
 ```
 
 Alternatively, to start the server, execute the commands below:
@@ -74,15 +74,13 @@ $ docker run --name efi-api --detach --publish 8000:8000 docker.gitlab.gwdg.de/a
 
 ### Ingest AVefi compliant JSON records into PID system
 
-Again, the easiest way is to use docker-compose. In the root directory
-of a local checkout of this project, pull the image from the container
-registry:
+Again, the easiest way is to use docker-compose with the dedicated
+`docker-compose.efi-agent.yml` file. In the root directory of a local checkout
+of this project, build and run the `efi-agent` service:
 
 ```console
-# Log in to GitLab
-$ docker login docker.gitlab.gwdg.de
-# Pull image
-$ docker-compose pull
+$ docker compose -f docker-compose.efi-agent.yml build
+$ docker compose -f docker-compose.efi-agent.yml run --rm efi-agent push --help
 ```
 
 
