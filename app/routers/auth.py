@@ -7,6 +7,7 @@ import uuid
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi_csrf_protect import CsrfProtect
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.status import HTTP_401_UNAUTHORIZED
 
@@ -42,7 +43,7 @@ async def verify_csrf(
 
 
 async def get_session_for_refresh(
-    request: Request, db=Depends(get_db)
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
 ) -> tuple[dict | None, SessionStore]:
     """Get session from cookie and refresh if needed. Raises 401 if expired."""
     sid = request.session.get("sid")
@@ -90,7 +91,9 @@ async def get_session_for_refresh(
     """,
     response_model=SessionInfo,
 )
-async def session(request: Request, db=Depends(get_db)):
+async def session(
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+):
     sid = request.session.get("sid")
     if not sid:
         return SessionInfo(
@@ -128,11 +131,12 @@ async def session(request: Request, db=Depends(get_db)):
     current one has expired. Returns the updated session information.
     Requires valid CSRF token.
     """,
-    response_model=SessionInfo,
     dependencies=[Depends(verify_csrf)],
 )
 async def refresh(
-    request: Request, response: Response, db=Depends(get_db)
+    request: Request,
+    response: Response,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SessionInfo:
     """Refresh session on user activity."""
     sid = request.session.get("sid")
@@ -186,7 +190,9 @@ async def refresh(
     response_description="""Returns 204 No Content on success.""",
     dependencies=[Depends(verify_csrf)],
 )
-async def signout(request: Request, db=Depends(get_db)):
+async def signout(
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+):
     sid = request.session.get("sid")
     if sid:
         store = SessionStore(db)
@@ -240,7 +246,7 @@ async def redirect_to_ac(request: Request):
 
 
 @router.get("/callback/academiccloud")
-async def auth(request: Request, db=Depends(get_db)):
+async def auth(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
     token = await oauth.academiccloud.authorize_access_token(request)
     userinfo = token.get("userinfo")
     if userinfo:

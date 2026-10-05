@@ -1,4 +1,4 @@
-"""Add oidc_sessions table
+"""Add oidc_sessions table.
 
 Revision ID: 001
 Revises:

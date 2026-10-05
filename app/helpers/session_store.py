@@ -73,7 +73,8 @@ class SessionStore:
 
         Args:
             session: Existing session to update
-            new_tokens: Token dict from authlib (access_token, refresh_token, expires_at, ...)
+            new_tokens: Token dict from authlib (access_token,
+                refresh_token, expires_at, ...)
 
         Returns
         -------

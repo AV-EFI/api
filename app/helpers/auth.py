@@ -13,7 +13,8 @@ def derive_expiries(
     """Extract access and refresh expiry datetimes from token response.
 
     Args:
-        token: Token dict from authlib with 'expires_at' and optionally 'refresh_expires_in'
+        token: Token dict from authlib with 'expires_at' and
+            optionally 'refresh_expires_in'
 
     Returns
     -------
