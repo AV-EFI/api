@@ -134,7 +134,7 @@ async def cleanup_sessions_loop():
     while True:
         try:
             await asyncio.sleep(settings.SESSION_CLEANUP_INTERVAL)
-            async with get_async_session_maker() as db:
+            async with get_async_session_maker()() as db:
                 deleted = await delete_expired_sessions(db)
                 if deleted > 0:
                     log.info(f"Deleted {deleted} expired sessions")
