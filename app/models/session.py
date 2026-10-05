@@ -1,5 +1,4 @@
 from datetime import UTC, datetime
-from uuid import uuid4
 
 from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import (
@@ -20,8 +19,6 @@ class OidcSession(Base):
     sid: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
-        init=False,
-        default_factory=lambda: str(uuid4()),
     )
     user_name: Mapped[str] = mapped_column(String(255))
     user_email: Mapped[str] = mapped_column(String(255))
