@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import JSON, TIMESTAMP, String, Text
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -29,9 +29,14 @@ class OidcSession(Base):
     access_token: Mapped[str] = mapped_column(Text)
     refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     id_token: Mapped[str] = mapped_column(Text)
-    access_expires_at: Mapped[datetime] = mapped_column()
-    refresh_expires_at: Mapped[datetime | None] = mapped_column(nullable=True)
-    login_time: Mapped[datetime] = mapped_column()
+    access_expires_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True)
+    )
+    refresh_expires_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
+    login_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(
-        default_factory=lambda: datetime.now(UTC)
+        TIMESTAMP(timezone=True),
+        default_factory=lambda: datetime.now(UTC),
     )
