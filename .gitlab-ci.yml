@@ -38,7 +38,7 @@ deploy-trigger:
   trigger:
     project: av-efi/api-deploy
     branch: main
-    strategy: depend
+    strategy: mirror
   variables:
     TRIGGER: "api"
     TARGET_ENV: "$CI_COMMIT_BRANCH"
