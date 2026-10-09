@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-import httpx
+import httpx2
 
 from ...core.config import settings
 from ...helpers.auth import get_auth_headers, verify_token
@@ -43,7 +43,7 @@ async def get_pid_handle(
     full_url = f"{url}/handles/{pid}/{suffix}"
     headers = await get_auth_headers()
 
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         response = await client.get(full_url, headers=headers)
         return response.json()
 
@@ -108,10 +108,10 @@ async def update_pid_handle(
         headers["If-None-Match"] = if_none_match
 
     try:
-        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
+        async with httpx2.AsyncClient(timeout=TIMEOUT_SECONDS) as client:
             response = await client.put(full_url, json=data, headers=headers)
             return response.json()
-    except httpx.TimeoutException as e:
+    except httpx2.TimeoutException as e:
         raise HTTPException(
             status_code=504, detail="Request to PID service timed out"
         ) from e
@@ -155,7 +155,7 @@ async def delete_pid_handle(
     full_url = f"{url}/handles/{pid}/{suffix}"
     headers = await get_auth_headers()
 
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         response = await client.delete(full_url, headers=headers)
 
         if response.status_code == 200:

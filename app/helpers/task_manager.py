@@ -4,7 +4,7 @@ import graphlib
 import logging
 
 from avefi_schema import model_pydantic_v2 as efi
-import httpx
+import httpx2
 from pydantic import ValidationError
 
 log = logging.getLogger(__name__)
@@ -278,7 +278,7 @@ class Task:
                 if not handler.tasks.get(Operation.CREATE):
                     try:
                         r = self.client.get(handler.pid)
-                    except httpx.HTTPStatusError as e:
+                    except httpx2.HTTPStatusError as e:
                         if e.response.status_code == 404 and handler.record:
                             log.warning(
                                 f"PID '{handler.pid}' did not exist when"

@@ -2,7 +2,7 @@ import json
 import pathlib
 
 from fastapi_csrf_protect import CsrfProtect
-from httpx import BasicAuth
+from httpx2 import BasicAuth
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 

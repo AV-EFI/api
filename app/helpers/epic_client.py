@@ -4,7 +4,7 @@ import re
 from uuid import uuid4
 
 from avefi_schema import model_pydantic_v2 as efi
-from httpx import Client, HTTPStatusError, Timeout
+from httpx2 import Client, HTTPStatusError, Timeout
 
 from ..core.config import get_credentials, settings
 

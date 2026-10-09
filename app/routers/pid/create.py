@@ -2,7 +2,7 @@ from http.client import HTTPException
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-import httpx
+import httpx2
 
 from ...core.config import settings
 from ...helpers.auth import verify_token
@@ -62,7 +62,7 @@ async def create_pid(
 
     print(base64_auth)
     # Make POST request to PID service with auth headers
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         response = await client.post(
             full_url, json=wrapped_data, headers=headers
         )

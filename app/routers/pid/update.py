@@ -2,7 +2,7 @@ from http.client import HTTPException
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
-import httpx
+import httpx2
 
 from app.core.config import settings
 from app.helpers.auth import verify_token
@@ -63,7 +63,7 @@ async def update_pid(
     headers = {"Authorization": f"Basic {base64_auth}"}
 
     # Make PUT request to PID service with auth headers
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         response = await client.put(
             full_url, json=wrapped_data, headers=headers
         )
