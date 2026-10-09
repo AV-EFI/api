@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import delete
+from sqlalchemy import and_, delete, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.session import OidcSession
@@ -44,7 +44,7 @@ def classify(session: dict) -> str:
 
     if now < access_expires_at:
         return "active"
-    if refresh_expires_at is None or now < refresh_expires_at:
+    if refresh_expires_at is not None and now < refresh_expires_at:
         return "refreshable"
     return "expired"
 
@@ -88,10 +88,12 @@ async def delete_expired_sessions(db: AsyncSession) -> int:
     now = datetime.now(UTC)
 
     stmt = delete(OidcSession).where(
-        (OidcSession.refresh_expires_at < now)
-        | (
-            OidcSession.refresh_expires_at.is_(None),
-            OidcSession.access_expires_at < now,
+        or_(
+            OidcSession.refresh_expires_at < now,
+            and_(
+                OidcSession.refresh_expires_at.is_(None),
+                OidcSession.access_expires_at < now,
+            ),
         )
     )
 
