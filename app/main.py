@@ -24,8 +24,10 @@ EFI_PATH = f"{EFI_ROOT}/v1"
 
 tags_metadata = [
     {
-        "name": "Search",
-        "description": "Search the database.",
+        "name": "Matching",
+        "description": (
+            "Find film work by title, year, location, and director.",
+        ),
     },
     {
         "name": "Frontend",
@@ -112,11 +114,9 @@ api.include_router(health.router, tags=["Health"])
 # api.include_router(create.router, prefix="/pid", tags=["PID"])
 # api.include_router(update.router, prefix="/pid", tags=["PID"])
 # api.include_router(pid.router, prefix="", tags=["PID"])
-api.include_router(
-    search.router, prefix="/frontend", tags=["Frontend", "Search"]
-)
+api.include_router(search.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(view.router, prefix="/frontend", tags=["Frontend"])
-api.include_router(matches.router, prefix="", tags=["Matching", "Search"])
+api.include_router(matches.router, prefix="", tags=["Matching"])
 # api.include_router(transform.router, prefix="", tags=["Transform"])
 
 
