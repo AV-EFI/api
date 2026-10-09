@@ -1,9 +1,14 @@
+import asyncio
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from sqlalchemy.dialects import postgresql
 
-from app.helpers.auth import classify, delete_expired_sessions
+from app.helpers.auth import (
+    classify,
+    delete_expired_sessions,
+    revoke_provider_token,
+)
 
 
 def _session_dict(
@@ -101,3 +106,115 @@ def _run_delete(db):
     import asyncio
 
     return asyncio.run(delete_expired_sessions(db))
+
+
+def test_revoke_provider_token_without_endpoint():
+    result = asyncio.run(
+        revoke_provider_token(
+            client_id="cid",
+            client_secret="secret",
+            metadata={},
+            refresh_token="rt",
+            access_token="at",
+        )
+    )
+    assert result is False
+
+
+def test_revoke_provider_token_without_tokens():
+    result = asyncio.run(
+        revoke_provider_token(
+            client_id="cid",
+            client_secret="secret",
+            metadata={"revocation_endpoint": "https://idp/revoke"},
+            refresh_token=None,
+            access_token=None,
+        )
+    )
+    assert result is False
+
+
+def _revocation_client():
+    response = MagicMock()
+    response.raise_for_status = MagicMock(return_value=None)
+    client = MagicMock()
+    client.revoke_token = AsyncMock(return_value=response)
+    client.aclose = AsyncMock()
+    return client
+
+
+def test_revoke_provider_token_prefers_refresh_token():
+    client = _revocation_client()
+
+    with patch(
+        "app.helpers.auth.AsyncOAuth2Client", return_value=client
+    ) as client_cls:
+        result = asyncio.run(
+            revoke_provider_token(
+                client_id="cid",
+                client_secret="secret",
+                metadata={"revocation_endpoint": "https://idp/revoke"},
+                refresh_token="rt",
+                access_token="at",
+            )
+        )
+
+    assert result is True
+    client_cls.assert_called_once_with(client_id="cid", client_secret="secret")
+    client.revoke_token.assert_awaited_once_with(
+        "https://idp/revoke",
+        token="rt",
+        token_type_hint="refresh_token",
+    )
+    client.aclose.assert_awaited_once()
+
+
+def test_revoke_provider_token_falls_back_to_access_token():
+    client = _revocation_client()
+
+    with patch("app.helpers.auth.AsyncOAuth2Client", return_value=client):
+        result = asyncio.run(
+            revoke_provider_token(
+                client_id="cid",
+                client_secret="secret",
+                metadata={"revocation_endpoint": "https://idp/revoke"},
+                refresh_token=None,
+                access_token="at",
+            )
+        )
+
+    assert result is True
+    client.revoke_token.assert_awaited_once_with(
+        "https://idp/revoke",
+        token="at",
+        token_type_hint="access_token",
+    )
+    client.aclose.assert_awaited_once()
+
+
+def test_revoke_provider_token_raises_on_provider_error():
+    client = MagicMock()
+    response = MagicMock()
+    response.raise_for_status = MagicMock(
+        side_effect=RuntimeError("provider rejected")
+    )
+    client.revoke_token = AsyncMock(return_value=response)
+    client.aclose = AsyncMock()
+
+    with patch("app.helpers.auth.AsyncOAuth2Client", return_value=client):
+        try:
+            asyncio.run(
+                revoke_provider_token(
+                    client_id="cid",
+                    client_secret="secret",
+                    metadata={"revocation_endpoint": "https://idp/revoke"},
+                    refresh_token="rt",
+                    access_token=None,
+                )
+            )
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("Expected RuntimeError")
+
+    client.aclose.assert_awaited_once()

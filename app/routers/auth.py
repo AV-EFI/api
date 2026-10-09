@@ -4,16 +4,30 @@ from typing import Annotated
 from urllib import parse
 import uuid
 
+from authlib.integrations.base_client.errors import (
+    MismatchingStateError,
+    OAuthError,
+)
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi_csrf_protect import CsrfProtect
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse, RedirectResponse
-from starlette.status import HTTP_401_UNAUTHORIZED
+from starlette.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_502_BAD_GATEWAY,
+)
 
 from ..core.config import settings
 from ..core.db import get_db
-from ..helpers.auth import build_session_info, classify, derive_expiries
+from ..helpers.auth import (
+    build_session_info,
+    classify,
+    derive_expiries,
+    revoke_provider_token,
+)
 from ..helpers.session_store import SessionStore
 from ..schemas.auth import CsrfToken, SessionInfo
 
@@ -198,10 +212,36 @@ async def signout(
         store = SessionStore(db)
         session = await store.get(sid)
         if session:
+            await _revoke_session_tokens(session)
             await store.delete(session)
 
     request.session.pop("sid", None)
     return Response(status_code=204)
+
+
+async def _revoke_session_tokens(session) -> None:
+    """Best-effort provider token revocation on signout.
+
+    Revocation failures must not prevent local logout, so they are logged and
+    swallowed here.
+    """
+    if not settings.AC_CLIENT_ID and not settings.AC_SECRET_KEY:
+        return
+    try:
+        metadata = await oauth.academiccloud.load_server_metadata()
+    except Exception as e:
+        log.warning(f"Could not load provider metadata during signout: {e}")
+        return
+    try:
+        await revoke_provider_token(
+            client_id=settings.AC_CLIENT_ID,
+            client_secret=settings.AC_SECRET_KEY,
+            metadata=metadata,
+            refresh_token=session.refresh_token,
+            access_token=session.access_token,
+        )
+    except Exception as e:
+        log.warning(f"Token revocation failed during signout: {e}")
 
 
 @router.get("/csrf")
@@ -227,52 +267,143 @@ async def signin_ac_get(request: Request):
 
 
 async def redirect_to_ac(request: Request):
+    if not settings.AC_CLIENT_ID:
+        log.error("OAuth client id is not configured")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OAuth client is not configured",
+        )
+
     redirect_uri = request.url_for("auth")
     proxy_host = request.headers.get("x-forwarded-host")
     if proxy_host:
+        scheme = request.headers.get("x-forwarded-proto")
+        if scheme not in ("http", "https"):
+            log.warning(
+                f"Rejecting signin with invalid forwarded proto: {scheme}"
+            )
+            raise HTTPException(
+                status_code=HTTP_400_BAD_REQUEST,
+                detail="Invalid forwarded protocol",
+            )
         redirect_uri = parse.urljoin(
-            f"{request.headers.get('x-forwarded-proto')}://{proxy_host}",
+            f"{scheme}://{proxy_host}",
             redirect_uri.path,
         )
     log.debug(f"Passing as callback: {redirect_uri}")
-    return await oauth.academiccloud.authorize_redirect(request, redirect_uri)
+    try:
+        return await oauth.academiccloud.authorize_redirect(
+            request, redirect_uri
+        )
+    except OAuthError as e:
+        log.error(f"OAuth authorization initiation failed: {e}")
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="Could not initiate authentication",
+        ) from e
+    except Exception as e:
+        log.error(f"Authorization initiation failed: {e}")
+        raise HTTPException(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not initiate authentication",
+        ) from e
 
 
 @router.get("/callback/academiccloud")
 async def auth(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
-    token = await oauth.academiccloud.authorize_access_token(request)
+    params = request.query_params
+
+    error = params.get("error")
+    if error:
+        log.warning(f"Identity provider returned an error: {error}")
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="Authentication failed",
+        )
+
+    code = params.get("code")
+    state = params.get("state")
+    if not code or not state:
+        log.warning("OAuth callback missing code or state parameter")
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="Missing OAuth parameters",
+        )
+
+    try:
+        token = await oauth.academiccloud.authorize_access_token(request)
+    except MismatchingStateError as e:
+        log.warning("OAuth state mismatch during callback")
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="Invalid OAuth state",
+        ) from e
+    except OAuthError as e:
+        log.warning(f"OAuth callback token exchange failed: {e}")
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="Authentication failed",
+        ) from e
+
     userinfo = token.get("userinfo")
-    if userinfo:
-        scopes = token["scope"].split()
-        user = dict(
-            name=userinfo.get("name"),
-            email=userinfo.get("email"),
-            uid=userinfo.get("uid"),
-            orgid=userinfo.get("ou"),
+    access_token = token.get("access_token")
+    expires_at = token.get("expires_at")
+    if not userinfo or not access_token or not expires_at:
+        log.error("Identity provider returned an incomplete token response")
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="Invalid response from identity provider",
         )
 
+    aud = userinfo.get("aud")
+    if not aud:
+        log.error("Identity provider userinfo is missing audience")
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="Invalid response from identity provider",
+        )
+
+    scopes = token.get("scope", "").split()
+    user = dict(
+        name=userinfo.get("name"),
+        email=userinfo.get("email"),
+        uid=userinfo.get("uid"),
+        orgid=userinfo.get("ou"),
+    )
+    if not user["name"] or not user["email"] or not user["uid"]:
+        log.error("Identity provider userinfo is missing required fields")
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="Invalid response from identity provider",
+        )
+
+    try:
         access_expires_at, refresh_expires_at = derive_expiries(token)
+    except Exception as e:
+        log.error(f"Invalid token expiry from identity provider: {e}")
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="Invalid response from identity provider",
+        ) from e
 
-        sid = str(uuid.uuid4())
-        request.session["sid"] = sid
+    sid = str(uuid.uuid4())
+    request.session["sid"] = sid
 
-        await SessionStore(db).create(
-            sid=sid,
-            user_name=user["name"],
-            user_email=user["email"],
-            user_uid=user["uid"],
-            user_orgid=user.get("orgid"),
-            audience=userinfo["aud"],
-            scopes=scopes,
-            access_token=token["access_token"],
-            refresh_token=token.get("refresh_token"),
-            id_token=token.get("id_token", ""),
-            access_expires_at=int(access_expires_at.timestamp()),
-            refresh_expires_at=(
-                int(refresh_expires_at.timestamp())
-                if refresh_expires_at
-                else None
-            ),
-        )
+    await SessionStore(db).create(
+        sid=sid,
+        user_name=user["name"],
+        user_email=user["email"],
+        user_uid=user["uid"],
+        user_orgid=user.get("orgid"),
+        audience=aud,
+        scopes=scopes,
+        access_token=access_token,
+        refresh_token=token.get("refresh_token"),
+        id_token=token.get("id_token", ""),
+        access_expires_at=int(access_expires_at.timestamp()),
+        refresh_expires_at=(
+            int(refresh_expires_at.timestamp()) if refresh_expires_at else None
+        ),
+    )
 
     return RedirectResponse(url=FRONTEND_CALLBACK)
