@@ -222,13 +222,6 @@ async def csrf_token(
       via redirect. Protected by OAuth state parameter (not CSRF).""",
     response_description="""Redirect to external identity provider.""",
 )
-@router.get(
-    "/signin/academiccloud",
-    summary="Authenticate user via Academiccloud.",
-    description="""Authenticate user via external identity provider.""",
-    response_description="""Redirect to external identity provider and
-      hand back control to the frontend eventually.""",
-)
 async def signin_ac_get(request: Request):
     return await redirect_to_ac(request)
 
