@@ -195,17 +195,10 @@ def _fake_session(refresh_token="rt"):
 
 
 def _patch_refresh_flow(new_token):
-    return (
-        patch.object(
-            oauth_app.academiccloud,
-            "load_server_metadata",
-            new=AsyncMock(return_value={"token_endpoint": "/oauth/token"}),
-        ),
-        patch.object(
-            oauth_app.academiccloud,
-            "fetch_access_token",
-            new=AsyncMock(return_value=new_token),
-        ),
+    return patch.object(
+        oauth_app.academiccloud,
+        "fetch_access_token",
+        new=AsyncMock(return_value=new_token),
     )
 
 
@@ -217,10 +210,9 @@ def test_refresh_rotates_when_access_active():
         "expires_at": 9999999999,
         "refresh_token": "new-rt",
     }
-    metadata_patch, fetch_patch = _patch_refresh_flow(new_token)
+    fetch_patch = _patch_refresh_flow(new_token)
     with (
         patch("app.routers.auth.SessionStore", return_value=store),
-        metadata_patch,
         fetch_patch,
     ):
         result = _run(refresh(_refresh_request(), MagicMock()))
@@ -233,10 +225,9 @@ def test_refresh_rotates_when_access_expired():
     session = _fake_session()
     store = _store_with_session(session)
     new_token = {"access_token": "new-at", "expires_at": 9999999999}
-    metadata_patch, fetch_patch = _patch_refresh_flow(new_token)
+    fetch_patch = _patch_refresh_flow(new_token)
     with (
         patch("app.routers.auth.SessionStore", return_value=store),
-        metadata_patch,
         fetch_patch,
     ):
         result = _run(refresh(_refresh_request(), MagicMock()))
@@ -257,6 +248,24 @@ def test_refresh_401_without_refresh_token():
     store.delete.assert_awaited_once()
 
 
+def test_refresh_passes_grant_without_url_to_fetch_access_token():
+    session = _fake_session(refresh_token="rt-1")
+    store = _store_with_session(session)
+    new_token = {"access_token": "new-at", "expires_at": 9999999999}
+    fetch = AsyncMock(return_value=new_token)
+    with (
+        patch("app.routers.auth.SessionStore", return_value=store),
+        patch.object(oauth_app.academiccloud, "fetch_access_token", new=fetch),
+    ):
+        result = _run(refresh(_refresh_request(), MagicMock()))
+
+    assert result.authenticated is True
+    fetch.assert_awaited_once_with(
+        grant_type="refresh_token", refresh_token="rt-1"
+    )
+    store.update_tokens.assert_awaited_once_with(session, new_token)
+
+
 def test_refresh_401_on_provider_failure():
     session = _fake_session()
     store = _store_with_session(session)
@@ -266,11 +275,6 @@ def test_refresh_401_on_provider_failure():
 
     with (
         patch("app.routers.auth.SessionStore", return_value=store),
-        patch.object(
-            oauth_app.academiccloud,
-            "load_server_metadata",
-            new=AsyncMock(return_value={"token_endpoint": "/oauth/token"}),
-        ),
         patch.object(
             oauth_app.academiccloud,
             "fetch_access_token",

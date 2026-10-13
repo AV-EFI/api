@@ -62,9 +62,7 @@ async def _refresh_session_tokens(session, store: SessionStore) -> None:
     Raises if the provider rejects the refresh or the request otherwise fails.
     Token values are never logged.
     """
-    metadata = await oauth.academiccloud.load_server_metadata()
     new_token = await oauth.academiccloud.fetch_access_token(
-        url=metadata.get("token_endpoint", "/oauth/token"),
         grant_type="refresh_token",
         refresh_token=session.refresh_token,
     )
