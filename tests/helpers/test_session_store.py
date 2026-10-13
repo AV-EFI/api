@@ -28,13 +28,13 @@ def test_oidc_session_datetime_columns_are_timezone_aware():
     ddl = _table_ddl()
     for col in (
         "access_expires_at",
-        "refresh_expires_at",
         "login_time",
         "updated_at",
     ):
         assert f"{col} TIMESTAMP WITH TIME ZONE" in ddl, (
             f"{col} should be timestamptz, got: {ddl}"
         )
+    assert "refresh_expires_at" not in ddl
 
 
 def test_oidc_session_accepts_sid_in_init():
@@ -59,7 +59,6 @@ def test_oidc_session_accepts_sid_in_init():
         refresh_token=None,
         id_token="id-token",
         access_expires_at=now,
-        refresh_expires_at=None,
         login_time=now,
         updated_at=now,
     )

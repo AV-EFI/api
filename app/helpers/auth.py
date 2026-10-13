@@ -1,52 +1,33 @@
 from datetime import UTC, datetime
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
-from sqlalchemy import and_, delete, or_
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.session import OidcSession
 from app.schemas.auth import SessionInfo, User
 
 
-def derive_expiries(
-    token: dict,
-) -> tuple[datetime, datetime | None]:
-    """Extract access and refresh expiry datetimes from token response.
+def derive_access_expiry(token: dict) -> datetime:
+    """Extract the access-token expiry from a token response.
 
-    Args:
-        token: Token dict from authlib with 'expires_at' and
-            optionally 'refresh_expires_in'
-
-    Returns
-    -------
-        (access_expires_at, refresh_expires_at) where refresh_expires_at
-        is None if unavailable
+    Only the standard ``expires_at`` is used. The provider-specific
+    ``refresh_expires_in`` field is intentionally ignored because refresh-token
+    expiry is not part of the OAuth specification.
     """
-    access_expires_at = datetime.fromtimestamp(token["expires_at"], tz=UTC)
-
-    refresh_expires_at: datetime | None = None
-    if "refresh_expires_in" in token:
-        refresh_expires_at = datetime.fromtimestamp(
-            token["expires_at"] + token["refresh_expires_in"],
-            tz=UTC,
-        )
-
-    return access_expires_at, refresh_expires_at
+    return datetime.fromtimestamp(token["expires_at"], tz=UTC)
 
 
 def classify(session: dict) -> str:
-    """Classify session state based on expiry timestamps.
+    """Classify session state based on the access-token expiry.
 
-    Returns one of: "active", "refreshable", "expired"
+    Returns one of: "active", "expired"
     """
     now = int(datetime.now(UTC).timestamp())
     access_expires_at = session.get("access_expires_at", 0)
-    refresh_expires_at = session.get("refresh_expires_at")
 
     if now < access_expires_at:
         return "active"
-    if refresh_expires_at is not None and now < refresh_expires_at:
-        return "refreshable"
     return "expired"
 
 
@@ -63,11 +44,7 @@ def build_session_info(session: dict) -> SessionInfo:
             orgid=session["user"].get("orgid"),
         )
 
-    expires_at: int | None = None
-    if "refresh_expires_at" in session and session["refresh_expires_at"]:
-        expires_at = int(session["refresh_expires_at"])
-    elif "access_expires_at" in session:
-        expires_at = int(session["access_expires_at"])
+    expires_at = int(session["access_expires_at"])
 
     return SessionInfo(
         authenticated=True,
@@ -80,7 +57,7 @@ def build_session_info(session: dict) -> SessionInfo:
 
 
 async def delete_expired_sessions(db: AsyncSession) -> int:
-    """Delete sessions whose tokens have expired.
+    """Delete sessions whose access tokens have expired.
 
     Returns
     -------
@@ -88,15 +65,7 @@ async def delete_expired_sessions(db: AsyncSession) -> int:
     """
     now = datetime.now(UTC)
 
-    stmt = delete(OidcSession).where(
-        or_(
-            OidcSession.refresh_expires_at < now,
-            and_(
-                OidcSession.refresh_expires_at.is_(None),
-                OidcSession.access_expires_at < now,
-            ),
-        )
-    )
+    stmt = delete(OidcSession).where(OidcSession.access_expires_at < now)
 
     result = await db.execute(stmt)
     await db.commit()

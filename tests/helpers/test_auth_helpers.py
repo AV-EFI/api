@@ -7,18 +7,14 @@ from sqlalchemy.dialects import postgresql
 from app.helpers.auth import (
     classify,
     delete_expired_sessions,
+    derive_access_expiry,
     revoke_provider_token,
 )
 
 
-def _session_dict(
-    *,
-    access_expires_at: int,
-    refresh_expires_at: int | None,
-) -> dict:
+def _session_dict(*, access_expires_at: int) -> dict:
     return {
         "access_expires_at": access_expires_at,
-        "refresh_expires_at": refresh_expires_at,
     }
 
 
@@ -26,49 +22,25 @@ def _now() -> int:
     return int(datetime.now(UTC).timestamp())
 
 
-def test_classify_active_with_no_refresh_expiry():
+def test_classify_active_with_future_access_expiry():
     now = _now()
-    session = _session_dict(
-        access_expires_at=now + 100,
-        refresh_expires_at=None,
-    )
+    session = _session_dict(access_expires_at=now + 100)
     assert classify(session) == "active"
 
 
-def test_classify_active_with_future_refresh_expiry():
+def test_classify_expired_with_past_access_expiry():
     now = _now()
-    session = _session_dict(
-        access_expires_at=now + 100,
-        refresh_expires_at=now + 1000,
-    )
-    assert classify(session) == "active"
-
-
-def test_classify_refreshable_with_expired_access_and_future_refresh():
-    now = _now()
-    session = _session_dict(
-        access_expires_at=now - 10,
-        refresh_expires_at=now + 1000,
-    )
-    assert classify(session) == "refreshable"
-
-
-def test_classify_expired_when_no_refresh_expiry():
-    now = _now()
-    session = _session_dict(
-        access_expires_at=now - 10,
-        refresh_expires_at=None,
-    )
+    session = _session_dict(access_expires_at=now - 10)
     assert classify(session) == "expired"
 
 
-def test_classify_expired_when_access_and_refresh_expired():
-    now = _now()
-    session = _session_dict(
-        access_expires_at=now - 100,
-        refresh_expires_at=now - 10,
-    )
-    assert classify(session) == "expired"
+def test_derive_access_expiry_ignores_refresh_expires_in():
+    token = {
+        "expires_at": 1700000000,
+        "refresh_expires_in": 1800,
+    }
+    expiry = derive_access_expiry(token)
+    assert int(expiry.timestamp()) == 1700000000
 
 
 def test_delete_expired_sessions_executes_and_compiles():
@@ -97,9 +69,8 @@ def test_delete_expired_sessions_executes_and_compiles():
     sql = str(compiled)
     assert "DELETE FROM oidc_sessions" in sql
     assert "WHERE" in sql
-    # Both branches of the OR must be present.
-    assert "refresh_expires_at" in sql
     assert "access_expires_at" in sql
+    assert "refresh_expires_at" not in sql
 
 
 def _run_delete(db):

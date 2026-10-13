@@ -3,7 +3,7 @@ from datetime import UTC
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.helpers.auth import derive_expiries
+from app.helpers.auth import derive_access_expiry
 from app.models.session import OidcSession
 
 
@@ -32,18 +32,12 @@ class SessionStore:
         refresh_token: str | None,
         id_token: str,
         access_expires_at: int,
-        refresh_expires_at: int | None,
     ) -> OidcSession:
         """Create a new session."""
         from datetime import datetime
 
         now = datetime.now(UTC)
         access_expires_dt = datetime.fromtimestamp(access_expires_at, tz=UTC)
-        refresh_expires_dt = (
-            datetime.fromtimestamp(refresh_expires_at, tz=UTC)
-            if refresh_expires_at
-            else None
-        )
 
         session = OidcSession(
             sid=sid,
@@ -57,7 +51,6 @@ class SessionStore:
             refresh_token=refresh_token,
             id_token=id_token,
             access_expires_at=access_expires_dt,
-            refresh_expires_at=refresh_expires_dt,
             login_time=now,
             updated_at=now,
         )
@@ -83,12 +76,14 @@ class SessionStore:
         from datetime import datetime
 
         now = datetime.now(UTC)
-        access_expires_at, refresh_expires_at = derive_expiries(new_tokens)
+        access_expires_at = derive_access_expiry(new_tokens)
 
         session.access_token = new_tokens["access_token"]
-        session.refresh_token = new_tokens.get("refresh_token")
+        # Keep the current refresh token if the provider does not rotate it.
+        session.refresh_token = new_tokens.get(
+            "refresh_token", session.refresh_token
+        )
         session.access_expires_at = access_expires_at
-        session.refresh_expires_at = refresh_expires_at
         session.updated_at = now
 
         await self.db.commit()
@@ -115,11 +110,6 @@ class SessionStore:
             "refresh_token": session.refresh_token,
             "id_token": session.id_token,
             "access_expires_at": int(session.access_expires_at.timestamp()),
-            "refresh_expires_at": (
-                int(session.refresh_expires_at.timestamp())
-                if session.refresh_expires_at
-                else None
-            ),
             "login_time": int(session.login_time.timestamp()),
             "updated_at": int(session.updated_at.timestamp()),
         }

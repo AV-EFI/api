@@ -32,9 +32,6 @@ class OidcSession(Base):
     access_expires_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True)
     )
-    refresh_expires_at: Mapped[datetime | None] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=True
-    )
     login_time: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),

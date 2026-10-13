@@ -25,7 +25,7 @@ from ..core.db import get_db
 from ..helpers.auth import (
     build_session_info,
     classify,
-    derive_expiries,
+    derive_access_expiry,
     revoke_provider_token,
 )
 from ..helpers.session_store import SessionStore
@@ -56,42 +56,19 @@ async def verify_csrf(
     await csrf_protect.validate_csrf(request)
 
 
-async def get_session_for_refresh(
-    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
-) -> tuple[dict | None, SessionStore]:
-    """Get session from cookie and refresh if needed. Raises 401 if expired."""
-    sid = request.session.get("sid")
-    if not sid:
-        return None, SessionStore(db)
+async def _refresh_session_tokens(session, store: SessionStore) -> None:
+    """Perform a refresh-token grant against the identity provider.
 
-    store = SessionStore(db)
-    session = await store.get(sid)
-    if not session:
-        return None, store
-
-    state = classify(store.to_dict(session))
-
-    if state == "active":
-        return store.to_dict(session), store
-
-    if state == "refreshable":
-        try:
-            metadata = await oauth.academiccloud.load_server_metadata()
-            new_token = await oauth.academiccloud.fetch_access_token(
-                url=metadata.get("token_endpoint", "/oauth/token"),
-                grant_type="refresh_token",
-                refresh_token=session.refresh_token,
-            )
-            await store.update_tokens(session, new_token)
-            return store.to_dict(session), store
-        except Exception as e:
-            log.error(f"Token refresh failed: {e}")
-            await store.delete(session)
-            return None, store
-
-    # expired
-    await store.delete(session)
-    return None, store
+    Raises if the provider rejects the refresh or the request otherwise fails.
+    Token values are never logged.
+    """
+    metadata = await oauth.academiccloud.load_server_metadata()
+    new_token = await oauth.academiccloud.fetch_access_token(
+        url=metadata.get("token_endpoint", "/oauth/token"),
+        grant_type="refresh_token",
+        refresh_token=session.refresh_token,
+    )
+    await store.update_tokens(session, new_token)
 
 
 @router.get(
@@ -123,9 +100,7 @@ async def session(
             server_time=int(datetime.now(UTC).timestamp()),
         )
 
-    state = classify(store.to_dict(session))
-
-    if state == "active" or state == "refreshable":
+    if classify(store.to_dict(session)) == "active":
         return build_session_info(store.to_dict(session))
 
     # Expired
@@ -140,19 +115,17 @@ async def session(
     "/refresh",
     summary="Refresh user session on activity",
     description="""
-    Refresh the session token when the user is active. This endpoint
-    will use the refresh token to obtain a new access token if the
-    current one has expired. Returns the updated session information.
-    Requires valid CSRF token.
+    Perform refresh-token rotation against the identity provider and return
+    the updated session information. This runs regardless of whether the
+    current access token has expired. Requires valid CSRF token.
     """,
     dependencies=[Depends(verify_csrf)],
 )
 async def refresh(
     request: Request,
-    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SessionInfo:
-    """Refresh session on user activity."""
+    """Rotate tokens against the identity provider."""
     sid = request.session.get("sid")
     if not sid:
         raise HTTPException(
@@ -161,39 +134,23 @@ async def refresh(
 
     store = SessionStore(db)
     session = await store.get(sid)
-    if not session:
+    if not session or not session.refresh_token:
+        if session:
+            await store.delete(session)
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Not logged in"
         )
 
-    state = classify(store.to_dict(session))
+    try:
+        await _refresh_session_tokens(session, store)
+    except Exception as e:
+        log.error(f"Token refresh failed: {e}")
+        await store.delete(session)
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, detail="Not logged in"
+        ) from None
 
-    if state == "active":
-        return build_session_info(store.to_dict(session))
-
-    if state == "refreshable":
-        try:
-            metadata = await oauth.academiccloud.load_server_metadata()
-            new_token = await oauth.academiccloud.fetch_access_token(
-                url=metadata.get("token_endpoint", "/oauth/token"),
-                grant_type="refresh_token",
-                refresh_token=session.refresh_token,
-            )
-            await store.update_tokens(session, new_token)
-            return build_session_info(store.to_dict(session))
-        except Exception as e:
-            log.error(f"Token refresh failed: {e}")
-            await store.delete(session)
-            raise HTTPException(
-                status_code=HTTP_401_UNAUTHORIZED,
-                detail="Not logged in",
-            ) from None
-
-    # Expired
-    await store.delete(session)
-    raise HTTPException(
-        status_code=HTTP_401_UNAUTHORIZED, detail="Not logged in"
-    )
+    return build_session_info(store.to_dict(session))
 
 
 @router.post(
@@ -378,7 +335,7 @@ async def auth(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
         )
 
     try:
-        access_expires_at, refresh_expires_at = derive_expiries(token)
+        access_expires_at = derive_access_expiry(token)
     except Exception as e:
         log.error(f"Invalid token expiry from identity provider: {e}")
         raise HTTPException(
@@ -401,9 +358,6 @@ async def auth(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
         refresh_token=token.get("refresh_token"),
         id_token=token.get("id_token", ""),
         access_expires_at=int(access_expires_at.timestamp()),
-        refresh_expires_at=(
-            int(refresh_expires_at.timestamp()) if refresh_expires_at else None
-        ),
     )
 
     return RedirectResponse(url=FRONTEND_CALLBACK)
