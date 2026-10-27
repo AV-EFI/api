@@ -101,8 +101,9 @@ async def session(
     if classify(store.to_dict(session)) == "active":
         return build_session_info(store.to_dict(session))
 
-    # Expired
-    await store.delete(session)
+    # The access token can expire while the refresh token remains valid. Keep
+    # the server-side session so the client can rotate the tokens via POST
+    # /auth/refresh.
     return SessionInfo(
         authenticated=False,
         server_time=int(datetime.now(UTC).timestamp()),

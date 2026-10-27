@@ -46,10 +46,8 @@ def test_derive_access_expiry_ignores_refresh_expires_in():
 def test_delete_expired_sessions_executes_and_compiles():
     """Cleanup statement must be valid SQL, not a tuple.
 
-    Regression test: the where() clause used a Python tuple on the right-hand
-    side of the OR, raising "SQL expression for WHERE/HAVING role expected,
-    got (<BinaryExpression>, <BinaryExpression>)". The statement is built
-    inside delete_expired_sessions and captured from db.execute.
+    The statement is built inside delete_expired_sessions and captured from
+    db.execute.
     """
     db = MagicMock()
     db.execute = AsyncMock()
@@ -69,7 +67,7 @@ def test_delete_expired_sessions_executes_and_compiles():
     sql = str(compiled)
     assert "DELETE FROM oidc_sessions" in sql
     assert "WHERE" in sql
-    assert "access_expires_at" in sql
+    assert "login_time" in sql
     assert "refresh_expires_at" not in sql
 
 

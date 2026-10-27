@@ -1,9 +1,10 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.models.session import OidcSession
 from app.schemas.auth import SessionInfo, User
 
@@ -57,15 +58,25 @@ def build_session_info(session: dict) -> SessionInfo:
 
 
 async def delete_expired_sessions(db: AsyncSession) -> int:
-    """Delete sessions whose access tokens have expired.
+    """Delete sessions beyond the server-side session lifetime.
+
+    Access-token expiry is not a session expiry boundary: a valid refresh
+    token must survive access-token expiry so the next activity can rotate it.
+    The signed browser cookie and database row share the configured session
+    lifetime, measured from the original login.
 
     Returns
     -------
         Number of rows deleted.
     """
     now = datetime.now(UTC)
+    session_expired_before = now - timedelta(
+        seconds=settings.SESSION_COOKIE_MAX_AGE
+    )
 
-    stmt = delete(OidcSession).where(OidcSession.access_expires_at < now)
+    stmt = delete(OidcSession).where(
+        OidcSession.login_time < session_expired_before
+    )
 
     result = await db.execute(stmt)
     await db.commit()

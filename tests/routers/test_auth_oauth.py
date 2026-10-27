@@ -6,6 +6,7 @@ import pytest
 
 from app.routers.auth import auth, redirect_to_ac, refresh, settings
 from app.routers.auth import oauth as oauth_app
+from app.routers.auth import session as session_status
 
 
 def _request(headers=None, query_params=None):
@@ -169,6 +170,18 @@ def test_callback_valid_creates_session_and_redirects():
 
     assert result.status_code in (302, 307)
     store.create.assert_awaited_once()
+
+
+def test_session_status_keeps_expired_access_session_for_refresh():
+    session = _fake_session()
+    store = _store_with_session(session)
+    store.to_dict.return_value = {"access_expires_at": 1}
+
+    with patch("app.routers.auth.SessionStore", return_value=store):
+        result = _run(session_status(_refresh_request(), MagicMock()))
+
+    assert result.authenticated is False
+    store.delete.assert_not_awaited()
 
 
 def _refresh_request(sid="sid-1"):
