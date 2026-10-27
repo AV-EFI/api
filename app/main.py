@@ -171,7 +171,7 @@ app = FastAPI(
     docs_url=f"{EFI_ROOT}/docs",
     redoc_url=f"{EFI_ROOT}/redoc",
     openapi_url=f"{EFI_ROOT}/openapi.json",
-    tags_metadata=[
+    openapi_tags=[
         {
             "name": "Auth",
             "description": "Authenticate with OpenID Connect.",
