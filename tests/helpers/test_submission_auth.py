@@ -115,14 +115,19 @@ def test_resolve_authenticates_derived_handle_and_returns_profile():
     }
     api = MagicMock()
 
-    with patch(
-        "app.helpers.submission_auth.create_user_client", return_value=api
-    ) as create_client:
+    with (
+        patch(
+            "app.helpers.submission_auth.create_user_client", return_value=api
+        ) as create_client,
+        patch(
+            "app.helpers.submission_auth.get_handle_base_url",
+            return_value="https://handles.example/",
+        ),
+    ):
         identity = resolve_submission_identity(
             "SDK",
             "client-password",
             elasticsearch_client=elasticsearch_client,
-            handle_base_url="https://handles.example/",
         )
 
     create_client.assert_called_once_with(
@@ -163,13 +168,16 @@ def test_resolve_maps_handle_auth_failure_to_invalid_credentials(status_code):
         patch(
             "app.helpers.submission_auth.create_user_client", return_value=api
         ),
+        patch(
+            "app.helpers.submission_auth.get_handle_base_url",
+            return_value="https://handles.example/",
+        ),
         pytest.raises(InvalidSubmissionCredentials),
     ):
         resolve_submission_identity(
             "SDK",
             "wrong-password",
             elasticsearch_client=elasticsearch_client,
-            handle_base_url="https://handles.example/",
         )
 
     api.close.assert_called_once_with()
@@ -192,13 +200,16 @@ def test_resolve_maps_handle_server_failure_to_unavailable():
         patch(
             "app.helpers.submission_auth.create_user_client", return_value=api
         ),
+        patch(
+            "app.helpers.submission_auth.get_handle_base_url",
+            return_value="https://handles.example/",
+        ),
         pytest.raises(SubmissionAuthUnavailable),
     ):
         resolve_submission_identity(
             "SDK",
             "client-password",
             elasticsearch_client=elasticsearch_client,
-            handle_base_url="https://handles.example/",
         )
 
     api.close.assert_called_once_with()

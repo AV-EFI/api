@@ -14,7 +14,7 @@ from . import __version__
 from .core.config import settings
 from .core.db import engine
 from .helpers.auth import delete_expired_sessions
-from .routers import auth, health, matches
+from .routers import auth, health, matches, submissions
 from .routers.frontend import search, view
 
 # from .routers.pid import create,update, pid
@@ -117,6 +117,9 @@ api.include_router(health.router, tags=["Health"])
 api.include_router(search.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(view.router, prefix="/frontend", tags=["Frontend"])
 api.include_router(matches.router, prefix="", tags=["Matching"])
+api.include_router(
+    submissions.router, prefix="/submissions", tags=["Submissions"]
+)
 # api.include_router(transform.router, prefix="", tags=["Transform"])
 
 

@@ -7,7 +7,7 @@ from elasticsearch.exceptions import ApiError
 from elasticsearch.exceptions import ConnectionError as ESConnectionError
 from httpx2 import HTTPStatusError
 
-from ..core.config import settings
+from ..core.config import get_handle_base_url, settings
 from ..core.elasticsearch import es_client
 from .epic_client import create_user_client
 
@@ -94,7 +94,6 @@ def resolve_submission_identity(
     password: str,
     *,
     elasticsearch_client: Elasticsearch = es_client,
-    handle_base_url: str,
 ) -> SubmissionIdentity:
     """Resolve and authenticate a submission user.
 
@@ -112,6 +111,11 @@ def resolve_submission_identity(
             f"{source[ISSUER_SAME_AS_FIELD][ISSUER_ID_FIELD]}"
         ),
     }
+    try:
+        handle_base_url = get_handle_base_url(prefix)
+    except RuntimeError as exc:
+        log.warning("No configured Handle endpoint for prefix %s", prefix)
+        raise SubmissionAuthUnavailable from exc
     api = create_user_client(
         profile=profile,
         prefix=prefix,

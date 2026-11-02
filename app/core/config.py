@@ -47,6 +47,13 @@ class Settings(BaseSettings):
     PID_USERNAME: str = ""
     PID_PASSWORD: str = ""
 
+    # Submission settings
+    SUBMISSION_MAX_BODY_BYTES: int = 10 * 1024 * 1024
+    SUBMISSION_MAX_RECORDS: int = 2000
+    SUBMISSION_MAX_QUEUED_JOBS_PER_PROVIDER: int = 100
+    SUBMISSION_MAX_QUEUED_BYTES_PER_PROVIDER: int = 500 * 1024 * 1024
+    SUBMISSION_JOURNAL_PAGE_SIZE: int = 500
+
     model_config = ConfigDict(
         env_file=CONFIG_DIR / "config.ini",
     )
@@ -69,20 +76,30 @@ def get_csrf_config():
     return CsrfSettings()
 
 
-def get_credentials(prefix: str) -> dict:
-    result = {}
+def _prefix_config(prefix: str) -> dict:
     credentials_path = CONFIG_DIR / "credentials.json"
     with credentials_path.open() as f:
         credentials = json.load(f)
     for creds in credentials:
         if creds["prefix"] == prefix:
-            break
-    else:
-        raise RuntimeError(f"Did not find credentials for prefix {prefix}")
-    base_url = creds["base_url"]
+            return creds
+    raise RuntimeError(f"Did not find credentials for prefix {prefix}")
+
+
+def get_handle_base_url(prefix: str) -> str:
+    """Return the configured Handle API base URL for a trusted prefix.
+
+    Only the endpoint is returned. Service credentials are never exposed.
+    """
+    base_url = _prefix_config(prefix)["base_url"]
     if base_url.endswith("/"):
-        result["base_url"] = base_url
-    else:
-        result["base_url"] = f"{base_url}/"
+        return base_url
+    return f"{base_url}/"
+
+
+def get_credentials(prefix: str) -> dict:
+    result = {}
+    creds = _prefix_config(prefix)
+    result["base_url"] = get_handle_base_url(prefix)
     result["auth"] = BasicAuth(creds["username"], creds["password"])
     return result
