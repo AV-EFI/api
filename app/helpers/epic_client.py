@@ -4,11 +4,50 @@ import re
 from uuid import uuid4
 
 from avefi_schema import model_pydantic_v2 as efi
-from httpx2 import Client, HTTPStatusError, Timeout
+from httpx2 import BasicAuth, Client, HTTPStatusError, Timeout
 
 from ..core.config import get_credentials, settings
 
 log = logging.getLogger(__name__)
+
+
+def create_service_client(
+    profile: dict,
+    prefix: str,
+    suffix: str | None = None,
+    timeout: Timeout | None = None,
+) -> "EpicClient":
+    """Create a client using server-configured credentials for ``prefix``."""
+    return EpicClient(
+        profile=profile,
+        prefix=prefix,
+        suffix=suffix,
+        timeout=timeout,
+    )
+
+
+def create_user_client(
+    profile: dict,
+    prefix: str,
+    username: str,
+    password: str,
+    base_url: str,
+    suffix: str | None = None,
+    timeout: Timeout | None = None,
+) -> "EpicClient":
+    """Create a client using credentials supplied for one request.
+
+    The returned client owns the in-memory credentials and must be closed by
+    the caller. Credentials are never read from or written to configuration.
+    """
+    return EpicClient(
+        profile=profile,
+        prefix=prefix,
+        suffix=suffix,
+        timeout=timeout,
+        base_url=base_url,
+        auth=BasicAuth(username, password),
+    )
 
 
 class EpicClient(Client):
@@ -28,11 +67,18 @@ class EpicClient(Client):
         prefix: str,
         suffix: str | None = None,
         timeout: Timeout | None = None,
+        base_url: str | None = None,
+        auth: BasicAuth | None = None,
         **kwargs,
     ):
         if timeout is None:
             timeout = Timeout(settings.CONNECTION_TIMEOUT)
-        super().__init__(timeout=timeout, **get_credentials(prefix), **kwargs)
+        credentials = get_credentials(prefix)
+        if base_url is not None:
+            credentials["base_url"] = base_url
+        if auth is not None:
+            credentials["auth"] = auth
+        super().__init__(timeout=timeout, **credentials, **kwargs)
         self.prefix = prefix
         self.suffix = suffix
         self.profile = profile

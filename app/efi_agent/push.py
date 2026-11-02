@@ -41,7 +41,7 @@ def push(input_files, journal=None, profile=None, prefix=None, suffix=None):
                 result_log = json.load(f)
         with open(profile) as f:
             profile_dict = json.load(f)
-        with epic_client.EpicClient(
+        with epic_client.create_service_client(
             profile_dict, prefix, suffix=suffix
         ) as api:
             for input_file in input_files:
