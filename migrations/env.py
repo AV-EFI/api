@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
+from app.models import submission  # noqa: F401
 from app.models.session import Base
 
 target_metadata = Base.metadata
