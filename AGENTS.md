@@ -138,6 +138,12 @@ docker build -t avefi-api .
 
 ## Commit Message Guidelines
 
+### Assisted-by mode convention
+
+When work is designed in Plan Mode and implemented in a different mode, the
+commit trailer must identify the agent and model that produced the plan. The
+implementation mode does not override the Plan Mode attribution.
+
 ### Assisted Development Trailers
 
 When AI/ML agents assist with code changes, commit messages MUST include an `Assisted-by` trailer following Linux kernel conventions:
