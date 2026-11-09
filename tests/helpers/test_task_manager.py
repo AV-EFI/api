@@ -1,5 +1,7 @@
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+from httpx2 import HTTPStatusError, Request, Response
 import pytest
 
 from app.helpers.task_manager import (
@@ -7,6 +9,7 @@ from app.helpers.task_manager import (
     Operation,
     Scheduler,
     SchedulerTaskError,
+    Task,
 )
 
 
@@ -136,3 +139,69 @@ def test_before_task_aborts_execution_when_lease_is_lost():
         scheduler.execute_graph({task: set()})
 
     assert task.executed is False
+
+
+def _status_error(status: int) -> HTTPStatusError:
+    request = Request("PUT", "https://handles.example/pid")
+    response = Response(status, request=request)
+    return HTTPStatusError("failed", request=request, response=response)
+
+
+def _create_task(client):
+    scheduler = SimpleNamespace(
+        client=client,
+        result_log=[],
+        checkpoint=MagicMock(),
+    )
+    handler = SimpleNamespace(
+        scheduler=scheduler,
+        record=SimpleNamespace(category="avefi:WorkVariant"),
+        pid="21.11155/PLANNED",
+        local_id="local-1",
+        name=("avefi:LocalResource", "local-1"),
+    )
+    return Task(Operation.CREATE, handler), handler, scheduler
+
+
+def test_create_adopts_existing_record_after_412():
+    client = MagicMock()
+    client.create.side_effect = _status_error(412)
+    client.get.return_value = "existing"
+    replacement = SimpleNamespace()
+    client.efi_from_response.return_value = (
+        "21.11155/PLANNED",
+        replacement,
+    )
+    task, handler, scheduler = _create_task(client)
+    original = handler.record
+
+    task.execute()
+
+    client.create.assert_called_once_with(original, pid="21.11155/PLANNED")
+    client.get.assert_called_once_with("21.11155/PLANNED")
+    assert handler.pid == "21.11155/PLANNED"
+    assert handler.record is replacement
+    scheduler.checkpoint.assert_called_once()
+
+
+def test_create_rejects_response_with_a_different_pid():
+    client = MagicMock()
+    client.efi_from_response.return_value = (
+        "21.11155/OTHER",
+        SimpleNamespace(),
+    )
+    task, _, _ = _create_task(client)
+
+    with pytest.raises(RuntimeError):
+        task.execute()
+
+
+def test_create_propagates_non_412_status_error():
+    client = MagicMock()
+    client.create.side_effect = _status_error(503)
+    task, _, _ = _create_task(client)
+
+    with pytest.raises(HTTPStatusError):
+        task.execute()
+
+    client.get.assert_not_called()

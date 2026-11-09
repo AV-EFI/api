@@ -251,6 +251,30 @@ def test_claim_skips_locked_rows(postgres_url):
     run(scenario())
 
 
+def test_concurrent_claims_run_only_one_job_per_provider(postgres_url):
+    async def scenario():
+        engine, maker = _maker(postgres_url)
+        try:
+            await _create(maker, "job-1", "21.11155/A")
+            await _create(maker, "job-2", "21.11155/A")
+
+            results = await asyncio.gather(
+                _claim(maker, "worker-1"),
+                _claim(maker, "worker-2"),
+            )
+
+            claimed = [job for job in results if job is not None]
+            assert len(claimed) == 1
+            job = await _job(maker, claimed[0].token)
+            assert job.status == "running"
+            assert job.worker_id in ("worker-1", "worker-2")
+            assert job.worker_id == claimed[0].worker_id
+        finally:
+            await engine.dispose()
+
+    run(scenario())
+
+
 def test_pid_plan_is_persisted_and_reused(postgres_url):
     async def scenario():
         engine, maker = _maker(postgres_url)
