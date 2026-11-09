@@ -264,12 +264,18 @@ def _run_job(job: dict[str, Any], loop: asyncio.AbstractEventLoop) -> None:
                 )
         except LeaseLost:
             log.warning("Lost lease while finalizing submission %s", token)
+        except Exception:
+            log.exception(
+                "Failed to record failure state for submission %s", token
+            )
         return
 
     try:
         _run_on_loop(loop, _finalize(token, worker_id, "succeeded"))
     except LeaseLost:
         log.warning("Lost lease while finalizing submission %s", token)
+    except Exception:
+        log.exception("Failed to finalize submission %s", token)
 
 
 def _record_planning_failure(
@@ -310,8 +316,25 @@ async def run_worker() -> None:
     """Poll for and process one submission job at a time."""
     worker_id = _worker_id()
     log.info("Submission worker started: %s", worker_id)
+    claim_failures = 0
     while True:
-        job = await _claim(worker_id)
+        try:
+            job = await _claim(worker_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            claim_failures += 1
+            delay = min(
+                settings.SUBMISSION_WORKER_POLL_SECONDS
+                * (2 ** min(claim_failures - 1, 5)),
+                settings.SUBMISSION_WORKER_RETRY_MAX_SECONDS,
+            )
+            log.exception(
+                "Failed to claim a submission; retrying in %ss", delay
+            )
+            await asyncio.sleep(delay)
+            continue
+        claim_failures = 0
         if job is None:
             await asyncio.sleep(settings.SUBMISSION_WORKER_POLL_SECONDS)
             continue

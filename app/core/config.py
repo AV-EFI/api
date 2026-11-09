@@ -59,7 +59,9 @@ class Settings(BaseSettings):
     SUBMISSION_WORKER_MAX_ATTEMPTS: int = 3
     SUBMISSION_WORKER_RETRY_BASE_SECONDS: int = 10
     SUBMISSION_WORKER_RETRY_MAX_SECONDS: int = 10 * 60
-    SUBMISSION_WORKER_LEASE_SECONDS: int = 5 * 60
+    # Must exceed the worst-case duration of one remote operation:
+    # CONNECTION_TIMEOUT plus the client's single retry after a 500.
+    SUBMISSION_WORKER_LEASE_SECONDS: int = 10 * 60
     SUBMISSION_WORKER_POLL_SECONDS: int = 2
 
     model_config = ConfigDict(
