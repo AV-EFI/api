@@ -73,6 +73,7 @@ pytest-postgres:
     - until pg_isready -h postgres -U avefi -d avefi_test; do sleep 1; done
   script:
     - uv run alembic upgrade head
+    - uv run alembic check
     - uv run pytest
 
 # Tests only; deployment is handled by the separate `av-efi/api-deploy` repo.
