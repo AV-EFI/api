@@ -50,6 +50,11 @@ class SubmissionJob(Base):
             "status",
             "created_at",
         ),
+        Index(
+            "ix_submission_jobs_status_next_attempt",
+            "status",
+            "next_attempt_at",
+        ),
     )
 
     token: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -68,6 +73,9 @@ class SubmissionJob(Base):
         String(255), nullable=True, default=None
     )
     lease_expires_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True, default=None
+    )
+    next_attempt_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True, default=None
     )
     created_at: Mapped[datetime] = mapped_column(
@@ -134,6 +142,45 @@ class SubmissionJournalEntry(Base):
     )
     error_message: Mapped[str | None] = mapped_column(
         Text, nullable=True, default=None
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        default_factory=lambda: datetime.now(UTC),
+    )
+
+
+class SubmissionPidPlan(Base):
+    """Durable pre-assigned PID for one record in a submission."""
+
+    __tablename__ = "submission_pid_plan"
+    __table_args__ = (
+        UniqueConstraint(
+            "submission_token",
+            "identifier_category",
+            "identifier_id",
+            name="uq_submission_pid_plan_record",
+        ),
+        Index(
+            "ix_submission_pid_plan_token",
+            "submission_token",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    submission_token: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("submission_jobs.token", ondelete="CASCADE"),
+    )
+    identifier_category: Mapped[str] = mapped_column(String(64))
+    identifier_id: Mapped[str] = mapped_column(String(255))
+    planned_pid: Mapped[str] = mapped_column(String(255))
+    local_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
+    )
+    record_type: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, default=None
     )
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),

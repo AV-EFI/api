@@ -32,6 +32,49 @@ ruff format:
   script:
     - ruff format --diff
 
+.base_python:
+  stage: test
+  interruptible: true
+  image:
+    name: ghcr.io/astral-sh/uv:0.13.7-python3.13-trixie-slim
+  variables:
+    UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
+  cache:
+    key:
+      files:
+        - uv.lock
+    paths:
+      - .uv-cache
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends git
+    - uv sync --locked --no-python-downloads
+
+pytest:
+  extends: .base_python
+  script:
+    - uv run pytest -m "not postgres"
+
+pytest-postgres:
+  extends: .base_python
+  services:
+    - name: postgres:18
+      alias: postgres
+  variables:
+    POSTGRES_USER: avefi
+    POSTGRES_DB: avefi_test
+    POSTGRES_HOST_AUTH_METHOD: trust
+    DATABASE_URL: postgresql+asyncpg://avefi@postgres:5432/avefi_test
+    TEST_DATABASE_URL: postgresql+asyncpg://avefi@postgres:5432/avefi_test
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends git postgresql-client
+    - uv sync --locked --no-python-downloads
+    - until pg_isready -h postgres -U avefi -d avefi_test; do sleep 1; done
+  script:
+    - uv run alembic upgrade head
+    - uv run pytest
+
 # Tests only; deployment is handled by the separate `av-efi/api-deploy` repo.
 deploy-trigger:
   stage: trigger

@@ -5,7 +5,6 @@ import logging
 from typing import Annotated
 import uuid
 
-from avefi_schema import model_pydantic_v2 as efi
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import ValidationError
@@ -20,6 +19,7 @@ from ..helpers.submission_auth import (
     require_service_credentials,
     resolve_submission_identity,
 )
+from ..helpers.submission_payload import record_count as count_records
 from ..helpers.submission_store import QueueLimitReached, SubmissionStore
 from ..models.submission import SubmissionJob
 from ..schemas.submissions import (
@@ -65,15 +65,6 @@ async def get_submission_identity(
 
 Identity = Annotated[SubmissionIdentity, Depends(get_submission_identity)]
 Session = Annotated[AsyncSession, Depends(get_db)]
-
-
-def _validate_payload(data) -> int:
-    """Validate submitted JSON and return the number of records."""
-    if isinstance(data, list):
-        efi.MovingImageRecords.model_validate(data)
-        return len(data)
-    efi.MovingImageRecordTypeAdapter.validate_python(data)
-    return 1
 
 
 def _store(db: AsyncSession) -> SubmissionStore:
@@ -139,7 +130,7 @@ async def create_submission(
         raise HTTPException(status_code=422, detail="Invalid JSON") from None
 
     try:
-        record_count = _validate_payload(data)
+        record_count = count_records(data)
     except ValidationError:
         raise HTTPException(
             status_code=422, detail="Invalid AVefi records"

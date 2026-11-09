@@ -1,7 +1,9 @@
 from collections import defaultdict
+from collections.abc import Callable
 import enum
 import graphlib
 import logging
+from typing import Any
 
 from avefi_schema import model_pydantic_v2 as efi
 import httpx2
@@ -15,6 +17,48 @@ Operation = enum.Enum("Operation", names="CREATE GET UPDATE")
 
 class UnreferencedError(ValueError):
     pass
+
+
+class CheckpointAborted(Exception):
+    """The worker lost ownership of the job and must stop."""
+
+
+class SchedulerTaskError(RuntimeError):
+    """A scheduled operation failed with structured task context."""
+
+    def __init__(self, task: "Task", cause: BaseException):
+        self.task = task
+        self.cause = cause
+        handler = task.handler
+        super().__init__(
+            f"Failed {task.operation.name} on record"
+            f" {handler.local_id or handler.pid or handler.name}"
+        )
+
+    @property
+    def operation(self) -> str:
+        """Return the failed operation name."""
+        return self.task.operation.name
+
+    @property
+    def pid(self) -> str | None:
+        """Return the PID associated with the failed task, if known."""
+        return self.task.handler.pid
+
+    @property
+    def local_id(self) -> str | None:
+        """Return the local identifier associated with the failed task."""
+        return self.task.handler.local_id
+
+    @property
+    def record_type(self) -> str | None:
+        """Return the AVefi record type associated with the failed task."""
+        record = self.task.handler.record
+        return type(record).__name__ if record is not None else None
+
+
+def _default_error(exc: BaseException) -> tuple[str, str]:
+    return ("operation_failed", "Operation failed")
 
 
 class Scheduler:
@@ -51,12 +95,25 @@ class Scheduler:
 
     """
 
-    def __init__(self, client, result_log, input_file=None):
+    def __init__(
+        self,
+        client,
+        result_log,
+        input_file=None,
+        checkpoint: Callable[[dict[str, Any]], None] | None = None,
+        before_task: Callable[["Task"], None] | None = None,
+        error_classifier: (
+            Callable[[BaseException], tuple[str, str]] | None
+        ) = None,
+    ):
         self.client = client
         self.result_log = result_log
         self.handler_lookup = {}
         self.handlers = []
         self.referencing = defaultdict(list)
+        self.checkpoint = checkpoint or (lambda entry: None)
+        self.before_task = before_task or (lambda task: None)
+        self.error_classifier = error_classifier or _default_error
         if input_file:
             self.load_from_file(input_file)
 
@@ -236,15 +293,54 @@ class Scheduler:
     def submit(self):
         self.record_reverse_dependencies()
         self.skip_previously_logged_tasks()
-        sorter = graphlib.TopologicalSorter(self.prepare_dependency_graph())
-        try:
-            for task in sorter.static_order():
+        graph = self.prepare_dependency_graph()
+        self.execute_graph(graph)
+
+    def execute_graph(self, graph) -> None:
+        """Execute a prepared dependency graph, checkpointing each task."""
+        sorter = graphlib.TopologicalSorter(graph)
+        for task in sorter.static_order():
+            try:
+                self.before_task(task)
                 task.execute()
-        except Exception as e:
-            id = task.handler.local_id or task.handler.pid
-            raise RuntimeError(
-                f"Failed {task.operation.name} on record {id}"
-            ) from e
+            except CheckpointAborted:
+                raise
+            except Exception as exc:
+                entry = self._failure_entry(task, exc)
+                self.checkpoint(entry)
+                raise SchedulerTaskError(task, exc) from exc
+
+    def _failure_entry(self, task: "Task", exc: BaseException) -> dict:
+        handler = task.handler
+        error_code, error_message = self.error_classifier(exc)
+        record = handler.record
+        return {
+            "outcome": "failed",
+            "action": task.operation.name,
+            "pid": handler.pid,
+            "local_id": handler.local_id,
+            "record_type": (
+                type(record).__name__ if record is not None else None
+            ),
+            "error_code": error_code,
+            "error_message": error_message,
+        }
+
+    def pending_create_handlers(self) -> list["Handler"]:
+        """Return handlers whose CREATE task has not completed yet."""
+        return [
+            handler
+            for handler in self.handlers
+            if handler.tasks.get(Operation.CREATE)
+        ]
+
+    def apply_planned_pids(self, plan: dict[tuple[str, str], str]) -> None:
+        """Assign persisted PIDs to all pending CREATE handlers."""
+        for handler in self.pending_create_handlers():
+            planned_pid = plan.get(handler.name)
+            if not planned_pid:
+                raise RuntimeError(f"No planned PID for record {handler.name}")
+            handler.pid = planned_pid
 
 
 class Task:
@@ -267,8 +363,26 @@ class Task:
                 and handler.record.has_item
             ):
                 handler.record.has_item = []
-            r = self.client.create(handler.record)
-            handler.pid, handler.record = self.client.efi_from_response(r)
+            planned_pid = handler.pid
+            if planned_pid is None:
+                r = self.client.create(handler.record)
+            else:
+                try:
+                    r = self.client.create(handler.record, pid=planned_pid)
+                except httpx2.HTTPStatusError as exc:
+                    if exc.response.status_code != 412:
+                        raise
+                    # A previous attempt created the resource but did not
+                    # get to persist its checkpoint. Adopt it if valid.
+                    r = self.client.get(planned_pid)
+            response_pid, response_record = self.client.efi_from_response(r)
+            if planned_pid is not None and response_pid != planned_pid:
+                raise RuntimeError(
+                    f"Planned PID {planned_pid} does not match response"
+                    f" PID {response_pid}"
+                )
+            handler.pid = response_pid
+            handler.record = response_record
         else:
             # must be an update then
             if not handler.record or isinstance(
@@ -327,14 +441,16 @@ class Task:
 
         # log results
         entry = {
+            "outcome": "succeeded",
             "action": self.operation.name,
             "pid": handler.pid,
+            "local_id": handler.local_id,
+            "record_type": (
+                handler.record.__class__.__name__ if handler.record else None
+            ),
         }
-        if handler.record:
-            if handler.local_id:
-                entry["local_id"] = handler.local_id
-            entry["record_type"] = handler.record.__class__.__name__
         handler.scheduler.result_log.append(entry)
+        handler.scheduler.checkpoint(entry)
         log.info(entry)
         self.done = True
 

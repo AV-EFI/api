@@ -47,8 +47,11 @@ module-name = "app"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q"
+addopts = "-ra -q --strict-markers"
 testpaths = ["tests"]
+markers = [
+    "postgres: requires a live PostgreSQL database",
+]
 
 [tool.ruff]
 # Set the maximum line length to 79.

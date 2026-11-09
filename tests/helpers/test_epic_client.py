@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from httpx2 import BasicAuth
 
@@ -109,4 +109,42 @@ def test_explicit_auth_without_base_url_uses_configured_endpoint():
     get_handle_base_url.assert_called_once_with("21.11155")
     get_credentials.assert_not_called()
     assert client.base_url == "https://handles.example/"
+    client.close()
+
+
+def test_create_uses_explicit_planned_pid():
+    client = create_user_client(
+        profile={},
+        prefix="21.11155",
+        username="SDK",
+        password="client-password",
+        base_url="https://handles.example/",
+    )
+    record = MagicMock()
+
+    with patch.object(client, "_put") as put:
+        client.create(record, pid="21.11155/PLANNED")
+
+    put.assert_called_once_with("21.11155/PLANNED", record, preexisting=False)
+    client.close()
+
+
+def test_create_generates_pid_when_none_is_supplied():
+    client = create_user_client(
+        profile={},
+        prefix="21.11155",
+        username="SDK",
+        password="client-password",
+        base_url="https://handles.example/",
+        suffix="SUFFIX",
+    )
+    record = MagicMock()
+
+    with patch.object(client, "_put") as put:
+        client.create(record)
+
+    pid = put.call_args.args[0]
+    assert pid.startswith("21.11155/")
+    assert pid.endswith("-SUFFIX")
+    put.assert_called_once_with(pid, record, preexisting=False)
     client.close()

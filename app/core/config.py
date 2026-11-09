@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     SUBMISSION_MAX_QUEUED_BYTES_PER_PROVIDER: int = 500 * 1024 * 1024
     SUBMISSION_JOURNAL_PAGE_SIZE: int = 500
 
+    # Submission worker settings
+    SUBMISSION_WORKER_MAX_ATTEMPTS: int = 3
+    SUBMISSION_WORKER_RETRY_BASE_SECONDS: int = 10
+    SUBMISSION_WORKER_RETRY_MAX_SECONDS: int = 10 * 60
+    SUBMISSION_WORKER_LEASE_SECONDS: int = 5 * 60
+    SUBMISSION_WORKER_POLL_SECONDS: int = 2
+
     model_config = ConfigDict(
         env_file=CONFIG_DIR / "config.ini",
     )

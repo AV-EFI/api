@@ -3,7 +3,11 @@ from datetime import UTC, datetime
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateIndex, CreateTable
 
-from app.models.submission import SubmissionJob, SubmissionJournalEntry
+from app.models.submission import (
+    SubmissionJob,
+    SubmissionJournalEntry,
+    SubmissionPidPlan,
+)
 
 
 def _table_ddl(model) -> str:
@@ -18,6 +22,7 @@ def test_submission_datetime_columns_are_timezone_aware():
 
     for col in (
         "lease_expires_at",
+        "next_attempt_at",
         "created_at",
         "started_at",
         "finished_at",
@@ -25,6 +30,9 @@ def test_submission_datetime_columns_are_timezone_aware():
     ):
         assert f"{col} TIMESTAMP WITH TIME ZONE" in job_ddl
     assert "created_at TIMESTAMP WITH TIME ZONE" in journal_ddl
+    assert "created_at TIMESTAMP WITH TIME ZONE" in _table_ddl(
+        SubmissionPidPlan
+    )
 
 
 def test_submission_job_constraints_and_indexes():
@@ -44,6 +52,7 @@ def test_submission_job_constraints_and_indexes():
         in index_ddl["uq_submission_jobs_active_provider_handle"]
     )
     assert "ix_submission_jobs_provider_queue" in index_ddl
+    assert "ix_submission_jobs_status_next_attempt" in index_ddl
     assert "record_count INTEGER" in ddl
     assert "payload_bytes INTEGER" in ddl
 
@@ -60,6 +69,15 @@ def test_submission_journal_constraints_and_error_fields():
     )
     assert "error_code VARCHAR(64)" in ddl
     assert "error_message TEXT" in ddl
+
+
+def test_submission_pid_plan_constraints():
+    ddl = _table_ddl(SubmissionPidPlan)
+
+    assert "uq_submission_pid_plan_record" in ddl
+    assert "FOREIGN KEY(submission_token)" in ddl
+    assert "ON DELETE CASCADE" in ddl
+    assert "planned_pid VARCHAR(255)" in ddl
 
 
 def test_submission_models_accept_job_and_failure_checkpoint_values():

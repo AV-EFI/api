@@ -90,10 +90,16 @@ class EpicClient(Client):
         self.suffix = suffix
         self.profile = profile
 
-    def create(self, efi_record: efi.MovingImageRecord):
-        pid = f"{self.prefix}/{str(uuid4()).upper()}"
-        if self.suffix:
-            pid += f"-{self.suffix}"
+    def create(
+        self,
+        efi_record: efi.MovingImageRecord,
+        pid: str | None = None,
+    ):
+        """Create ``efi_record`` under ``pid`` or a freshly generated PID."""
+        if pid is None:
+            pid = f"{self.prefix}/{str(uuid4()).upper()}"
+            if self.suffix:
+                pid += f"-{self.suffix}"
         return self._put(pid, efi_record, preexisting=False)
 
     def update(self, pid: str, efi_record: efi.MovingImageRecord):

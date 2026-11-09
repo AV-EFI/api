@@ -1,11 +1,20 @@
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy.dialects import postgresql
 
 from app.core.config import settings
-from app.helpers.submission_store import QueueLimitReached, SubmissionStore
+from app.helpers.submission_store import (
+    LeaseLost,
+    QueueLimitReached,
+    SubmissionStore,
+    _assert_owner,
+    _eligible_job_stmt,
+    _retry_delay,
+    _stale_job_stmt,
+)
 from app.models.submission import SubmissionJob, SubmissionJournalEntry
 
 
@@ -125,3 +134,64 @@ def test_get_journal_returns_entries():
     entries = _run(store.get_journal("token-1", after=0, limit=500))
 
     assert entries == [entry]
+
+
+def _sql(stmt) -> str:
+    return str(stmt.compile(dialect=postgresql.dialect()))
+
+
+def test_eligible_job_query_skips_locked_and_busy_providers():
+    sql = _sql(_eligible_job_stmt(datetime.now(UTC)))
+
+    assert "FOR UPDATE SKIP LOCKED" in sql
+    assert (
+        "submission_jobs_1.provider_handle = submission_jobs.provider_handle"
+    ) in sql
+    assert "submission_jobs_1.status" in sql
+    assert "NOT (EXISTS" in sql
+    assert "next_attempt_at IS NULL" in sql
+    assert "ORDER BY submission_jobs.created_at" in sql
+
+
+def test_stale_job_query_locks_expired_rows():
+    sql = _sql(_stale_job_stmt(datetime.now(UTC)))
+
+    assert "FOR UPDATE SKIP LOCKED" in sql
+    assert "lease_expires_at <" in sql
+
+
+def test_retry_delay_doubles_and_caps():
+    assert _retry_delay(1, 10, 600) == 10
+    assert _retry_delay(2, 10, 600) == 20
+    assert _retry_delay(8, 10, 600) == 600
+
+
+def test_assert_owner_rejects_expired_or_foreign_leases():
+    now = datetime.now(UTC)
+    job = SubmissionJob(
+        token="token-1",
+        submitter_principal="SDK",
+        authentication_method="basic",
+        provider_handle="21.11155/A",
+        prefix="21.11155",
+        issuer_profile={},
+        payload=[],
+        payload_digest="d" * 64,
+        record_count=0,
+        payload_bytes=0,
+        status="running",
+        worker_id="worker-1",
+        lease_expires_at=now + timedelta(seconds=60),
+    )
+
+    _assert_owner(job, "worker-1", now)
+
+    with pytest.raises(LeaseLost):
+        _assert_owner(job, "worker-2", now)
+
+    job.lease_expires_at = now - timedelta(seconds=1)
+    with pytest.raises(LeaseLost):
+        _assert_owner(job, "worker-1", now)
+
+    with pytest.raises(LeaseLost):
+        _assert_owner(None, "worker-1", now)
