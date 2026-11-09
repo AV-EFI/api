@@ -1,5 +1,6 @@
 import json
 import pathlib
+from typing import Any
 
 from fastapi_csrf_protect import CsrfProtect
 from httpx2 import BasicAuth
@@ -76,30 +77,124 @@ def get_csrf_config():
     return CsrfSettings()
 
 
-def _prefix_config(prefix: str) -> dict:
+REQUIRED_HANDLE_FIELDS = ("base_url", "username", "password")
+
+
+class HandleConfigError(RuntimeError):
+    """Base class for missing or invalid server-side Handle configuration."""
+
+
+class HandlePrefixNotConfigured(HandleConfigError):
+    """No server-side Handle configuration exists for a prefix."""
+
+    def __init__(self, prefix: str):
+        self.prefix = prefix
+        super().__init__(
+            f"No server-side Handle configuration for prefix {prefix}"
+        )
+
+
+class HandleConfigIncomplete(HandleConfigError):
+    """A Handle configuration entry is missing required fields."""
+
+    def __init__(self, prefix: str, missing: tuple[str, ...]):
+        self.prefix = prefix
+        self.missing = missing
+        super().__init__(
+            f"Server-side Handle configuration for prefix {prefix} is "
+            f"incomplete; missing: {', '.join(missing)}"
+        )
+
+
+class HandleConfigUnreadable(HandleConfigError):
+    """The Handle configuration file cannot be read or parsed."""
+
+    def __init__(self, path: pathlib.Path, reason: str):
+        self.path = path
+        self.reason = reason
+        super().__init__(f"Cannot read Handle configuration {path}: {reason}")
+
+
+def _load_prefix_config(prefix: str) -> dict[str, Any]:
     credentials_path = CONFIG_DIR / "credentials.json"
-    with credentials_path.open() as f:
-        credentials = json.load(f)
-    for creds in credentials:
-        if creds["prefix"] == prefix:
+    try:
+        with credentials_path.open() as f:
+            credentials = json.load(f)
+    except FileNotFoundError as exc:
+        raise HandleConfigUnreadable(
+            credentials_path, "file not found"
+        ) from exc
+    except OSError as exc:
+        raise HandleConfigUnreadable(
+            credentials_path, exc.strerror or str(exc)
+        ) from exc
+    except UnicodeDecodeError as exc:
+        raise HandleConfigUnreadable(
+            credentials_path, "file is not valid UTF-8"
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise HandleConfigUnreadable(
+            credentials_path,
+            f"invalid JSON at line {exc.lineno} column {exc.colno}",
+        ) from exc
+
+    if not isinstance(credentials, list):
+        raise HandleConfigUnreadable(
+            credentials_path, "expected a list of prefix entries"
+        )
+    for index, creds in enumerate(credentials):
+        if not isinstance(creds, dict):
+            raise HandleConfigUnreadable(
+                credentials_path, f"entry {index} is not an object"
+            )
+        if creds.get("prefix") == prefix:
             return creds
-    raise RuntimeError(f"Did not find credentials for prefix {prefix}")
+    raise HandlePrefixNotConfigured(prefix)
 
 
-def get_handle_base_url(prefix: str) -> str:
-    """Return the configured Handle API base URL for a trusted prefix.
+def _require_fields(
+    prefix: str, creds: dict[str, Any], fields: tuple[str, ...]
+) -> None:
+    missing = tuple(
+        field
+        for field in fields
+        if not isinstance(creds.get(field), str) or not creds[field]
+    )
+    if missing:
+        raise HandleConfigIncomplete(prefix, missing)
 
-    Only the endpoint is returned. Service credentials are never exposed.
-    """
-    base_url = _prefix_config(prefix)["base_url"]
+
+def _normalise_base_url(base_url: str) -> str:
     if base_url.endswith("/"):
         return base_url
     return f"{base_url}/"
 
 
+def get_handle_base_url(prefix: str) -> str:
+    """Return the configured Handle API base URL for a trusted prefix.
+
+    Only the endpoint is required. Service credentials are not validated
+    here, so status reads do not depend on worker credentials.
+    """
+    creds = _load_prefix_config(prefix)
+    _require_fields(prefix, creds, ("base_url",))
+    return _normalise_base_url(creds["base_url"])
+
+
+def require_handle_service_credentials(prefix: str) -> None:
+    """Require complete server-side Handle credentials for ``prefix``.
+
+    A submission may only be accepted if the worker can later process it
+    with configured server-side credentials.
+    """
+    creds = _load_prefix_config(prefix)
+    _require_fields(prefix, creds, REQUIRED_HANDLE_FIELDS)
+
+
 def get_credentials(prefix: str) -> dict:
+    creds = _load_prefix_config(prefix)
+    _require_fields(prefix, creds, REQUIRED_HANDLE_FIELDS)
     result = {}
-    creds = _prefix_config(prefix)
-    result["base_url"] = get_handle_base_url(prefix)
+    result["base_url"] = _normalise_base_url(creds["base_url"])
     result["auth"] = BasicAuth(creds["username"], creds["password"])
     return result

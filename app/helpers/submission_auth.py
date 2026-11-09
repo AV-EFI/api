@@ -7,7 +7,15 @@ from elasticsearch.exceptions import ApiError
 from elasticsearch.exceptions import ConnectionError as ESConnectionError
 from httpx2 import HTTPStatusError
 
-from ..core.config import get_handle_base_url, settings
+from ..core.config import (
+    HandleConfigError,
+    HandleConfigIncomplete,
+    HandleConfigUnreadable,
+    HandlePrefixNotConfigured,
+    get_handle_base_url,
+    require_handle_service_credentials,
+    settings,
+)
 from ..core.elasticsearch import es_client
 from .epic_client import create_user_client
 
@@ -41,6 +49,56 @@ class SubmissionIdentity:
     provider_handle: str
     prefix: str
     profile: dict[str, str]
+
+
+def _log_handle_config_error(exc: HandleConfigError, *, action: str) -> None:
+    """Log a Handle configuration failure without exposing secrets."""
+    if isinstance(exc, HandlePrefixNotConfigured):
+        log.error(
+            "Cannot %s for prefix %s: no server-side Handle "
+            "credentials are configured",
+            action,
+            exc.prefix,
+        )
+    elif isinstance(exc, HandleConfigIncomplete):
+        log.error(
+            "Cannot %s for prefix %s: server-side Handle credentials "
+            "are incomplete (missing: %s)",
+            action,
+            exc.prefix,
+            ", ".join(exc.missing),
+        )
+    elif isinstance(exc, HandleConfigUnreadable):
+        log.error(
+            "Cannot %s: server-side Handle configuration is unavailable (%s)",
+            action,
+            exc,
+        )
+    else:
+        log.error(
+            "Cannot %s: server-side Handle configuration error (%s)",
+            action,
+            exc,
+        )
+
+
+def require_service_credentials(prefix: str) -> None:
+    """Require worker credentials before accepting a submission.
+
+    User authentication proves who is submitting. This check proves that
+    the server can act on the accepted job later. It is deliberately
+    separate from authentication so status reads do not depend on worker
+    credentials.
+    """
+    try:
+        require_handle_service_credentials(prefix)
+    except HandleConfigError as exc:
+        _log_handle_config_error(exc, action="accept submission")
+        raise SubmissionAuthUnavailable from exc
+    log.debug(
+        "Server-side Handle credentials are configured for prefix %s",
+        prefix,
+    )
 
 
 def lookup_submission_identity(
@@ -113,8 +171,10 @@ def resolve_submission_identity(
     }
     try:
         handle_base_url = get_handle_base_url(prefix)
-    except RuntimeError as exc:
-        log.warning("No configured Handle endpoint for prefix %s", prefix)
+    except HandleConfigError as exc:
+        _log_handle_config_error(
+            exc, action="authenticate submission principal"
+        )
         raise SubmissionAuthUnavailable from exc
     api = create_user_client(
         profile=profile,

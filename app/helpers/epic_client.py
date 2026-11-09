@@ -6,7 +6,7 @@ from uuid import uuid4
 from avefi_schema import model_pydantic_v2 as efi
 from httpx2 import BasicAuth, Client, HTTPStatusError, Timeout
 
-from ..core.config import get_credentials, settings
+from ..core.config import get_credentials, get_handle_base_url, settings
 
 log = logging.getLogger(__name__)
 
@@ -73,12 +73,19 @@ class EpicClient(Client):
     ):
         if timeout is None:
             timeout = Timeout(settings.CONNECTION_TIMEOUT)
-        credentials = get_credentials(prefix)
-        if base_url is not None:
-            credentials["base_url"] = base_url
-        if auth is not None:
-            credentials["auth"] = auth
-        super().__init__(timeout=timeout, **credentials, **kwargs)
+        # Explicit connection details are used as supplied. Only fall back
+        # to configured service credentials when the caller does not provide
+        # an auth object (CLI and worker clients).
+        if auth is None:
+            service = get_credentials(prefix)
+            if base_url is None:
+                base_url = service["base_url"]
+            auth = service["auth"]
+        elif base_url is None:
+            base_url = get_handle_base_url(prefix)
+        super().__init__(
+            timeout=timeout, base_url=base_url, auth=auth, **kwargs
+        )
         self.prefix = prefix
         self.suffix = suffix
         self.profile = profile

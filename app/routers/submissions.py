@@ -17,6 +17,7 @@ from ..helpers.submission_auth import (
     InvalidSubmissionCredentials,
     SubmissionAuthUnavailable,
     SubmissionIdentity,
+    require_service_credentials,
     resolve_submission_identity,
 )
 from ..helpers.submission_store import QueueLimitReached, SubmissionStore
@@ -111,6 +112,13 @@ async def create_submission(
     db: Session,
     request: Request,
 ):
+    try:
+        await asyncio.to_thread(require_service_credentials, identity.prefix)
+    except SubmissionAuthUnavailable:
+        raise HTTPException(
+            status_code=503, detail="Service Unavailable"
+        ) from None
+
     content_length = request.headers.get("content-length")
     if content_length is not None:
         try:

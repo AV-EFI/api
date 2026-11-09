@@ -26,13 +26,12 @@ def test_service_client_uses_credentials_for_prefix():
 
 
 def test_user_client_uses_explicit_in_memory_credentials():
-    configured = {
-        "base_url": "https://configured.example/",
-        "auth": BasicAuth("service-user", "service-password"),
-    }
-    with patch(
-        "app.helpers.epic_client.get_credentials", return_value=configured
-    ) as get_credentials:
+    with (
+        patch("app.helpers.epic_client.get_credentials") as get_credentials,
+        patch(
+            "app.helpers.epic_client.get_handle_base_url"
+        ) as get_handle_base_url,
+    ):
         client = create_user_client(
             profile={},
             prefix="21.11155",
@@ -41,7 +40,8 @@ def test_user_client_uses_explicit_in_memory_credentials():
             base_url="https://handles.example/",
         )
 
-    get_credentials.assert_called_once_with("21.11155")
+    get_credentials.assert_not_called()
+    get_handle_base_url.assert_not_called()
     assert client.base_url == "https://handles.example/"
     assert (
         client.auth._auth_header
@@ -50,14 +50,13 @@ def test_user_client_uses_explicit_in_memory_credentials():
     client.close()
 
 
-def test_explicit_epic_client_credentials_override_configured_values():
-    configured = {
-        "base_url": "https://configured.example/",
-        "auth": BasicAuth("service-user", "service-password"),
-    }
+def test_explicit_epic_client_credentials_do_not_read_configuration():
     explicit_auth = BasicAuth("request-user", "request-password")
-    with patch(
-        "app.helpers.epic_client.get_credentials", return_value=configured
+    with (
+        patch("app.helpers.epic_client.get_credentials") as get_credentials,
+        patch(
+            "app.helpers.epic_client.get_handle_base_url"
+        ) as get_handle_base_url,
     ):
         client = EpicClient(
             profile={},
@@ -66,6 +65,48 @@ def test_explicit_epic_client_credentials_override_configured_values():
             auth=explicit_auth,
         )
 
+    get_credentials.assert_not_called()
+    get_handle_base_url.assert_not_called()
     assert client.base_url == "https://handles.example/"
     assert client.auth == explicit_auth
+    client.close()
+
+
+def test_explicit_base_url_keeps_explicit_connection_details():
+    configured = {
+        "base_url": "https://configured.example/",
+        "auth": BasicAuth("service-user", "service-password"),
+    }
+    with patch(
+        "app.helpers.epic_client.get_credentials", return_value=configured
+    ) as get_credentials:
+        client = EpicClient(
+            profile={},
+            prefix="21.11155",
+            base_url="https://handles.example/",
+        )
+
+    get_credentials.assert_called_once_with("21.11155")
+    assert client.base_url == "https://handles.example/"
+    assert client.auth == configured["auth"]
+    client.close()
+
+
+def test_explicit_auth_without_base_url_uses_configured_endpoint():
+    with (
+        patch(
+            "app.helpers.epic_client.get_handle_base_url",
+            return_value="https://handles.example/",
+        ) as get_handle_base_url,
+        patch("app.helpers.epic_client.get_credentials") as get_credentials,
+    ):
+        client = EpicClient(
+            profile={},
+            prefix="21.11155",
+            auth=BasicAuth("request-user", "request-password"),
+        )
+
+    get_handle_base_url.assert_called_once_with("21.11155")
+    get_credentials.assert_not_called()
+    assert client.base_url == "https://handles.example/"
     client.close()

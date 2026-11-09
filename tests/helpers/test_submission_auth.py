@@ -1,9 +1,15 @@
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from elasticsearch.exceptions import ConnectionError as ESConnectionError
 from httpx2 import HTTPStatusError, Request, Response
 import pytest
 
+from app.core.config import (
+    HandleConfigIncomplete,
+    HandleConfigUnreadable,
+    HandlePrefixNotConfigured,
+)
 from app.helpers.submission_auth import (
     ISIL_CATEGORY,
     ISSUER_CATEGORY_FIELD,
@@ -13,6 +19,7 @@ from app.helpers.submission_auth import (
     InvalidSubmissionCredentials,
     SubmissionAuthUnavailable,
     lookup_submission_identity,
+    require_service_credentials,
     resolve_submission_identity,
 )
 
@@ -213,3 +220,120 @@ def test_resolve_maps_handle_server_failure_to_unavailable():
         )
 
     api.close.assert_called_once_with()
+
+
+def test_resolve_maps_missing_handle_config_to_unavailable(caplog):
+    elasticsearch_client = MagicMock()
+    elasticsearch_client.search.return_value = {
+        "hits": {"hits": [_hit(**_source())]}
+    }
+
+    with (
+        patch(
+            "app.helpers.submission_auth.get_handle_base_url",
+            side_effect=HandlePrefixNotConfigured("21.11155"),
+        ),
+        patch(
+            "app.helpers.submission_auth.create_user_client"
+        ) as create_client,
+        pytest.raises(SubmissionAuthUnavailable),
+    ):
+        resolve_submission_identity(
+            "SDK",
+            "client-password",
+            elasticsearch_client=elasticsearch_client,
+        )
+
+    create_client.assert_not_called()
+    assert "21.11155" in caplog.text
+    assert "no server-side Handle credentials" in caplog.text
+    assert "client-password" not in caplog.text
+
+
+def test_resolve_maps_unreadable_handle_config_to_unavailable(caplog):
+    elasticsearch_client = MagicMock()
+    elasticsearch_client.search.return_value = {
+        "hits": {"hits": [_hit(**_source())]}
+    }
+
+    with (
+        patch(
+            "app.helpers.submission_auth.get_handle_base_url",
+            side_effect=HandleConfigUnreadable(
+                Path("config/credentials.json"), "file not found"
+            ),
+        ),
+        patch(
+            "app.helpers.submission_auth.create_user_client"
+        ) as create_client,
+        pytest.raises(SubmissionAuthUnavailable),
+    ):
+        resolve_submission_identity(
+            "SDK",
+            "client-password",
+            elasticsearch_client=elasticsearch_client,
+        )
+
+    create_client.assert_not_called()
+    assert "server-side Handle configuration is unavailable" in caplog.text
+    assert "client-password" not in caplog.text
+
+
+def test_require_service_credentials_accepts_complete_config(caplog):
+    with (
+        patch(
+            "app.helpers.submission_auth.require_handle_service_credentials"
+        ) as require_config,
+        caplog.at_level("DEBUG"),
+    ):
+        require_service_credentials("21.11155")
+
+    require_config.assert_called_once_with("21.11155")
+    assert "configured for prefix 21.11155" in caplog.text
+
+
+def test_require_service_credentials_maps_missing_prefix(caplog):
+    with (
+        patch(
+            "app.helpers.submission_auth.require_handle_service_credentials",
+            side_effect=HandlePrefixNotConfigured("21.11155"),
+        ),
+        pytest.raises(SubmissionAuthUnavailable),
+    ):
+        require_service_credentials("21.11155")
+
+    assert (
+        "Cannot accept submission for prefix 21.11155: no server-side "
+        "Handle credentials are configured" in caplog.text
+    )
+
+
+def test_require_service_credentials_maps_incomplete_config(caplog):
+    error = HandleConfigIncomplete("21.11155", ("username", "password"))
+    with (
+        patch(
+            "app.helpers.submission_auth.require_handle_service_credentials",
+            side_effect=error,
+        ),
+        pytest.raises(SubmissionAuthUnavailable),
+    ):
+        require_service_credentials("21.11155")
+
+    assert "incomplete (missing: username, password)" in caplog.text
+
+
+def test_require_service_credentials_maps_unreadable_config(caplog):
+    error = HandleConfigUnreadable(
+        Path("config/credentials.json"), "file not found"
+    )
+    with (
+        patch(
+            "app.helpers.submission_auth.require_handle_service_credentials",
+            side_effect=error,
+        ),
+        pytest.raises(SubmissionAuthUnavailable),
+    ):
+        require_service_credentials("21.11155")
+
+    assert "server-side Handle configuration is unavailable" in caplog.text
+    assert "file not found" in caplog.text

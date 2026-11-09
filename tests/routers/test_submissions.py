@@ -100,6 +100,12 @@ def auth_identity():
         yield
 
 
+@pytest.fixture
+def service_credentials_ok():
+    with patch("app.routers.submissions.require_service_credentials"):
+        yield
+
+
 def test_missing_basic_auth_returns_401(api_client):
     response = api_client.post(f"{EFI_PATH}/submissions", json=_valid_record())
     assert response.status_code == 401
@@ -132,7 +138,9 @@ def test_auth_unavailable_returns_503(api_client):
     assert response.status_code == 503
 
 
-def test_oversized_body_returns_413(api_client, auth_identity):
+def test_oversized_body_returns_413(
+    api_client, auth_identity, service_credentials_ok
+):
     with patch.object(settings, "SUBMISSION_MAX_BODY_BYTES", 100):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
@@ -143,7 +151,9 @@ def test_oversized_body_returns_413(api_client, auth_identity):
     assert response.status_code == 413
 
 
-def test_invalid_json_returns_422(api_client, auth_identity):
+def test_invalid_json_returns_422(
+    api_client, auth_identity, service_credentials_ok
+):
     with patch("app.routers.submissions.SubmissionStore"):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
@@ -154,7 +164,9 @@ def test_invalid_json_returns_422(api_client, auth_identity):
     assert response.status_code == 422
 
 
-def test_schema_invalid_returns_422(api_client, auth_identity):
+def test_schema_invalid_returns_422(
+    api_client, auth_identity, service_credentials_ok
+):
     with patch("app.routers.submissions.SubmissionStore"):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
@@ -164,7 +176,9 @@ def test_schema_invalid_returns_422(api_client, auth_identity):
     assert response.status_code == 422
 
 
-def test_record_count_limit_returns_422(api_client, auth_identity):
+def test_record_count_limit_returns_422(
+    api_client, auth_identity, service_credentials_ok
+):
     records = [_valid_record(), _valid_record()]
     with (
         patch("app.routers.submissions.SubmissionStore"),
@@ -176,7 +190,9 @@ def test_record_count_limit_returns_422(api_client, auth_identity):
     assert response.status_code == 422
 
 
-def test_create_single_record_returns_202(api_client, auth_identity):
+def test_create_single_record_returns_202(
+    api_client, auth_identity, service_credentials_ok
+):
     store = _store()
     with patch("app.routers.submissions.SubmissionStore", return_value=store):
         response = api_client.post(
@@ -191,7 +207,9 @@ def test_create_single_record_returns_202(api_client, auth_identity):
     store.create_queued_job.assert_awaited_once()
 
 
-def test_create_queue_limit_returns_409(api_client, auth_identity):
+def test_create_queue_limit_returns_409(
+    api_client, auth_identity, service_credentials_ok
+):
     store = _store()
     store.create_queued_job = AsyncMock(side_effect=QueueLimitReached("jobs"))
     with patch("app.routers.submissions.SubmissionStore", return_value=store):
@@ -201,6 +219,41 @@ def test_create_queue_limit_returns_409(api_client, auth_identity):
             auth=("SDK", "password"),
         )
     assert response.status_code == 409
+
+
+def test_server_credentials_missing_returns_503(api_client, auth_identity):
+    store = _store()
+    with (
+        patch(
+            "app.routers.submissions.require_service_credentials",
+            side_effect=SubmissionAuthUnavailable,
+        ),
+        patch("app.routers.submissions.SubmissionStore", return_value=store),
+    ):
+        response = api_client.post(
+            f"{EFI_PATH}/submissions",
+            json=_valid_record(),
+            auth=("SDK", "password"),
+        )
+
+    assert response.status_code == 503
+    store.create_queued_job.assert_not_awaited()
+
+
+def test_status_does_not_require_server_credentials(api_client, auth_identity):
+    store = _store()
+    with (
+        patch(
+            "app.routers.submissions.require_service_credentials"
+        ) as require_credentials,
+        patch("app.routers.submissions.SubmissionStore", return_value=store),
+    ):
+        response = api_client.get(
+            f"{EFI_PATH}/submissions/token-1", auth=("SDK", "password")
+        )
+
+    assert response.status_code == 200
+    require_credentials.assert_not_called()
 
 
 def test_status_returns_compact_summary(api_client, auth_identity):
