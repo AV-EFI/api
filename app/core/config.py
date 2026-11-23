@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     SUBMISSION_MAX_QUEUED_JOBS_PER_PROVIDER: int = 100
     SUBMISSION_MAX_QUEUED_BYTES_PER_PROVIDER: int = 500 * 1024 * 1024
     SUBMISSION_JOURNAL_PAGE_SIZE: int = 500
+    SUBMISSION_PLACEHOLDER_ISSUER_ID: str = (
+        "https://w3id.org/avefi/issuer/unspecified"
+    )
+    SUBMISSION_VALIDATION_MAX_DIAGNOSTICS: int = 100
 
     # Submission worker settings
     SUBMISSION_WORKER_MAX_ATTEMPTS: int = 3

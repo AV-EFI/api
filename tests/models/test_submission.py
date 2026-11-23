@@ -55,6 +55,7 @@ def test_submission_job_constraints_and_indexes():
     assert "ix_submission_jobs_status_next_attempt" in index_ddl
     assert "record_count INTEGER" in ddl
     assert "payload_bytes INTEGER" in ddl
+    assert "validation_fingerprint JSON" in ddl
 
 
 def test_submission_journal_constraints_and_error_fields():
@@ -97,6 +98,11 @@ def test_submission_models_accept_job_and_failure_checkpoint_values():
         record_count=1,
         payload_bytes=32,
         status="queued",
+        validation_fingerprint={
+            "package": "0.5.0",
+            "version": "2.0",
+            "sha256": "b" * 64,
+        },
         created_at=now,
         updated_at=now,
     )
@@ -115,5 +121,6 @@ def test_submission_models_accept_job_and_failure_checkpoint_values():
     )
 
     assert job.attempt_count == 0
+    assert job.validation_fingerprint["package"] == "0.5.0"
     assert entry.submission_token == job.token
     assert entry.error_code == "handle_unavailable"

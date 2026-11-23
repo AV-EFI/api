@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from avefi_schema import model_pydantic_v2 as efi
+from avefi_validate import DIRECTED_RELATIONS
 import httpx2
 from pydantic import ValidationError
 
@@ -13,6 +14,16 @@ log = logging.getLogger(__name__)
 
 
 Operation = enum.Enum("Operation", names="CREATE GET UPDATE")
+
+#: Relations that order one record after another, derived from the
+#: validator so acceptance and scheduling cannot disagree. Equivalence
+#: relations such as ``same_as`` are deliberately absent: they are
+#: symmetric and must not create a dependency cycle.
+ORDERING_ATTRIBUTES = frozenset(
+    attribute
+    for attributes in DIRECTED_RELATIONS.values()
+    for attribute in attributes
+)
 
 
 class UnreferencedError(ValueError):
@@ -158,21 +169,6 @@ class Scheduler:
             self.add_reference(handler, attr_name, id)
 
     def add_reference(self, handler, attr_name, record_id):
-        def _raise_on_loop(handler, seen=None):
-            if seen is None:
-                seen = []
-            for key in handler.iter_hashable_ids():
-                for check_handler, check_attr in self.referencing.get(key, []):
-                    if check_attr == attr_name:
-                        if check_handler in seen:
-                            raise ValueError(
-                                f"{attr_name} loop detected while processing"
-                                f" {record_id}"
-                            )
-                        seen.append(handler)
-                        _raise_on_loop(check_handler, seen=seen)
-
-        _raise_on_loop(handler)
         self.referencing[record_id].append((handler, attr_name))
 
     def skip_previously_logged_tasks(self):
@@ -270,6 +266,8 @@ class Scheduler:
                 )
             dependencies = set()
             for attr_name, id in handler.iter_links():
+                if attr_name not in ORDERING_ATTRIBUTES:
+                    continue
                 dep = self.handler_lookup.get(id)
                 if not dep or not dep.tasks:
                     continue
@@ -575,7 +573,12 @@ class Handler:
             # Ignore has_item here and deal with that later
             link_attributes = ("is_manifestation_of", "same_as")
         elif isinstance(self.record, efi.Item):
-            link_attributes = ("is_item_of", "is_copy_of", "is_derivative_of")
+            link_attributes = (
+                "is_item_of",
+                "same_as",
+                "is_copy_of",
+                "is_derivative_of",
+            )
         else:
             raise ValueError(
                 f"Cannot handle {type(self.record)} (record={self.record})"

@@ -49,6 +49,7 @@ class SubmissionStore:
         payload_digest: str,
         record_count: int,
         payload_bytes: int,
+        validation_fingerprint: dict | None = None,
     ) -> SubmissionJob:
         """Atomically enforce provider queue quotas and insert a queued job.
 
@@ -93,6 +94,7 @@ class SubmissionStore:
             issuer_profile=issuer_profile,
             payload=payload,
             payload_digest=payload_digest,
+            validation_fingerprint=validation_fingerprint,
             record_count=record_count,
             payload_bytes=payload_bytes,
             status="queued",

@@ -34,7 +34,12 @@ def _maker(url: str):
     return engine, async_sessionmaker(engine, expire_on_commit=False)
 
 
-async def _create(maker, token: str, provider: str = "21.11155/A"):
+async def _create(
+    maker,
+    token: str,
+    provider: str = "21.11155/A",
+    fingerprint: dict | None = None,
+):
     async with maker() as db:
         await SubmissionStore(db).create_queued_job(
             token=token,
@@ -46,6 +51,7 @@ async def _create(maker, token: str, provider: str = "21.11155/A"):
             payload_digest="d" * 64,
             record_count=1,
             payload_bytes=100,
+            validation_fingerprint=fingerprint,
         )
 
 
@@ -74,6 +80,22 @@ def test_claim_marks_oldest_job_running(postgres_url):
             assert job.attempt_count == 1
             assert job.lease_expires_at is not None
             assert job.started_at is not None
+        finally:
+            await engine.dispose()
+
+    run(scenario())
+
+
+def test_create_persists_the_validation_fingerprint(postgres_url):
+    async def scenario():
+        engine, maker = _maker(postgres_url)
+        try:
+            fingerprint = {"package": "0.5.0", "version": "2.0"}
+            await _create(maker, "job-1", fingerprint=fingerprint)
+
+            job = await _job(maker, "job-1")
+
+            assert job.validation_fingerprint == fingerprint
         finally:
             await engine.dispose()
 

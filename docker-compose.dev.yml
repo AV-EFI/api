@@ -35,6 +35,24 @@ services:
     networks:
       - db-network
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["/code/.venv/bin/python", "-m", "app.worker"]
+    restart: unless-stopped
+    environment:
+      - EFI_API_LOGLEVEL=${EFI_API_LOGLEVEL:-INFO}
+    volumes:
+      - './config:/code/config:ro'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    networks:
+      - db-network
+
   postgres:
     image: postgres:18
     restart: unless-stopped

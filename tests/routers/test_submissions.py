@@ -83,7 +83,45 @@ def api_client():
     api.dependency_overrides.pop(get_db, None)
 
 
-def _valid_record():
+def _local(identifier):
+    return {"category": "avefi:LocalResource", "id": identifier}
+
+
+def _submission():
+    """Return a complete work/manifestation/item hierarchy."""
+    return [
+        {
+            "category": "avefi:WorkVariant",
+            "type": "Monographic",
+            "has_primary_title": {
+                "type": "PreferredTitle",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("w1")],
+        },
+        {
+            "category": "avefi:Manifestation",
+            "has_primary_title": {
+                "type": "TitleProper",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("m1")],
+            "is_manifestation_of": [_local("w1")],
+        },
+        {
+            "category": "avefi:Item",
+            "has_primary_title": {
+                "type": "TitleProper",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("i1")],
+            "is_item_of": _local("m1"),
+        },
+    ]
+
+
+def _invalid_record():
+    """Return a record the schema can parse but the validator rejects."""
     return {
         "category": "avefi:WorkVariant",
         "has_primary_title": {"has_name": "Test", "type": "PreferredTitle"},
@@ -107,7 +145,7 @@ def service_credentials_ok():
 
 
 def test_missing_basic_auth_returns_401(api_client):
-    response = api_client.post(f"{EFI_PATH}/submissions", json=_valid_record())
+    response = api_client.post(f"{EFI_PATH}/submissions", json=_submission())
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Basic"
 
@@ -119,7 +157,7 @@ def test_invalid_credentials_return_401(api_client):
     ):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
-            json=_valid_record(),
+            json=_submission(),
             auth=("SDK", "wrong"),
         )
     assert response.status_code == 401
@@ -132,7 +170,7 @@ def test_auth_unavailable_returns_503(api_client):
     ):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
-            json=_valid_record(),
+            json=_submission(),
             auth=("SDK", "password"),
         )
     assert response.status_code == 503
@@ -170,7 +208,7 @@ def test_schema_invalid_returns_422(
     with patch("app.routers.submissions.SubmissionStore"):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
-            json={"category": "avefi:WorkVariant", "type": "Monographic"},
+            json=_invalid_record(),
             auth=("SDK", "password"),
         )
     assert response.status_code == 422
@@ -179,7 +217,7 @@ def test_schema_invalid_returns_422(
 def test_record_count_limit_returns_422(
     api_client, auth_identity, service_credentials_ok
 ):
-    records = [_valid_record(), _valid_record()]
+    records = _submission() * 2
     with (
         patch("app.routers.submissions.SubmissionStore"),
         patch.object(settings, "SUBMISSION_MAX_RECORDS", 1),
@@ -197,7 +235,7 @@ def test_create_single_record_returns_202(
     with patch("app.routers.submissions.SubmissionStore", return_value=store):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
-            json=_valid_record(),
+            json=_submission(),
             auth=("SDK", "password"),
         )
     assert response.status_code == 202
@@ -205,6 +243,144 @@ def test_create_single_record_returns_202(
     assert body["status"] == "queued"
     assert body["status_url"].startswith("/rest/v1/submissions/")
     store.create_queued_job.assert_awaited_once()
+    kwargs = store.create_queued_job.await_args.kwargs
+    assert kwargs["record_count"] == 3
+    assert {
+        "package",
+        "version",
+        "sha256",
+        "report_contract",
+    } <= set(kwargs["validation_fingerprint"])
+
+
+def test_mutual_equivalence_is_accepted(
+    api_client, auth_identity, service_credentials_ok
+):
+    store = _store()
+    records = [
+        {
+            "category": "avefi:WorkVariant",
+            "type": "Monographic",
+            "has_primary_title": {
+                "type": "PreferredTitle",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("w1")],
+        },
+        {
+            "category": "avefi:Manifestation",
+            "has_primary_title": {
+                "type": "TitleProper",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("m1")],
+            "is_manifestation_of": [_local("w1")],
+            "same_as": [_local("m2")],
+        },
+        {
+            "category": "avefi:Manifestation",
+            "has_primary_title": {
+                "type": "TitleProper",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("m2")],
+            "is_manifestation_of": [_local("w1")],
+            "same_as": [_local("m1")],
+        },
+        {
+            "category": "avefi:Item",
+            "has_primary_title": {
+                "type": "TitleProper",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("i1")],
+            "is_item_of": _local("m1"),
+        },
+        {
+            "category": "avefi:Item",
+            "has_primary_title": {
+                "type": "TitleProper",
+                "has_name": "Test",
+            },
+            "has_identifier": [_local("i2")],
+            "is_item_of": _local("m2"),
+        },
+    ]
+    with patch("app.routers.submissions.SubmissionStore", return_value=store):
+        response = api_client.post(
+            f"{EFI_PATH}/submissions",
+            json=records,
+            auth=("SDK", "password"),
+        )
+
+    assert response.status_code == 202
+    store.create_queued_job.assert_awaited_once()
+
+
+def _cycle_submission():
+    records = _submission()
+    records[0]["type"] = "Analytic"
+    records[0]["is_part_of"] = [_local("w2")]
+    records.insert(
+        1,
+        {
+            "category": "avefi:WorkVariant",
+            "type": "Analytic",
+            "has_primary_title": {
+                "type": "PreferredTitle",
+                "has_name": "Other",
+            },
+            "has_identifier": [_local("w2")],
+            "is_part_of": [_local("w1")],
+        },
+    )
+    return records
+
+
+def test_reference_cycle_returns_422_with_diagnostics(
+    api_client, auth_identity, service_credentials_ok
+):
+    store = _store()
+    with patch("app.routers.submissions.SubmissionStore", return_value=store):
+        response = api_client.post(
+            f"{EFI_PATH}/submissions",
+            json=_cycle_submission(),
+            auth=("SDK", "password"),
+        )
+
+    assert response.status_code == 422
+    body = response.json()
+    assert body["invalid"] == 2
+    assert body["truncated"] is False
+    assert {
+        "package",
+        "version",
+        "sha256",
+        "report_contract",
+    } <= set(body["validator"])
+    assert "reference.cycle" in {
+        diagnostic["code"] for diagnostic in body["diagnostics"]
+    }
+    store.create_queued_job.assert_not_awaited()
+
+
+def test_diagnostics_are_truncated(
+    api_client, auth_identity, service_credentials_ok
+):
+    with (
+        patch("app.routers.submissions.SubmissionStore"),
+        patch.object(settings, "SUBMISSION_VALIDATION_MAX_DIAGNOSTICS", 1),
+    ):
+        response = api_client.post(
+            f"{EFI_PATH}/submissions",
+            json=_cycle_submission(),
+            auth=("SDK", "password"),
+        )
+
+    body = response.json()
+    assert response.status_code == 422
+    assert body["truncated"] is True
+    assert len(body["diagnostics"]) == 1
 
 
 def test_create_queue_limit_returns_409(
@@ -215,7 +391,7 @@ def test_create_queue_limit_returns_409(
     with patch("app.routers.submissions.SubmissionStore", return_value=store):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
-            json=_valid_record(),
+            json=_submission(),
             auth=("SDK", "password"),
         )
     assert response.status_code == 409
@@ -232,7 +408,7 @@ def test_server_credentials_missing_returns_503(api_client, auth_identity):
     ):
         response = api_client.post(
             f"{EFI_PATH}/submissions",
-            json=_valid_record(),
+            json=_submission(),
             auth=("SDK", "password"),
         )
 

@@ -1,11 +1,14 @@
+import graphlib
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+from avefi_schema import model_pydantic_v2 as efi
 from httpx2 import HTTPStatusError, Request, Response
 import pytest
 
 from app.helpers.task_manager import (
     CheckpointAborted,
+    Handler,
     Operation,
     Scheduler,
     SchedulerTaskError,
@@ -205,3 +208,104 @@ def test_create_propagates_non_412_status_error():
         task.execute()
 
     client.get.assert_not_called()
+
+
+def _local(identifier):
+    return {"category": "avefi:LocalResource", "id": identifier}
+
+
+def _work(identifier, **links):
+    document = {
+        "category": "avefi:WorkVariant",
+        "type": "Monographic",
+        "has_primary_title": {"type": "PreferredTitle", "has_name": "X"},
+        "has_identifier": [_local(identifier)],
+    }
+    document.update(links)
+    return document
+
+
+def _manifestation(identifier, work="w1", **links):
+    document = {
+        "category": "avefi:Manifestation",
+        "has_primary_title": {"type": "TitleProper", "has_name": "X"},
+        "has_identifier": [_local(identifier)],
+        "is_manifestation_of": [_local(work)],
+    }
+    document.update(links)
+    return document
+
+
+def _item(identifier, manifestation="m1", **links):
+    document = {
+        "category": "avefi:Item",
+        "has_primary_title": {"type": "TitleProper", "has_name": "X"},
+        "has_identifier": [_local(identifier)],
+        "is_item_of": _local(manifestation),
+    }
+    document.update(links)
+    return document
+
+
+def _graph(*documents):
+    scheduler = Scheduler(client=MagicMock(), result_log=[])
+    for document in documents:
+        scheduler.add_record(
+            efi.MovingImageRecordTypeAdapter.validate_python(document)
+        )
+    scheduler.record_reverse_dependencies()
+    return scheduler.prepare_dependency_graph()
+
+
+def test_mutual_same_as_is_not_an_ordering_edge():
+    graph = _graph(
+        _work("w1"),
+        _manifestation("m1", same_as=[_local("m2")]),
+        _manifestation("m2", same_as=[_local("m1")]),
+        _item("i1", "m1"),
+        _item("i2", "m2"),
+    )
+
+    assert list(graphlib.TopologicalSorter(graph).static_order())
+
+
+def test_mutual_is_copy_of_is_not_an_ordering_edge():
+    graph = _graph(
+        _work("w1"),
+        _manifestation("m1"),
+        _item("i1", is_copy_of=[_local("i2")]),
+        _item("i2", is_copy_of=[_local("i1")]),
+    )
+
+    assert list(graphlib.TopologicalSorter(graph).static_order())
+
+
+def test_mutual_item_same_as_is_not_an_ordering_edge():
+    graph = _graph(
+        _work("w1"),
+        _manifestation("m1"),
+        _item("i1", same_as=[_local("i2")]),
+        _item("i2", same_as=[_local("i1")]),
+    )
+
+    assert list(graphlib.TopologicalSorter(graph).static_order())
+
+
+def test_a_hierarchy_cycle_is_still_rejected():
+    graph = _graph(
+        _work("w1", type="Analytic", is_part_of=[_local("w2")]),
+        _work("w2", type="Analytic", is_part_of=[_local("w1")]),
+    )
+
+    with pytest.raises(graphlib.CycleError):
+        list(graphlib.TopologicalSorter(graph).static_order())
+
+
+def test_item_same_as_is_tracked_as_a_reference():
+    scheduler = Scheduler(client=MagicMock(), result_log=[])
+    record = efi.MovingImageRecordTypeAdapter.validate_python(
+        _item("i1", same_as=[_local("i2")])
+    )
+    handler = Handler(scheduler, record=record)
+
+    assert "same_as" in {attribute for attribute, _ in handler.iter_links()}

@@ -68,6 +68,9 @@ class SubmissionJob(Base):
     record_count: Mapped[int] = mapped_column(Integer)
     payload_bytes: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(16))
+    validation_fingerprint: Mapped[dict | None] = mapped_column(
+        JSON, nullable=True, default=None
+    )
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
     worker_id: Mapped[str | None] = mapped_column(
         String(255), nullable=True, default=None

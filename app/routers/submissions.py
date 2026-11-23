@@ -6,6 +6,7 @@ from typing import Annotated
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,8 +20,14 @@ from ..helpers.submission_auth import (
     require_service_credentials,
     resolve_submission_identity,
 )
-from ..helpers.submission_payload import record_count as count_records
+from ..helpers.submission_payload import decode_payload
 from ..helpers.submission_store import QueueLimitReached, SubmissionStore
+from ..helpers.submission_validation import (
+    check_records,
+    decode_envelope,
+    invalid_envelope,
+    validation_fingerprint,
+)
 from ..models.submission import SubmissionJob
 from ..schemas.submissions import (
     SubmissionAccepted,
@@ -130,16 +137,18 @@ async def create_submission(
         raise HTTPException(status_code=422, detail="Invalid JSON") from None
 
     try:
-        record_count = count_records(data)
+        records = decode_payload(data)
     except ValidationError:
-        raise HTTPException(
-            status_code=422, detail="Invalid AVefi records"
-        ) from None
+        return JSONResponse(status_code=422, content=decode_envelope())
 
-    if record_count > settings.SUBMISSION_MAX_RECORDS:
+    if len(records) > settings.SUBMISSION_MAX_RECORDS:
         raise HTTPException(
             status_code=422, detail="Record limit exceeded"
         ) from None
+
+    result = await asyncio.to_thread(check_records, records)
+    if not result.passed:
+        return JSONResponse(status_code=422, content=invalid_envelope(result))
 
     store = _store(db)
     token = str(uuid.uuid4())
@@ -152,7 +161,8 @@ async def create_submission(
             issuer_profile=identity.profile,
             payload=data,
             payload_digest=hashlib.sha256(raw).hexdigest(),
-            record_count=record_count,
+            record_count=len(records),
+            validation_fingerprint=validation_fingerprint(),
             payload_bytes=len(raw),
         )
     except QueueLimitReached:
